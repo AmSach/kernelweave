@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
-import json
 import hashlib
+import json
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ class Kernel:
     tests: list[dict[str, Any]]
     status: KernelStatus
     source_trace_ids: list[str]
-    version: int = 1
+    version: int = 2
 
     def digest(self) -> str:
         blob = json.dumps(asdict(self), sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -72,7 +72,7 @@ class Kernel:
             tests=list(data["tests"]),
             status=status,
             source_trace_ids=list(data["source_trace_ids"]),
-            version=int(data.get("version", 1)),
+            version=int(data.get("version", 2)),
         )
 
 
@@ -131,7 +131,9 @@ class KernelStore:
     def list_traces(self) -> list[dict[str, Any]]:
         return self._read_index().get("traces", [])
 
+    def summary(self) -> dict[str, Any]:
+        return {"root": str(self.root), "kernels": len(self.list_kernels()), "traces": len(self.list_traces())}
+
 
 def load_sample_store(root: Path) -> KernelStore:
-    store = KernelStore(root)
-    return store
+    return KernelStore(root)

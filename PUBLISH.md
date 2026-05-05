@@ -1,65 +1,67 @@
-# Publishing KernelWeave to GitHub Pages and GitHub
+# Publishing KernelWeave to NeurIPS and GitHub
 
-## What you have
-- NeurIPS-style paper source: `paper/main.tex`
-- compiled PDF: `kernelweave-neurips-paper.pdf`
-- codebase zip: `kernelweave-neurips-codebase.zip`
-- prototype code under `kernelweave/`
+## What is included
+- `paper/main.tex` — NeurIPS-style manuscript source
+- `kernelweave-neurips-paper.pdf` — compiled PDF
+- `kernelweave-neurips-codebase.zip` — codebase archive for reviewers
+- `tests/` — automated validation
+- `docs/` — architecture and algorithm notes
 
-## Step-by-step publish guide
+## NeurIPS page limit
+NeurIPS 2025 main submissions are limited to **9 pages** of content. Put any extra material in the appendix or supplementary material. Keep the main paper tight and let the appendix carry the grind.
 
-### 1) Create the GitHub repo
-If the repo does not already exist, create it under your GitHub account:
+## Step-by-step publishing workflow
 
+### 1) Verify the codebase locally
 ```bash
-gh repo create AmanSachan/kernelweave --public --source=. --remote=origin --push
+cd /home/workspace/Projects/kernelweave
+python -m pytest -q
 ```
 
-If you want it private first, use `--private`.
-
-### 2) Push the code
-If the remote already exists:
-
+### 2) Build the paper
 ```bash
-git add .
-git commit -m "Publish KernelWeave prototype"
-git push -u origin main
+cd /home/workspace/Projects/kernelweave
+./paper/build.sh
 ```
 
-### 3) Attach the NeurIPS files
-Keep these in the repo root so reviewers can find them easily:
+### 3) Inspect the deliverables
+Make sure these files exist:
 - `paper/main.tex`
 - `kernelweave-neurips-paper.pdf`
 - `kernelweave-neurips-codebase.zip`
 
-### 4) Create a GitHub Pages branch or site
-If you want a project page:
-
+### 4) Create the GitHub repository
+If it doesn't exist yet:
 ```bash
-gh pages publish --branch main --path docs
+gh repo create AmanSachan/kernelweave --public --source=. --remote=origin --push
+```
+If it already exists, just push:
+```bash
+git push -u origin main
 ```
 
-Better: build a tiny `docs/` site or `index.html` that links the PDF and zip.
+### 5) Prepare the submission bundle
+Upload to OpenReview / NeurIPS:
+- the PDF manuscript
+- the appendix if permitted
+- the codebase zip as supplementary material if allowed
 
-### 5) Put the paper and zip online
-Recommended repo layout:
-- `/paper/main.tex`
-- `/kernelweave-neurips-paper.pdf`
-- `/kernelweave-neurips-codebase.zip`
-- `/docs/index.html`
+### 6) GitHub Pages / public landing page
+For reviewers and readers, create a tiny docs site in `docs/` that links:
+- the PDF
+- the codebase zip
+- a short project summary
 
-### 6) Use the paper with NeurIPS submission
-- Upload the PDF to OpenReview when submitting.
-- Upload the technical appendix / codebase zip as supplementary material if permitted.
-- Keep the main manuscript within the page limit.
+Then publish the site from the repo settings or via `gh pages publish`.
 
-### 7) Final sanity checks
-- compile the TeX locally
-- open the PDF and inspect equations/figures
-- verify the zip contains the full codebase
-- verify the repo renders on GitHub
+### 7) Final checks before submission
+- paper fits the 9-page limit
+- figures and equations render cleanly
+- tests pass
+- zip includes the whole codebase
+- README explains what the prototype actually does
 
-## Direct links in this workspace
+## Files to hand over
+- `file 'paper/main.tex'`
 - `file 'kernelweave-neurips-paper.pdf'`
 - `file 'kernelweave-neurips-codebase.zip'`
-- `file 'paper/main.tex'`

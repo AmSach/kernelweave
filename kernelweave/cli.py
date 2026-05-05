@@ -32,6 +32,12 @@ def build_parser() -> argparse.ArgumentParser:
     list_p = sub.add_parser("list", help="list kernels")
     list_p.add_argument("store", type=Path)
 
+    traces_p = sub.add_parser("traces", help="list traces")
+    traces_p.add_argument("store", type=Path)
+
+    info_p = sub.add_parser("info", help="summarize store status")
+    info_p.add_argument("store", type=Path)
+
     return parser
 
 
@@ -85,11 +91,11 @@ def main() -> None:
     store = load_sample_store(args.store)
 
     if args.cmd == "init":
-        print(json.dumps({"store": str(args.store), "kernels": len(store.list_kernels()), "traces": len(store.list_traces())}, indent=2))
+        print(json.dumps(store.summary(), indent=2, sort_keys=True))
         return
     if args.cmd == "add-sample":
         install_samples(store)
-        print(json.dumps({"store": str(args.store), "kernels": store.list_kernels(), "traces": store.list_traces()}, indent=2))
+        print(json.dumps(store.summary(), indent=2, sort_keys=True))
         return
     if args.cmd == "compile":
         events = [
@@ -106,6 +112,12 @@ def main() -> None:
         return
     if args.cmd == "list":
         print(json.dumps(store.list_kernels(), indent=2, sort_keys=True))
+        return
+    if args.cmd == "traces":
+        print(json.dumps(store.list_traces(), indent=2, sort_keys=True))
+        return
+    if args.cmd == "info":
+        print(json.dumps(store.summary(), indent=2, sort_keys=True))
         return
 
 

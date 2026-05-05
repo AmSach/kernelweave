@@ -424,6 +424,8 @@ Safety calibration & False accepts vs false rejects & Measures trustworthiness \
 
 \section{Discussion}
 
+KernelWeave is designed to be explainable as well as executable. A reviewer should be able to inspect the kernel object, read its evidence, and understand why the runtime made a choice. That is why we prefer explicit schemas, explicit rollback rules, and explicit tests instead of a black-box learned policy.
+
 KernelWeave changes the philosophical shape of an LLM system.
 
 First, it makes competence persistent. A solved pattern is no longer a one-off accident buried in the conversation history. It becomes an object in a store.
@@ -437,6 +439,8 @@ Fourth, it makes competence governable. Since kernels have rollback policies and
 The deeper implication is that future LLM systems may not be defined only by the base model architecture. They may be defined by the collection of kernels they can accumulate. In that world, the model is the engine, but the kernel store is the transmission, the brakes, and the steering. That is the sort of infrastructure that changes whether the machine can actually do work.
 
 \section{Limitations}
+
+The architecture is not free of problems. Prompt families are fuzzy, traces can be misleading, kernels can overfit, and similarity scoring can miss semantically equivalent prompts. These are the reasons the system must stay fail-closed and why the evaluation plan matters.
 
 The architecture is strong, but it is not magic.
 

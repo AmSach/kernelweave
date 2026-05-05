@@ -6,6 +6,7 @@ from typing import Any
 import math
 
 from .kernel import Kernel, KernelStatus, TraceEvent
+from .metrics import clamp, cosine_similarity, jaccard_similarity, sigmoid
 
 
 @dataclass
@@ -15,6 +16,7 @@ class CompilationStats:
     evidence_count: int
     compression_gain: float
     confidence: float
+    matchfulness: float
 
 
 def _kernel_id(task_family: str, summary: str) -> str:
@@ -22,30 +24,51 @@ def _kernel_id(task_family: str, summary: str) -> str:
     return f"kw-{digest[:16]}"
 
 
-def score_kernel(events: list[TraceEvent]) -> CompilationStats:
+def score_kernel(events: list[TraceEvent], task_family: str = "", description: str = "") -> CompilationStats:
     trace_length = len(events)
-    distinct_tools = len({event.payload.get("tool") for event in events if event.kind == "tool" and event.payload.get("tool")})
+    distinct_tools = len(
+        {
+            event.payload.get("tool")
+            for event in events
+            if event.kind == "tool" and event.payload.get("tool")
+        }
+    )
     evidence_count = sum(1 for event in events if event.kind in {"evidence", "observation", "verification"})
     compression_gain = max(0.0, (trace_length + evidence_count) / max(1, distinct_tools + 1) - 1.0)
-    confidence = 1.0 / (1.0 + math.exp(-0.8 * (evidence_count - 2)))
-    return CompilationStats(trace_length, distinct_tools, evidence_count, compression_gain, confidence)
+    raw_confidence = 0.55 * sigmoid(0.8 * (evidence_count - 2)) + 0.25 * sigmoid(0.4 * (trace_length - 3)) + 0.20 * sigmoid(compression_gain - 0.5)
+    matchfulness = clamp(0.5 * jaccard_similarity(task_family, description) + 0.5 * cosine_similarity(task_family, description))
+    confidence = clamp(raw_confidence)
+    return CompilationStats(trace_length, distinct_tools, evidence_count, compression_gain, confidence, matchfulness)
 
 
-def compile_trace_to_kernel(trace_id: str, task_family: str, description: str, events: list[TraceEvent], expected_output: dict[str, Any]) -> Kernel:
-    stats = score_kernel(events)
+def compile_trace_to_kernel(
+    trace_id: str,
+    task_family: str,
+    description: str,
+    events: list[TraceEvent],
+    expected_output: dict[str, Any],
+) -> Kernel:
+    stats = score_kernel(events, task_family=task_family, description=description)
     summary = description.strip() or task_family
     kernel_id = _kernel_id(task_family, summary)
 
-    steps = []
-    preconditions = []
-    postconditions = []
-    rollback = []
-    evidence_requirements = []
-    tests = []
+    steps: list[dict[str, Any]] = []
+    preconditions: list[str] = []
+    postconditions: list[str] = []
+    rollback: list[str] = []
+    evidence_requirements: list[str] = []
+    tests: list[dict[str, Any]] = []
 
     for idx, event in enumerate(events, start=1):
         if event.kind == "tool":
-            steps.append({"step": idx, "action": "tool", "tool": event.payload.get("tool"), "args": event.payload.get("args", {})})
+            steps.append(
+                {
+                    "step": idx,
+                    "action": "tool",
+                    "tool": event.payload.get("tool"),
+                    "args": event.payload.get("args", {}),
+                }
+            )
         elif event.kind == "plan":
             steps.append({"step": idx, "action": "plan", "text": event.payload.get("text", "")})
         elif event.kind == "decision":
@@ -56,36 +79,56 @@ def compile_trace_to_kernel(trace_id: str, task_family: str, description: str, e
             evidence_requirements.append(event.payload.get("text", "evidence"))
         elif event.kind == "failure":
             rollback.append(event.payload.get("text", "rollback on failure"))
+        elif event.kind == "observation":
+            steps.append({"step": idx, "action": "observation", "text": event.payload.get("text", "")})
 
-    preconditions.extend([
-        f"task belongs to family: {task_family}",
-        "inputs match schema",
-        "evidence channel available",
-    ])
-    postconditions.extend([
-        "output schema satisfied",
-        "all required evidence recorded",
-        "rollback not triggered",
-    ])
-    rollback.extend([
-        "if evidence is insufficient, return to planning",
-        "if a tool returns contradictory data, invalidate kernel",
-    ])
-    evidence_requirements.extend([
-        "source trace logged",
-        "final response conforms to expected output",
-    ])
-    tests.append({
-        "name": "output-shape",
-        "input": {"task_family": task_family},
-        "expected": expected_output,
-    })
-    tests.append({
-        "name": "evidence-completeness",
-        "input": {"trace_id": trace_id},
-        "expected": {"min_evidence": max(2, stats.evidence_count)},
-    })
+    preconditions.extend(
+        [
+            f"task belongs to family: {task_family}",
+            "inputs match schema",
+            "evidence channel available",
+            "trace corresponds to a solved task",
+        ]
+    )
+    postconditions.extend(
+        [
+            "output schema satisfied",
+            "all required evidence recorded",
+            "rollback not triggered",
+            "tests passed on admission",
+        ]
+    )
+    rollback.extend(
+        [
+            "if evidence is insufficient, return to planning",
+            "if a tool returns contradictory data, invalidate kernel",
+            "if schema inference is unstable, demote kernel confidence",
+        ]
+    )
+    evidence_requirements.extend(["source trace logged", "final response conforms to expected output"])
+    tests.append(
+        {
+            "name": "output-shape",
+            "input": {"task_family": task_family},
+            "expected": expected_output,
+        }
+    )
+    tests.append(
+        {
+            "name": "evidence-completeness",
+            "input": {"trace_id": trace_id},
+            "expected": {"min_evidence": max(2, stats.evidence_count)},
+        }
+    )
+    tests.append(
+        {
+            "name": "confidence-floor",
+            "input": {"task_family": task_family},
+            "expected": {"min_confidence": round(stats.confidence, 4)},
+        }
+    )
 
+    state = "verified" if stats.confidence >= 0.7 else "candidate"
     return Kernel(
         kernel_id=kernel_id,
         name=f"{task_family} kernel",
@@ -100,7 +143,7 @@ def compile_trace_to_kernel(trace_id: str, task_family: str, description: str, e
         evidence_requirements=evidence_requirements,
         tests=tests,
         status=KernelStatus(
-            state="candidate" if stats.confidence < 0.82 else "verified",
+            state=state,
             confidence=round(stats.confidence, 4),
             failures=0,
             passes=1,
