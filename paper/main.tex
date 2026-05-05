@@ -3,58 +3,81 @@
 \usepackage{amsmath,amssymb,amsthm,booktabs,graphicx,hyperref,enumitem,longtable,array}
 \usepackage{microtype}
 \usepackage{setspace}
-\setstretch{1.0}
+\usepackage{url}
+\setstretch{1.02}
 
-\title{KernelWeave: Self-Compiling Skill Kernels for Language Models}
-\author{Anonymous}
+\title{KernelWeave: A Self-Compiling Architecture for Verified Skill Kernels in Language Models}
+\author{Aman Sachan}
 
 \newtheorem{theorem}{Theorem}
-\newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Large language models repeatedly solve the same families of tasks, yet most systems discard that success after each interaction. We introduce KernelWeave, a self-compiling architecture that converts verified task traces into reusable skill kernels. A kernel is not a cached answer or a prompt template; it is an executable object containing schemas, preconditions, postconditions, evidence requirements, rollback rules, and regression tests. At inference time, the runtime searches for a matching kernel, executes it when the evidence supports reuse, and falls back to raw generation when the match is weak. The result is a model system that accumulates durable competence instead of starting over on every prompt. We formalise the induction objective, derive a fail-closed reuse rule, present a working prototype, and define an evaluation programme that measures reuse, safety, and compounding capability.
+Large language models repeatedly solve the same families of tasks, yet most systems discard that success after each interaction. We introduce \emph{KernelWeave}, a self-compiling architecture that converts verified task traces into reusable skill kernels. A kernel is not a cached answer or a prompt template; it is an executable object containing schemas, preconditions, postconditions, evidence requirements, rollback rules, tests, and a confidence score. At inference time, the runtime searches for a matching kernel, executes it when the evidence supports reuse, and falls back to raw generation when the match is weak. The result is a model system that accumulates durable competence instead of starting over on every prompt. We formalise the induction objective, derive a fail-closed reuse rule, present a working prototype, and define an evaluation programme that measures reuse, safety, compounding savings, and drift robustness.
 \end{abstract}
 
 \section{Introduction}
 
-Current LLM systems improve through retrieval, routing, tool use, and fine-tuning, but they still have a basic flaw: when a task is solved well, the system often forgets how it solved it. The next similar request is answered again from scratch, paying the same reasoning cost and redoing the same safety checks. That is wasteful, and it is the real bottleneck for many practical deployments.
+The standard way to use a language model is brutally simple: ask a prompt, receive a response, and move on. That is useful, but it is also wasteful. If the model solves a task well today, most systems do not preserve the procedure that made it succeed. Tomorrow, the same family of task arrives again, and the system pays the same reasoning cost all over again. The answer may look elegant, but the underlying capability is still transient.
 
-KernelWeave is built around a different idea. When a task family is solved successfully enough, the system should compile that success into a reusable computational object. On future prompts, the system should try the compiled skill first, rather than regenerating the entire solution path. In other words, the model should not merely remember text; it should accumulate verified competence.
+KernelWeave is built to change that. Its core claim is that repeated success should be compiled into a durable computational object. Instead of treating solved work as disposable text, the system converts it into a 
+\emph{skill kernel}: a typed, executable, evidence-carrying unit that can be reused before raw generation. This changes the unit of learning from prompt-response pairs to reusable capability modules.
 
-The contribution is not a wrapper around a model. It is a compilation architecture for competence itself.
+That sounds abstract, so here is the image to keep in mind. Imagine the space of prompts as a rough landscape. Some hills are just wordsmithing; some valleys represent genuine task structure. A normal LLM rolls the marble downhill from scratch every time. KernelWeave carves channels in the ground. The marble still moves, but now the deep path is there already. If the evidence is good enough, the system follows the channel. If not, it climbs back out and generates afresh. That is the whole philosophy: make the right path easier to follow, but never force the wrong one.
 
 \paragraph{Contributions}
 \begin{enumerate}[leftmargin=1.2em]
 \item We define a skill kernel as a typed, executable, evidence-carrying representation of a solved task family.
-\item We introduce a kernel induction objective that scores usefulness, evidence quality, reuse value, and failure risk.
+\item We introduce a kernel induction objective that scores usefulness, evidence quality, reuse value, compression, and failure risk.
 \item We derive a fail-closed runtime rule that refuses reuse when evidence or regression checks are insufficient.
 \item We present a full prototype with a kernel compiler, kernel store, runtime selector, CLI, and regression-gated sample kernels.
-\item We outline an evaluation plan that measures reuse rate, compounding savings, drift robustness, and safety.
+\item We give a detailed evaluation plan covering reuse rate, compounding savings, drift robustness, and safety.
 \end{enumerate}
 
-\section{Problem statement}
+\section{Why this is not just another wrapper}
 
-Let a prompt family be denoted by $\mathcal{P}$, and let successful traces over that family be $\tau \in \mathcal{T}(\mathcal{P})$. We seek a compilation operator
-\[
-\mathcal{K}: \mathcal{T}(\mathcal{P}) \to \mathbb{K},
-\]
-where the resulting object is executable, testable, and reusable.
+A wrapper puts a prettier surface around the same behavior. KernelWeave changes the behavior class itself.
 
-A kernel must satisfy six requirements: it must be typed, it must define preconditions and postconditions, it must carry evidence requirements, it must fail closed when evidence is insufficient, it must be rollbackable, and it must be stored as a durable artifact.
+A wrapper says: ``here is the model, plus some extra instructions.'' KernelWeave says: ``here is a compiled capability with a contract, evidence, rollback, and tests.'' The distinction matters because a system that can reuse verified competence is not the same as a system that merely hides prompts inside software.
 
-\begin{definition}[Skill kernel]
-A skill kernel is a structured, executable representation of a solved task family, containing input and output schemas, a step plan, evidence constraints, rollback logic, and regression tests.
-\end{definition}
+To make that concrete, think of three levels:
+\begin{enumerate}[leftmargin=1.2em]
+\item \textbf{Prompting}: every task is solved from scratch.
+\item \textbf{Memory}: past text is stored and retrieved.
+\item \textbf{Compilation}: successful behavior is turned into a reusable, validated kernel.
+\end{enumerate}
 
-This makes the unit of reuse concrete. A kernel is not a note. It is a validated capability module.
+KernelWeave sits at the third level. It does not merely remember what happened. It stores what should happen again, under what conditions, and with which safety checks.
 
-\section{KernelWeave framework}
+\section{Related work}
 
-We represent a task family by prompts $p \in \mathcal{P}$ and a successful trace by
+KernelWeave draws inspiration from but goes beyond several established lines of work.
+
+\subsection{Reasoning and self-consistency}
+Self-consistency improves answer quality by sampling multiple chains and selecting the consensus answer \cite{wang2023selfconsistency}. Reflection and verbal reinforcement let a model critique and revise itself \cite{shinn2023reflexion}. These methods improve reliability, but they still leave the model to regenerate the answer procedure every time.
+
+\subsection{Reasoning plus action}
+ReAct couples reasoning with tool use \cite{yao2023react}. Tool-augmented agents can search, calculate, and interact with the environment. KernelWeave keeps that advantage, but adds a compilation layer that stores successful tool-using behaviors as executable kernels.
+
+\subsection{Retrieval and external memory}
+Retrieval-augmented generation keeps knowledge available without fine-tuning the base model \cite{lewis2020retrieval}. Long-term memory systems and note stores are useful, but they are still mostly text containers. KernelWeave uses memory as a source of kernel induction, not as the final representation.
+
+\subsection{Program synthesis and learned routines}
+Program synthesis and skill libraries show that repeated behavior can become code. KernelWeave borrows that principle for LLM task families. The novelty is the combination of typed contracts, evidence gates, regression tests, and runtime selection in a single self-compiling loop.
+
+\subsection{Continual learning and compounding capability}
+Continual learning methods aim to preserve useful knowledge as new data arrives. KernelWeave is less about parameter updates and more about operational compounding: each solved task family can create a new kernel, and the kernel store becomes a growing library of verified competencies.
+
+\section{Framework overview}
+
+A kernel is a compact machine for a task family. It can be invoked, checked, and revoked.
+
+Formally, we represent a successful trace by
 \[
 \tau = (e_1, e_2, \dots, e_n),
 \]
@@ -62,146 +85,488 @@ where each event $e_i$ is one of: plan, tool call, observation, evidence item, v
 
 A kernel $k$ is a structured object
 \[
- k = (I_k, O_k, S_k, R_k, E_k, X_k, \pi_k, c_k),
+ k = (I_k, O_k, S_k, R_k, E_k, X_k, \pi_k, c_k, \mu_k),
 \]
-where $I_k$ is the input schema, $O_k$ the output schema, $S_k$ the step plan, $R_k$ the rollback policy, $E_k$ the evidence requirement set, $X_k$ the regression suite, $\pi_k$ the execution policy, and $c_k$ the confidence score.
+where:
+\begin{itemize}[leftmargin=1.2em]
+\item $I_k$ is the input schema,
+\item $O_k$ is the output schema,
+\item $S_k$ is the step plan,
+\item $R_k$ is the rollback policy,
+\item $E_k$ is the evidence requirement set,
+\item $X_k$ is the regression suite,
+\item $\pi_k$ is the execution policy,
+\item $c_k$ is the confidence score,
+\item $\mu_k$ is the maintenance metadata describing drift and version history.
+\end{itemize}
 
-The important part is that a kernel can be executed, checked, and revoked. It is therefore not a static memory record.
+This makes the kernel not just reusable, but governable. You can say when it applies, what proves that it applies, and how it should be retired.
 
-\subsection{Induction objective}
-Given a trace $\tau$, the compiler seeks a kernel that maximises
+\subsection{A simple visual}
+\begin{figure}[t]
+\centering
+\fbox{%
+\begin{minipage}{0.95\linewidth}
+\centering
+\vspace{2mm}
+\begin{tabular}{c}
+Prompt family $p$ \\
+$\downarrow$ \\
+Match scorer + evidence gatherer \\
+$\downarrow$ \\
+\fbox{Kernel candidate $k$} \hspace{1.2em} or \hspace{1.2em} \fbox{Fallback generation} \\
+$\downarrow$ \\
+Regression gate + rollback check \\
+$\downarrow$ \\
+Executed plan and trace \\
+$\downarrow$ \\
+Compiler updates kernel store
+\end{tabular}
+\vspace{2mm}
+\end{minipage}}
+\caption{The KernelWeave loop. Successful behavior is compiled into a kernel; the runtime reuses it only when evidence and regression checks say it is still safe.}
+\end{figure}
+
+\section{The intuitive picture: a landscape of competence}
+
+The easiest way to understand KernelWeave is to imagine the prompt space as a topographic map.
+
+A shallow hill is a superficial wording variation. A deep valley is a genuinely recurring task structure. The kernel is the valley floor, shaped by repeated success. The runtime does not blindly jump into the valley; it first checks whether there is enough evidence that the valley is the right one. If the evidence is weak, it stays on the ridge and generates a fresh path.
+
+This image is useful because it explains three things at once:
+\begin{enumerate}[leftmargin=1.2em]
+\item \textbf{Generalisation}: similar prompts should map to the same deep basin.
+\item \textbf{Safety}: bad evidence should not drag the system into the wrong basin.
+\item \textbf{Compounding}: each solved task can deepen the basin and make reuse more likely.
+\end{enumerate}
+
+The geometry is not just a metaphor. It is a way to reason about kernel confidence, drift, and threshold selection. A kernel with strong evidence and a broad applicability basin is like a wide, stable valley. A brittle kernel is a narrow groove; it may work in one spot and fail a centimetre away.
+
+\section{Problem statement}
+
+Let $\mathcal{P}$ be the space of prompts and $\mathcal{T}(\mathcal{P})$ the space of successful traces over that prompt family. We seek a compilation operator
 \[
-J(k;\tau)=\lambda_u U(k;\tau)+\lambda_e Q(k;\tau)+\lambda_r V(k)-\lambda_f F(k)-\lambda_o O(k),
+\mathcal{K}: \mathcal{T}(\mathcal{P}) \to \mathbb{K},
 \]
-where $U$ measures task utility recovered from the trace, $Q$ measures evidence quality, $V$ measures expected reuse value, $F$ measures failure risk, and $O$ measures operational overhead.
+where $\mathbb{K}$ is the space of skill kernels.
+
+A kernel should satisfy six requirements:
+\begin{enumerate}[leftmargin=1.2em]
+\item it must be typed;
+\item it must define preconditions and postconditions;
+\item it must carry evidence requirements;
+\item it must fail closed when evidence is insufficient;
+\item it must be rollbackable;
+\item it must be stored as a durable artifact.
+\end{enumerate}
+
+\begin{definition}[Skill kernel]
+A skill kernel is a structured, executable representation of a solved task family, containing input and output schemas, a step plan, evidence constraints, rollback logic, and regression tests.
+\end{definition}
+
+\begin{definition}[Evidence debt]
+The evidence debt of a prompt $p$ with respect to a kernel $k$ is the amount of required evidence not currently available for safe reuse.
+\end{definition}
+
+If the debt is nonzero, the runtime must either collect more evidence or fall back to general generation.
+
+\section{Kernel induction objective}
+
+Kernel induction is the process of converting a successful trace into a reusable kernel. The compiler should not merely shorten the trace; it should preserve the logic of success in a structured way.
+
+We define the score of a candidate kernel as
+\[
+J(k;\tau)=\lambda_u U(k;\tau)+\lambda_q Q(k;\tau)+\lambda_r R(k)-\lambda_f F(k)-\lambda_o O(k).
+\]
+Here:
+\begin{itemize}[leftmargin=1.2em]
+\item $U(k;\tau)$ measures task utility recovered from the trace,
+\item $Q(k;\tau)$ measures evidence quality,
+\item $R(k)$ measures expected reuse value,
+\item $F(k)$ measures failure risk,
+\item $O(k)$ measures operational overhead.
+\end{itemize}
 
 A useful concrete form is
 \[
 U(k;\tau)=\alpha A(k,\tau)+\beta E(k)+\gamma C(k),
 \]
-where $A$ is applicability, $E$ is evidence completeness, and $C$ is compaction of the trace into executable structure.
+where $A$ is applicability, $E$ is evidence completeness, and $C$ is compression of the trace into executable structure.
 
-\subsection{Runtime score}
-At inference time, a prompt $p$ is matched against kernels by
+The compiler wants a kernel that is not too narrow, not too broad, and not too costly to maintain. That is the tradeoff. If the kernel is too narrow, it never gets reused. If it is too broad, it becomes unsafe. If it is too expensive to maintain, the compounding benefit disappears.
+
+\section{Runtime selection and fail-closed gating}
+
+At inference time, a prompt $p$ is matched against kernels by a score
 \[
-S(p,k)=w_m M(p,k)+w_c c_k+w_e \mathrm{cov}(k,p)-w_f \mathrm{risk}(k),
+S(p,k)=w_m M(p,k)+w_c c_k+w_e \mathrm{cov}(k,p)-w_f \mathrm{risk}(k)-w_d D(k,p),
 \]
-where $M$ is semantic match, $\mathrm{cov}$ is evidence coverage for the prompt, and $\mathrm{risk}$ captures drift and overfitting. The runtime executes the kernel only if $S(p,k) \ge \theta$ and the regression gates pass.
+where $M$ is semantic match, $\mathrm{cov}$ is evidence coverage, $c_k$ is confidence, $\mathrm{risk}$ captures drift and overfitting, and $D$ is evidence debt.
 
-\section{Algorithm}
-
-KernelWeave compiles behaviour in five steps.
-
-\begin{enumerate}[leftmargin=1.2em]
-\item Observe a successful trace for a task family.
-\item Extract events, tools, evidence, and output constraints.
-\item Infer a typed schema and a step plan.
-\item Attach rollback rules, evidence requirements, and tests.
-\item Admit the kernel only if its confidence and regressions meet threshold.
-\end{enumerate}
-
-\begin{proposition}[Compile-or-reject]
-A candidate kernel is either admitted with a recorded confidence and test suite, or rejected entirely. There is no partial admission.
-\end{proposition}
-
-This matters because half-baked kernels are worse than no kernel. They create the illusion of reuse while quietly increasing failure probability.
-
-\subsection{Fail-closed reuse}
-\begin{definition}[Evidence debt]
-Evidence debt is the gap between the evidence required by a kernel and the evidence currently available for the active prompt.
-\end{definition}
-
-If evidence debt is non-zero, the runtime must either request more evidence or fall back to generation.
+The runtime decision rule is
+\[
+\delta(p)=\begin{cases}
+\text{execute}(k) & \text{if } S(p,k)\ge \theta \text{ and } G(k,p)=1,\\
+\text{generate} & \text{otherwise},
+\end{cases}
+\]
+where $G(k,p)$ is the regression gate.
 
 \begin{theorem}[Fail-closed reuse]
 If a kernel fails its regression suite or its evidence requirements are not satisfied, then the runtime does not execute it.
 \end{theorem}
 
 \begin{proof}
-The runtime only admits kernels whose stored confidence exceeds threshold and whose regression tests pass against the current constraints. If evidence is missing, the evidence debt is positive, so the gating condition fails. If the regression suite fails, the kernel is flagged invalid. In either case the execution branch is not taken, and the system falls back to raw generation or a more general kernel. Hence reuse is fail-closed.
+The runtime only admits kernels whose stored confidence exceeds threshold and whose regression tests pass against the current prompt constraints. If evidence is missing, evidence debt is positive and the gate fails. If the regression suite fails, the kernel is invalidated. In either case the execution branch is not taken, and the system falls back to raw generation or a more general kernel. Hence reuse is fail-closed.
 \end{proof}
 
-\subsection{Compounding benefit}
-If a task family occurs with probability $\rho$ and solving it from scratch costs $C_s$ compute units, while executing the kernel costs $C_k$ with induction overhead $C_i$, then expected net savings after $T$ occurrences is approximately
+This theorem is the safety backbone of the whole architecture. It says the system must prefer not to reuse if reuse is uncertain.
+
+\section{Kernel composition and the kernel lattice}
+
+The deepest version of KernelWeave is not just a library of isolated kernels. It is a lattice of composable kernels.
+
+Suppose kernel $k_a$ produces outputs compatible with the input schema of kernel $k_b$. Then we may define a composition operator
+\[
+ k_b \circ k_a
+\]
+if and only if $O_{k_a}$ is compatible with $I_{k_b}$ and the composed evidence requirements can be jointly satisfied.
+
+\begin{lemma}[Schema compatibility]
+If $O_{k_a}$ does not match $I_{k_b}$, then $k_b \circ k_a$ is undefined.
+\end{lemma}
+
+This simple condition matters a lot. It prevents accidental composition of unrelated abilities.
+
+We can partially order kernels by specificity. Say $k_1 \preceq k_2$ if $k_1$ is a more specific version of $k_2$ with stronger preconditions and narrower applicability. Then the kernel store becomes a kind of lattice: general kernels occupy upper levels, specific kernels occupy lower levels, and composition walks along edges between them.
+
+\begin{proposition}[Monotone safety under specialization]
+If kernel $k_1$ is a specialization of kernel $k_2$, then the safe applicability region of $k_1$ is contained in that of $k_2$.
+\end{proposition}
+
+The practical point is that specialization is useful when the task family is stable. Generalization is useful when the prompt family is broad. The kernel store should support both.
+
+\section{The compiler in detail}
+
+The compiler is the part that turns raw trace into structure.
+
+A successful trace contains events such as planning, tool calls, evidence statements, intermediate checks, and the final answer. The compiler extracts those events, sorts them into roles, and builds the kernel fields.
+
+The process has four passes.
+
+\subsection{Pass 1: normalization}
+The trace is normalized into a common event vocabulary. Ad hoc text becomes typed events such as \texttt{plan}, \texttt{tool}, \texttt{evidence}, \texttt{verification}, and \texttt{decision}. This is where the model’s messy behavior gets a cleaner shape.
+
+\subsection{Pass 2: schema inference}
+The compiler infers the input and output types from successful prompts and outputs. The goal is not perfect type theory; it is operational sanity. If the task family expects a structured response, the output schema should say so.
+
+\subsection{Pass 3: evidence extraction}
+Evidence is the part of the trace that justifies reuse. If the trace included a search result, a computation, a verification step, or a policy check, that becomes part of the evidence set. This matters because a kernel without evidence is just a guess wrapped in confidence.
+
+\subsection{Pass 4: test synthesis}
+The compiler synthesizes a regression suite from the trace. Tests can check output shape, required fields, specific invariants, and the presence of supporting evidence.
+
+\begin{figure}[t]
+\centering
+\fbox{%
+\begin{minipage}{0.95\linewidth}
+\centering
+\begin{tabular}{>{\centering\arraybackslash}p{0.28\linewidth} >{\centering\arraybackslash}p{0.16\linewidth} >{\centering\arraybackslash}p{0.28\linewidth} >{\centering\arraybackslash}p{0.18\linewidth}}
+Trace events & $\to$ & Kernel compiler & $\to$ Kernel object \\
+\addlinespace
+Plan, tool, evidence, verification, decision & $\to$ & schema, rollback, tests, confidence & $\to$ typed executable module
+\end{tabular}
+\end{minipage}}
+\caption{The compiler does not just compress the trace; it extracts the latent structure that makes the trace reusable.}
+\end{figure}
+
+\section{Expected savings and compounding}
+
+The central economic question is simple: when does it pay to compile a kernel instead of re-solving the task every time?
+
+Suppose a task family occurs with probability $\rho$. Solving it from scratch costs $C_s$ compute units. Executing the compiled kernel costs $C_k$. Compiling the kernel costs $C_i$. Then the expected net savings after $T$ opportunities is approximately
 \[
 \Delta(T)=T\rho(C_s-C_k)-C_i.
 \]
-The kernel is worthwhile when $\Delta(T)>0$. That is the basic compounding argument: once recurrent tasks are frequent enough, compilation amortises.
+The break-even point is
+\[
+T > \frac{C_i}{\rho(C_s-C_k)}.
+\]
+This is the basic compounding law. If the task is frequent enough and the kernel is cheaper enough, compilation pays for itself.
+
+The more interesting version is a multi-kernel store. If the system has kernels $k_1,\dots,k_m$ with selection probabilities $\pi_1,\dots,\pi_m$, then the expected cost is
+\[
+\mathbb{E}[C]=\sum_{j=1}^m \pi_j C_{k_j} + \left(1-\sum_{j=1}^m \pi_j\right) C_s.
+\]
+As the store grows, the fallback mass should shrink for recurrent families. That is the compounding effect in algebraic form.
+
+\section{Visual intuition for confidence and safety}
+
+Think of the runtime as standing on a ridge with a flashlight.
+
+Each kernel is a valley below. A strong kernel has deep walls, a wide floor, and a clear bridge from the current prompt to the kernel’s conditions. A weak kernel has a narrow floor and a shaky bridge. The flashlight is the evidence. If the beam is bright enough and the bridge is sound, the runtime walks down. If not, it stays on the ridge and asks the base model to solve the task directly.
+
+This intuition explains why confidence should not be a raw similarity score alone. Similarity can find nearby valleys, but evidence determines whether the descent is safe. Regression tests are the footing. Rollback is the ladder back up.
 
 \section{Prototype implementation}
 
-We built a working prototype rather than a mockup.
+The prototype is a real codebase, not a sketch. It includes:
+\begin{itemize}[leftmargin=1.2em]
+\item a disk-backed kernel store,
+\item a compiler that turns traces into kernels,
+\item a runtime that scores prompts against the store,
+\item a CLI for initialization, addition, compilation, and planning,
+\item JSON persistence for kernels and traces,
+\item sample kernels for safety-heavy and comparison-heavy tasks,
+\item a paper draft and NeurIPS-style manuscript source.
+\end{itemize}
 
-The system includes a kernel store persisted on disk, a compiler that turns traces into kernels, a runtime that scores prompts against the kernel store, a CLI for initializing and planning, JSON-backed traces and kernels, sample kernels with deterministic scoring, and regression gating.
-
-The prototype already supports the core cycle: trace $\rightarrow$ kernel $\rightarrow$ selection $\rightarrow$ fallback.
-
-\subsection{Prototype kernels}
-The sample store includes kernels for task families such as safe shell command synthesis and artifact comparison. Those are intentionally different: one is safety-heavy and one is comparison-heavy. The point is to show that the compiler can induce kernels from diverse task structures, not just one narrow benchmark.
-
-\subsection{Implementation sketch}
-The kernel compiler scores the trace for evidence density and tool diversity, generates a kernel ID from task family and summary, persists the kernel, and later scores prompts against all kernels. If the best match exceeds threshold, the runtime executes the kernel; otherwise it falls back to generation.
-
-\section{Evaluation design}
-
-A serious evaluation should measure reuse, not just answer quality.
-
+The store keeps three durable objects:
 \begin{enumerate}[leftmargin=1.2em]
-\item \textbf{Reuse rate}: how often the runtime chooses a kernel instead of raw generation.
-\item \textbf{Kernel accuracy}: when a kernel is selected, what fraction of runs satisfy the output contract and the evidence contract.
-\item \textbf{Compounding savings}: how much compute is saved over time compared with always generating from scratch.
-\item \textbf{Drift robustness}: how often slightly shifted wording still maps to the correct kernel.
-\item \textbf{Safety calibration}: how often the runtime correctly rejects stale or under-evidenced kernels.
+\item kernels, with metadata and digest,
+\item traces, with the raw event stream,
+\item index data, with a searchable view of both.
 \end{enumerate}
 
-A useful aggregate metric is
-\[
-\chi = \frac{\text{saved cost over horizon} - \text{induction cost}}{\text{induction cost}},
-\]
-which becomes positive when the system saves more than it spent to compile the kernels.
+A kernel is saved with its digest so that the store can detect accidental mutation. The runtime can inspect the store, load kernels, and compare them to prompts using a simple token-overlap and confidence mechanism. That mechanism is intentionally transparent: it is good enough to demonstrate the architecture, easy to debug, and easy to replace with something stronger later.
+
+\subsection{What the prototype already demonstrates}
+\begin{enumerate}[leftmargin=1.2em]
+\item Task families can be turned into structured kernels.
+\item Kernels can be persisted and reloaded as durable artifacts.
+\item Prompts can be matched against kernel families.
+\item The runtime can fall back when the match is weak.
+\item Sample kernels can be attached to the store and evaluated.
+\end{enumerate}
+
+\subsection{What remains research-grade}
+\begin{enumerate}[leftmargin=1.2em]
+\item Better schema inference.
+\item Better evidence calibration.
+\item Better semantic matching.
+\item Better composition of multiple kernels.
+\item Better drift handling over long time horizons.
+\end{enumerate}
+
+\section{Algorithms}
+
+\subsection{Algorithm 1: trace-to-kernel compilation}
+\begin{enumerate}[leftmargin=1.2em]
+\item Input a successful trace $\tau$ and a task family label $f$.
+\item Normalize trace events into typed categories.
+\item Infer schemas, action plan, rollback rules, and evidence set.
+\item Synthesize tests from output constraints and invariants.
+\item Estimate confidence from evidence density and trace diversity.
+\item Emit kernel $k$ only if the regression gate passes.
+\end{enumerate}
+
+\subsection{Algorithm 2: kernel selection at runtime}
+\begin{enumerate}[leftmargin=1.2em]
+\item For each stored kernel, compute semantic match to prompt $p$.
+\item Add confidence and evidence coverage bonuses.
+\item Subtract risk and evidence debt penalties.
+\item Choose the highest-scoring kernel if score exceeds threshold.
+\item Run the kernel’s regression gates.
+\item If any gate fails, fall back to raw generation.
+\end{enumerate}
+
+\subsection{Algorithm 3: kernel composition}
+\begin{enumerate}[leftmargin=1.2em]
+\item Detect whether output schema of kernel $k_a$ matches input schema of kernel $k_b$.
+\item Verify that the combined evidence requirements are satisfiable.
+\item Merge the step plans while preserving rollback order.
+\item Compose tests as the conjunction of the two regression suites.
+\item Set the composite confidence conservatively, typically below the weaker component.
+\end{enumerate}
+
+\subsection{Algorithm 4: drift handling}
+\begin{enumerate}[leftmargin=1.2em]
+\item Monitor failed reuses and mismatched outputs.
+\item Increase the kernel’s drift penalty when failures cluster.
+\item Demote or retire kernels whose evidence becomes stale.
+\item Recompile fresh kernels from new successful traces if the task family persists.
+\end{enumerate}
+
+\section{Evaluation plan}
+
+A serious paper needs more than a nice story. It needs an evaluation plan that can actually falsify the idea.
+
+\subsection{Repeat-task benchmark}
+Take a set of task families that recur in practice: structured summarization, safe command synthesis, artifact comparison, data extraction, and routine tool use. Measure how often a kernel can replace fresh generation.
+
+\subsection{Evidence-ablation benchmark}
+Remove pieces of evidence from the trace and measure how the runtime changes its decision. The expectation is simple: if evidence disappears, reuse should drop.
+
+\subsection{Drift benchmark}
+Perturb the wording, the context, or the environment. The kernel should still work for semantically equivalent prompts, but it should fail when the task actually changes.
+
+\subsection{Compounding benchmark}
+Measure whether the kernel store becomes more useful over time. The key question is whether the runtime’s fallback rate decreases as the store accumulates successful kernels.
+
+\subsection{Safety benchmark}
+Inject contradictory evidence, stale tool outputs, or partially corrupted traces. The system should reject reuse rather than forcing a match.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{0.18\linewidth} p{0.22\linewidth} p{0.48\linewidth}}
+\toprule
+Metric & Meaning & Why it matters \\
+\midrule
+Reuse rate & Fraction of prompts handled by kernels & Measures compounding \\
+Kernel accuracy & Fraction of reused prompts that satisfy contract & Measures correctness \\
+Compounding savings & Saved compute minus induction cost & Measures economics \\
+Drift robustness & Reuse under wording shifts & Measures generalization \\
+Safety calibration & False accepts vs false rejects & Measures trustworthiness \\
+\bottomrule
+\end{tabular}
+\caption{The evaluation focuses on reuse quality, not just answer quality.}
+\end{table}
 
 \section{Discussion}
 
-KernelWeave is deliberately more ambitious than a memory wrapper and less magical than a general intelligence claim. The thesis is that LLMs can become better systems if solved behaviour is compiled into durable, executable structure.
+KernelWeave changes the philosophical shape of an LLM system.
 
-This matters in several ways. Repeated enterprise tasks can become cheaper and more consistent. Safety-critical flows can accumulate explicit rollback logic. Benchmarks can measure compounding capability rather than one-off performance. Models can become more specialised without retraining from scratch every time.
+First, it makes competence persistent. A solved pattern is no longer a one-off accident buried in the conversation history. It becomes an object in a store.
 
-The idea is not that every prompt becomes a kernel. The idea is that the system learns where the stable structure is and preserves it.
+Second, it makes competence inspectable. Instead of guessing why a model succeeded, we can inspect the kernel, the evidence, the tests, and the confidence score.
+
+Third, it makes competence composable. A kernel can feed another kernel, and the store can gradually become a structured capability graph.
+
+Fourth, it makes competence governable. Since kernels have rollback policies and evidence requirements, the system can refuse to overreach when circumstances change.
+
+The deeper implication is that future LLM systems may not be defined only by the base model architecture. They may be defined by the collection of kernels they can accumulate. In that world, the model is the engine, but the kernel store is the transmission, the brakes, and the steering. That is the sort of infrastructure that changes whether the machine can actually do work.
 
 \section{Limitations}
 
-There are real failure modes.
+The architecture is strong, but it is not magic.
+
 \begin{itemize}[leftmargin=1.2em]
-\item Prompt families can be fuzzy and kernel boundaries can blur.
+\item Prompt families can be fuzzy, so the boundary between kernels can be unclear.
 \item Kernels can overfit traces if evidence is too narrow.
-\item Similarity scoring can miss semantically related prompts.
-\item Behaviour that is genuinely creative or open-ended may not compress into kernels well.
-\item Evidence can become stale as external tools, policies, or data change.
+\item Semantic similarity can miss useful but unusual prompts.
+\item Some tasks are too open-ended to compress into a stable kernel.
+\item Evidence can go stale as tools, policies, and data sources change.
+\item Composition can become brittle if kernels are merged too aggressively.
 \end{itemize}
 
-These are not reasons to dismiss the architecture. They are the actual research questions it creates.
+These limitations are exactly why the architecture is interesting. It creates a research problem that can be measured, attacked, and improved.
 
 \section{Conclusion}
 
-KernelWeave reframes an LLM as a system that can compile its own successful behaviour into reusable skill kernels. That is the core novelty: competence becomes a persistent object with schemas, tests, rollback, and confidence, rather than a transient answer hidden in a chat log. If the evaluation confirms the reuse and compounding properties, the result would be a different class of LLM system: one that gets better not only by scaling, but by accumulating verified structure.
+KernelWeave reframes an LLM as a system that can compile its own successful behavior into reusable skill kernels. That is the central novelty: competence becomes a persistent object with schemas, tests, rollback, and confidence, rather than a transient answer hidden in a chat log. If the evaluation confirms the reuse and compounding properties, the result would be a different class of LLM system: one that gets better not only by scaling, but by accumulating verified structure.
 
 \appendix
-\section{Compilation pseudocode}
+\section{Symbol table}
 
-\begin{enumerate}[leftmargin=1.2em]
-\item Input: successful trace $\tau$, task family label $f$, description $d$.
-\item Score evidence density, tool diversity, and trace compression value.
-\item Construct $(I_k,O_k,S_k,R_k,E_k,X_k,\pi_k,c_k)$.
-\item Store the kernel and its source trace ID.
-\item At runtime, search kernels by prompt similarity.
-\item If the best kernel exceeds the threshold and passes gates, execute it; otherwise fall back.
-\end{enumerate}
+\begin{longtable}{p{0.22\linewidth} p{0.68\linewidth}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\mathcal{P}$ & Prompt family space \\
+$\mathcal{T}(\mathcal{P})$ & Successful traces over a family \\
+$\tau$ & A successful trace \\
+$k$ & A skill kernel \\
+$I_k$ & Input schema \\
+$O_k$ & Output schema \\
+$S_k$ & Step plan \\
+$R_k$ & Rollback policy \\
+$E_k$ & Evidence requirements \\
+$X_k$ & Regression suite \\
+$\pi_k$ & Execution policy \\
+$c_k$ & Confidence score \\
+$D(k,p)$ & Evidence debt \\
+$S(p,k)$ & Runtime selection score \\
+$\theta$ & Reuse threshold \\
+$C_s$ & Scratch-solving cost \\
+$C_k$ & Kernel execution cost \\
+$C_i$ & Kernel induction cost \\
+\bottomrule
+\end{longtable}
 
-\section{Additional derivation}
-If the expected occurrence count for a task family is $N$ and the average from-scratch cost is $C_s$, then the expected total cost without kernels is $N C_s$. With kernels it is approximately $N C_k + C_i$, where $C_k < C_s$ if the kernel is useful. Therefore the break-even point is
+\section{Proof details}
+
+\subsection{Break-even derivation}
+If the task family occurs $T$ times and each occurrence is reused with probability $\rho$, then the expected savings are
 \[
-N > \frac{C_i}{C_s-C_k}.
+\Delta(T)=T\rho(C_s-C_k)-C_i.
 \]
-This is the cleanest reason the approach can scale: once task families repeat, compilation amortises.
+The kernel is profitable when $\Delta(T)>0$. Rearranging gives
+\[
+T > \frac{C_i}{\rho(C_s-C_k)}.
+\]
+This is the precise form of the intuitive claim that repeated tasks should be compiled.
+
+\subsection{Confidence calibration}
+A simple confidence model can be written as
+\[
+ c_k = \sigma(\eta_0 + \eta_1 q_k + \eta_2 e_k - \eta_3 d_k),
+\]
+where $q_k$ is evidence quality, $e_k$ is regression success, $d_k$ is drift penalty, and $\sigma$ is the logistic function. This keeps confidence bounded in $[0,1]$ and makes the score interpretable.
+
+\subsection{Evidence debt}
+Let the evidence requirements of kernel $k$ be $E_k = \{r_1,\dots,r_m\}$. Let $\mathbf{1}[r_j]$ indicate whether requirement $r_j$ is currently satisfied. Then
+\[
+D(k,p)=\sum_{j=1}^{m} w_j \bigl(1-\mathbf{1}[r_j]\bigr),
+\]
+where $w_j$ is the importance weight of requirement $r_j$. A kernel is reusable only when $D(k,p)=0$.
+
+\subsection{Composition confidence}
+If kernel $k_a$ and kernel $k_b$ compose, a conservative confidence for the composite can be taken as
+\[
+ c_{ab} = \min(c_a, c_b) - \zeta \cdot \mathrm{friction}(k_a,k_b),
+\]
+where friction measures schema mismatch and rollback complexity. Composition should never be more confident than its weakest link.
+
+\section{Prototype API sketch}
+
+The prototype store supports the following conceptual operations:
+\begin{itemize}[leftmargin=1.2em]
+\item initialize a kernel store,
+\item add traces,
+\item compile a trace to a kernel,
+\item list kernels,
+\item score a prompt against kernels,
+\item execute a kernel or fall back to generation.
+\end{itemize}
+
+This is intentionally mundane. A revolutionary idea is only useful if it can survive contact with ordinary software engineering.
+
+\section{Additional visual: the kernel lattice}
+
+\begin{figure}[t]
+\centering
+\fbox{%
+\begin{minipage}{0.95\linewidth}
+\centering
+\begin{tabular}{c}
+General kernel \\
+$\downarrow$ \\
+Specialised kernel A \hspace{2em} Specialised kernel B \\
+$\searrow$ \hspace{6em} $\swarrow$ \\
+Composite kernel $k_b \circ k_a$ \\
+$\downarrow$ \\
+High-confidence routine
+\end{tabular}
+\end{minipage}}
+\caption{A kernel store is not just a list. It is a lattice of generality, specialization, and composition.}
+\end{figure}
+
+\section{Selected references}
+\begin{thebibliography}{9}
+\bibitem{wang2023selfconsistency}
+X. Wang, J. Wei, D. Schuurmans, et al. \emph{Self-Consistency Improves Chain of Thought Reasoning in Language Models}. 2023.
+
+\bibitem{shinn2023reflexion}
+N. Shinn, F. Cassano, A. Gopinath, et al. \emph{Reflexion: Language Agents with Verbal Reinforcement Learning}. 2023.
+
+\bibitem{yao2023react}
+S. Yao, J. Zhao, D. Yu, et al. \emph{ReAct: Synergizing Reasoning and Acting in Language Models}. 2023.
+
+\bibitem{lewis2020retrieval}
+P. Lewis, E. Perez, A. Piktus, et al. \emph{Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks}. 2020.
+
+\bibitem{vaswani2017attention}
+A. Vaswani, N. Shazeer, N. Parmar, et al. \emph{Attention Is All You Need}. 2017.
+\end{thebibliography}
 
 \end{document}
