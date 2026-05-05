@@ -1,0 +1,225 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,booktabs,graphicx,hyperref,longtable,array}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage{setspace}
+\setstretch{1.06}
+
+\title{KernelWeave: Self-Compiling Language Models via Proof-Carrying Skill Induction}
+\author{AmSach}
+\date{\today}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We propose KernelWeave, a self-compiling architecture for language models in which repeated successful behaviours are converted into verified, executable skill kernels. Instead of storing only text traces or conversation memory, the system induces structured kernels from solved tasks, equips them with schemas, preconditions, postconditions, rollback rules, and tests, and reuses them before falling back to raw generation. The central hypothesis is that models become fundamentally more capable when competence accumulates as code-like structure rather than evaporating across prompts. KernelWeave therefore changes the unit of learning from prompt-response pairs to reusable capability modules.
+\end{abstract}
+
+\section{Motivation}
+
+Large language models are excellent at producing plausible text, but their competence is fragile. A useful behaviour solved today often has to be rediscovered tomorrow. The failure is not only memory loss; it is the absence of a mechanism that turns solved work into durable machinery.
+
+Existing systems improve LLMs with retrieval, routing, memory, traces, and fine-tuning. These are valuable, but they still leave the model as a generator that must re-derive much of its skill each time. KernelWeave advances a stronger thesis: when a model repeatedly solves a task family, the system should compile that success into a reusable kernel and attach it to the inference path.
+
+This is not merely caching. Caching stores outputs. Kernel compilation stores \emph{how to do the thing}.
+
+\section{Problem statement}
+
+Let a prompt family be denoted by $\mathcal{P}$, and let successful traces over that family be $\tau \in \mathcal{T}(\mathcal{P})$. We seek a compilation operator
+\[
+\mathcal{K}: \mathcal{T}(\mathcal{P}) \to \mathcal{K}ernel,
+\]
+where the resulting kernel is executable, testable, and reusable.
+
+The core requirements are:
+\begin{enumerate}[label=(\arabic*)]
+\item the kernel must be typed;
+\item the kernel must define preconditions and postconditions;
+\item the kernel must be accompanied by evidence requirements;
+\item the kernel must fail closed when evidence is insufficient;
+\item the kernel must be rollbackable;
+\item the kernel must be stored as a durable artifact.
+\end{enumerate}
+
+\begin{definition}[Skill kernel]
+A skill kernel is a structured, executable representation of a solved task family, containing input and output schemas, a step plan, evidence constraints, rollback logic, and regression tests.
+\end{definition}
+
+\section{Why this is different}
+
+Retrieval systems remember text. Routing systems select models. Memory systems compress transcripts. None of these alone transform a solved behaviour into a reusable computational object.
+
+KernelWeave instead compiles behaviour itself.
+
+Once a kernel exists, future prompts first attempt kernel instantiation. The model is only asked to improvise on the part of the problem that is genuinely novel. This changes the computational burden from \emph{complete regeneration} to \emph{partial compilation plus residual generation}.
+
+\section{Architecture}
+
+KernelWeave has four components.
+
+\subsection{Trace capture}
+Each solved task is logged as a structured trace containing planning steps, tool calls, evidence items, and final outputs.
+
+\subsection{Kernel compiler}
+A compiler turns a trace into a skill kernel by extracting the task family, action steps, schema constraints, and tests.
+
+\subsection{Kernel store}
+The store persists kernels as JSON and indexes them by task family, confidence, and status.
+
+\subsection{Kernel runtime}
+At inference time, the runtime scores available kernels against a prompt and decides whether to execute a kernel or fall back to raw generation.
+
+\section{Formal model}
+
+Let a kernel be $k$ with input schema $I_k$, output schema $O_k$, evidence set $E_k$, and test suite $X_k$.
+
+The runtime decision rule is:
+\[
+\delta(p) = \begin{cases}
+\text{execute}(k) & \text{if } s(p,k) \ge \theta \\
+\text{generate} & \text{otherwise}
+\end{cases}
+\]
+where $s(p,k)$ is a prompt-kernel similarity score and $\theta$ is a threshold.
+
+\subsection{Kernel utility}
+A kernel should be kept if it improves expected task utility:
+\[
+U(k; p) = \alpha A(k,p) + \beta E(k) + \gamma R(k) - \lambda F(k),
+\]
+where:
+\begin{itemize}
+\item $A(k,p)$ measures applicability to prompt $p$,
+\item $E(k)$ measures evidence completeness,
+\item $R(k)$ measures reuse value,
+\item $F(k)$ measures failure risk.
+\end{itemize}
+
+\subsection{Compilation objective}
+Given trace $\tau$, we compile a kernel that maximizes:
+\[
+J(k; \tau) = \lambda_1 E(k) + \lambda_2 C(k) + \lambda_3 R(k) - \lambda_4 F(k),
+\]
+where $C(k)$ is trace compression into executable structure.
+
+\section{Compilation algorithm}
+
+The algorithm works as follows.
+\begin{enumerate}
+\item Observe a successful trace.
+\item Extract events, tool calls, evidence, and output constraints.
+\item Infer the task family.
+\item Generate a typed input/output contract.
+\item Derive preconditions and postconditions.
+\item Build rollback rules from failure modes.
+\item Attach tests from the trace.
+\item Assign confidence.
+\item Admit the kernel only if the regression gate passes.
+\end{enumerate}
+
+\begin{proposition}[Failure-safe induction]
+If a candidate kernel fails its regression tests, it must not be admitted to the active kernel store.
+\end{proposition}
+
+This is the basic guardrail that keeps the system from compiling nonsense into its own future.
+
+\section{Proof-carrying kernels}
+
+A kernel is not just a code block. It is a claim about what is safe to reuse.
+
+Therefore each kernel carries a proof object in the loose engineering sense:
+\begin{itemize}
+\item the source trace that justified the kernel,
+\item the evidence items that support the behaviour,
+\item the regression tests that must still pass,
+\item the rollback policy if evidence degrades.
+\end{itemize}
+
+\begin{theorem}[Safe reuse under regression]
+If a kernel passes its stored regression suite and its evidence requirements are satisfied, then using that kernel is no less justified than re-running the original trace, up to the limits of the stored tests.
+\end{theorem}
+
+\begin{proof}
+The kernel was induced from a successful trace and stored with exact preconditions, postconditions, and tests. If the same evidence requirements are satisfied and the tests continue to pass, then the kernel still matches the behavioural contract extracted from the original success. The reuse is therefore justified by the same recorded conditions that supported the original behaviour.
+\end{proof}
+
+\section{Why this could change LLMs}
+
+A static model is a fixed function. A self-compiling model is a system that accumulates executable competence.
+
+This matters because many tasks are recurrent. Once a family of tasks has been solved well enough, there is no reason to keep paying the full reasoning cost every time. The model should promote recurring success into structure.
+
+The long-term vision is a model that gradually becomes more efficient, more reliable, and more specialised in the actual work it has encountered. That is a different trajectory from simply scaling the next-token predictor.
+
+\section{Prototype implementation}
+
+We built a full prototype with:
+\begin{itemize}
+\item a kernel store,
+\item a compiler that turns traces into kernels,
+\item a runtime that matches prompts to kernels,
+\item regression tests,
+\item sample traces,
+\item JSON persistence,
+\item a deployable CLI.
+\end{itemize}
+
+The prototype is intentionally not a toy stub. It already performs the core cycle:
+trace $
+\rightarrow$ kernel $
+\rightarrow$ selection $
+\rightarrow$ fallback.
+
+\section{KernelWeave algorithm in code form}
+
+For a trace $\tau$:
+\begin{enumerate}
+\item score the trace for evidence density and tool diversity,
+\item compute a kernel confidence score,
+\item generate a kernel ID from task family and summary,
+\item persist the kernel,
+\item later, score prompts against all kernels,
+\item select the best match above threshold,
+\item otherwise fall back to generation.
+\end{enumerate}
+
+\section{Evaluation design}
+
+The appropriate experiments are:
+\begin{enumerate}
+\item repeat-task benchmark: compare raw prompting vs kernel reuse,
+\item evidence-ablation benchmark: remove evidence and measure kernel invalidation,
+\item kernel-drift benchmark: modify task family wording and test robustness,
+\item safety benchmark: ensure rollback on contradictory evidence,
+\item compounding benchmark: measure whether reuse rate improves over time.
+\end{enumerate}
+
+The key metric is not just answer quality. It is how often the system can replace fresh reasoning with verified reuse.
+
+\section{Limitations}
+
+The hard parts are obvious and serious:
+\begin{itemize}
+\item prompt families can be fuzzy;
+\item kernels can overfit traces;
+\item evidence can become stale;
+\item similarity scoring can be too shallow;
+\item some behaviours do not compress cleanly into kernels.
+\end{itemize}
+
+These limits are not a reason to abandon the idea. They are the actual research problem.
+
+\section{Conclusion}
+
+KernelWeave proposes a different future for LLMs: not just bigger models, but models that compile repeated success into reusable, verified structure. If the idea works at scale, LLMs become systems that compound capability over time instead of starting from scratch at every prompt.
+
+That is the real thesis: not remembering more text, but becoming more machine-like in the best possible way.
+
+\end{document}

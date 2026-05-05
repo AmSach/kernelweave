@@ -1,0 +1,102 @@
+{
+  "description": "Compare two structured artifacts and produce a grounded summary.",
+  "digest": "33f905d79be61e9a568f82d96a55501cb900a36949b58e2fa97f5839cd23a9e4",
+  "evidence_requirements": [
+    "differences are structural and numerical",
+    "summary mentions both artifacts",
+    "source trace logged",
+    "final response conforms to expected output"
+  ],
+  "input_schema": {
+    "properties": {
+      "task": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "task"
+    ],
+    "type": "object"
+  },
+  "kernel_id": "kw-8fdcf8c7144b883b",
+  "name": "artifact comparison kernel",
+  "output_schema": {
+    "properties": {
+      "result": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "type": "object"
+  },
+  "postconditions": [
+    "output schema satisfied",
+    "all required evidence recorded",
+    "rollback not triggered"
+  ],
+  "preconditions": [
+    "task belongs to family: artifact comparison",
+    "inputs match schema",
+    "evidence channel available"
+  ],
+  "rollback": [
+    "if evidence is insufficient, return to planning",
+    "if a tool returns contradictory data, invalidate kernel"
+  ],
+  "source_trace_ids": [
+    "trace-compare-002"
+  ],
+  "status": {
+    "confidence": 0.5,
+    "failures": 0,
+    "passes": 1,
+    "state": "candidate"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "compare two artifacts and explain differences"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "path": "A"
+      },
+      "step": 2,
+      "tool": "load_artifact"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "path": "B"
+      },
+      "step": 3,
+      "tool": "load_artifact"
+    }
+  ],
+  "task_family": "artifact comparison",
+  "tests": [
+    {
+      "expected": {
+        "result": "comparison summary"
+      },
+      "input": {
+        "task_family": "artifact comparison"
+      },
+      "name": "output-shape"
+    },
+    {
+      "expected": {
+        "min_evidence": 2
+      },
+      "input": {
+        "trace_id": "trace-compare-002"
+      },
+      "name": "evidence-completeness"
+    }
+  ],
+  "version": 1
+}

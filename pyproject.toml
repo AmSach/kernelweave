@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kernelweave"
+version = "0.1.0"
+description = "Proof-carrying skill kernels for self-compiling language models"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "AmSach", email = "amansachan92905@gmail.com"}]
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+kernelweave = "kernelweave.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["kernelweave*"]

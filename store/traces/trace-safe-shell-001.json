@@ -1,0 +1,38 @@
+{
+  "events": [
+    {
+      "kind": "plan",
+      "payload": {
+        "text": "classify request and build safe command"
+      }
+    },
+    {
+      "kind": "tool",
+      "payload": {
+        "args": {
+          "mode": "safety"
+        },
+        "tool": "parse_intent"
+      }
+    },
+    {
+      "kind": "evidence",
+      "payload": {
+        "text": "command violates policy if destructive"
+      }
+    },
+    {
+      "kind": "verification",
+      "payload": {
+        "text": "command is non-destructive"
+      }
+    },
+    {
+      "kind": "decision",
+      "payload": {
+        "text": "emit safe shell command"
+      }
+    }
+  ],
+  "trace_id": "trace-safe-shell-001"
+}

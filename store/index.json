@@ -1,0 +1,32 @@
+{
+  "kernels": [
+    {
+      "digest": "33f905d79be61e9a568f82d96a55501cb900a36949b58e2fa97f5839cd23a9e4",
+      "kernel_id": "kw-8fdcf8c7144b883b",
+      "name": "artifact comparison kernel",
+      "path": "kernels/kw-8fdcf8c7144b883b.json",
+      "status": "candidate",
+      "task_family": "artifact comparison",
+      "version": 1
+    },
+    {
+      "digest": "b715e7fbed4b3168cdd865c45348b5f731f0f393327642124a48001b30a3b94a",
+      "kernel_id": "kw-f39a06ab8708ebb2",
+      "name": "safe shell command synthesis kernel",
+      "path": "kernels/kw-f39a06ab8708ebb2.json",
+      "status": "candidate",
+      "task_family": "safe shell command synthesis",
+      "version": 1
+    }
+  ],
+  "traces": [
+    {
+      "path": "traces/trace-compare-002.json",
+      "trace_id": "trace-compare-002"
+    },
+    {
+      "path": "traces/trace-safe-shell-001.json",
+      "trace_id": "trace-safe-shell-001"
+    }
+  ]
+}

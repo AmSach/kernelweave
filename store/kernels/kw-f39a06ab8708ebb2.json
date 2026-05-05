@@ -1,0 +1,99 @@
+{
+  "description": "Turn plain language into a guarded shell command when the action is safe.",
+  "digest": "b715e7fbed4b3168cdd865c45348b5f731f0f393327642124a48001b30a3b94a",
+  "evidence_requirements": [
+    "command violates policy if destructive",
+    "command is non-destructive",
+    "source trace logged",
+    "final response conforms to expected output"
+  ],
+  "input_schema": {
+    "properties": {
+      "task": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "task"
+    ],
+    "type": "object"
+  },
+  "kernel_id": "kw-f39a06ab8708ebb2",
+  "name": "safe shell command synthesis kernel",
+  "output_schema": {
+    "properties": {
+      "result": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "type": "object"
+  },
+  "postconditions": [
+    "output schema satisfied",
+    "all required evidence recorded",
+    "rollback not triggered"
+  ],
+  "preconditions": [
+    "task belongs to family: safe shell command synthesis",
+    "inputs match schema",
+    "evidence channel available"
+  ],
+  "rollback": [
+    "if evidence is insufficient, return to planning",
+    "if a tool returns contradictory data, invalidate kernel"
+  ],
+  "source_trace_ids": [
+    "trace-safe-shell-001"
+  ],
+  "status": {
+    "confidence": 0.5,
+    "failures": 0,
+    "passes": 1,
+    "state": "candidate"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "classify request and build safe command"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "mode": "safety"
+      },
+      "step": 2,
+      "tool": "parse_intent"
+    },
+    {
+      "action": "decision",
+      "step": 5,
+      "text": "emit safe shell command"
+    }
+  ],
+  "task_family": "safe shell command synthesis",
+  "tests": [
+    {
+      "expected": {
+        "result": "safe command"
+      },
+      "input": {
+        "task_family": "safe shell command synthesis"
+      },
+      "name": "output-shape"
+    },
+    {
+      "expected": {
+        "min_evidence": 2
+      },
+      "input": {
+        "trace_id": "trace-safe-shell-001"
+      },
+      "name": "evidence-completeness"
+    }
+  ],
+  "version": 1
+}

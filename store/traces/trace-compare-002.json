@@ -1,0 +1,41 @@
+{
+  "events": [
+    {
+      "kind": "plan",
+      "payload": {
+        "text": "compare two artifacts and explain differences"
+      }
+    },
+    {
+      "kind": "tool",
+      "payload": {
+        "args": {
+          "path": "A"
+        },
+        "tool": "load_artifact"
+      }
+    },
+    {
+      "kind": "tool",
+      "payload": {
+        "args": {
+          "path": "B"
+        },
+        "tool": "load_artifact"
+      }
+    },
+    {
+      "kind": "evidence",
+      "payload": {
+        "text": "differences are structural and numerical"
+      }
+    },
+    {
+      "kind": "verification",
+      "payload": {
+        "text": "summary mentions both artifacts"
+      }
+    }
+  ],
+  "trace_id": "trace-compare-002"
+}
