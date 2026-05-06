@@ -438,6 +438,8 @@ Fourth, it makes competence governable. Since kernels have rollback policies and
 
 The deeper implication is that future LLM systems may not be defined only by the base model architecture. They may be defined by the collection of kernels they can accumulate. In that world, the model is the engine, but the kernel store is the transmission, the brakes, and the steering. That is the sort of infrastructure that changes whether the machine can actually do work.
 
+\appendix
+
 \section{Limitations}
 
 The architecture is not free of problems. Prompt families are fuzzy, traces can be misleading, kernels can overfit, and similarity scoring can miss semantically equivalent prompts. These are the reasons the system must stay fail-closed and why the evaluation plan matters.
@@ -459,7 +461,6 @@ These limitations are exactly why the architecture is interesting. It creates a 
 
 KernelWeave reframes an LLM as a system that can compile its own successful behavior into reusable skill kernels. That is the central novelty: competence becomes a persistent object with schemas, tests, rollback, and confidence, rather than a transient answer hidden in a chat log. If the evaluation confirms the reuse and compounding properties, the result would be a different class of LLM system: one that gets better not only by scaling, but by accumulating verified structure.
 
-\appendix
 \section{Symbol table}
 
 \begin{longtable}{p{0.22\linewidth} p{0.68\linewidth}}
@@ -572,5 +573,22 @@ P. Lewis, E. Perez, A. Piktus, et al. \emph{Retrieval-Augmented Generation for K
 \bibitem{vaswani2017attention}
 A. Vaswani, N. Shazeer, N. Parmar, et al. \emph{Attention Is All You Need}. 2017.
 \end{thebibliography}
+
+\section*{NeurIPS Paper Checklist}
+\begin{enumerate}[leftmargin=1.2em]
+\item \textbf{Claims:} Yes. The abstract and introduction describe a self-compiling kernel architecture, and the paper’s body, appendix, and prototype align with that scope.
+\item \textbf{Limitations:} Yes. The appendix explicitly discusses fuzzy task families, overfitting, stale evidence, drift, and brittle composition.
+\item \textbf{Theory, Assumptions, and Proofs:} Yes. Theorems and lemmas state their assumptions and the proof details are given in the appendix.
+\item \textbf{Experimental Result Reproducibility:} Yes. The codebase is included, the prototype is deterministic, and the build/test commands are documented.
+\item \textbf{Open Access to Data and Code:} Yes. The anonymized code and submission bundle are provided in the repository and zip bundle.
+\item \textbf{Experimental Setting / Details:} Yes. The prototype implementation, CLI, tests, and validation flow are described in the paper and repository docs.
+\item \textbf{Experiment Statistical Significance:} N/A. The submission evaluates a prototype and does not report stochastic benchmark statistics.
+\item \textbf{Experiments Compute Resources:} N/A. The prototype validation uses local CPU execution and lightweight tests, not large-scale training.
+\item \textbf{Code of Ethics:} Yes. The work is written to conform to the NeurIPS Code of Ethics and emphasizes fail-closed reuse.
+\item \textbf{Broader Impacts:} Yes. The paper discusses governance, misuse resistance, and the consequences of stale or over-broad kernels.
+\item \textbf{Safeguards:} Yes. The runtime is fail-closed, evidence-gated, and rollback-aware.
+\item \textbf{Licenses:} Yes. The repository includes original code and cites prior work and the NeurIPS style files used in preparation.
+\item \textbf{Assets:} Yes. The assets and prototype artifacts are documented in the repository, docs, and submission guide.
+\end{enumerate}
 
 \end{document}
