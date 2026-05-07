@@ -1,3 +1,36 @@
+"""
+LLM architecture specification and kernel routing layer.
+
+CRITICAL DISCLAIMER: This module does NOT implement a neural network.
+===============================================================
+There are:
+  - NO model weights
+  - NO PyTorch, JAX, or any tensor framework
+  - NO actual inference forward pass through learned parameters
+  - NO training loop with backpropagation
+
+What this module ACTUALLY does:
+  - Define architecture specifications (TransformerConfig, etc.)
+  - Estimate parameter counts from those specifications
+  - Route prompts to skill kernels stored as JSON objects
+  - Simulate what a trained model "would" do based on kernel matching
+
+The `KernelWeaveLLM` class is a routing and simulation layer, not a trained model.
+It estimates how many parameters an architecture would have if it existed,
+but it cannot run inference because there are no weights to compute with.
+
+The "compact frontier preset" and "reasoning frontier preset" are architecture
+specifications, not trained checkpoints. They describe what a model could look
+like, not what currently exists.
+
+For the actual working parts of KernelWeave, see:
+  - kernelweave.kernel: kernel store and compilation
+  - kernelweave.runtime: execution engine for kernel plans
+  - kernelweave.calibration: confidence calibration from examples
+  - kernelweave.skills: skill kernel bank routing
+
+These are real, working Python that route between stored JSON skill objects.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -39,6 +72,36 @@ class ForwardTrace:
 
 
 class KernelWeaveLLM:
+    """
+    Kernel routing and simulation layer — NOT a trained neural network.
+    
+    ================================================================
+    IMPORTANT: This class does NOT perform actual neural inference.
+    ================================================================
+    
+    There are no learned weights. This class:
+      1. Estimates parameter counts from architecture config specs
+      2. Routes prompts to skill kernels stored as JSON objects  
+      3. Simulates what a trained model "would" do based on kernel matching
+      4. Tracks routing decisions and evidence
+    
+    The `forward()` method does NOT compute tensor operations.
+    It encodes text with a simple tokenizer and routes to kernels.
+    
+    If you want to use a real LLM, you need to:
+      - Train a model with the architecture spec defined in LLMConfig
+      - Load the trained weights into a PyTorch/JAX model
+      - Use that model for actual inference
+    
+    This class is useful for:
+      - Architecture specification and parameter estimation
+      - Kernel routing logic integration testing
+      - Simulation of routing behavior without a live model
+      - Planning agent integration with the skill bank
+    
+    For actual kernel execution, see KernelRuntime and ExecutionEngine.
+    """
+    
     def __init__(self, config: LLMConfig, tokenizer: SimpleTokenizer | None = None, kernel_store: KernelStore | None = None):
         self.config = config
         self.config.validate()

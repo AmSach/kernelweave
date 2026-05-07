@@ -1,3 +1,24 @@
+"""
+Architecture specification configs for hypothetical model configurations.
+
+IMPORTANT: These are NOT trained models.
+======================================
+These dataclasses define what a model architecture WOULD look like if trained.
+They are used to:
+  - Estimate parameter counts
+  - Specify hyperparameters for a training run
+  - Configure the kernel routing layer
+
+There are NO weights, NO checkpoints, NO trained parameters.
+The `compact_frontier()` and `reasoner_frontier()` methods return
+architecture specifications, not trained models.
+
+To actually use these specs:
+1. Implement the transformer architecture in PyTorch/JAX
+2. Train a model following the spec
+3. Load the trained weights
+4. Connect to the kernel routing layer
+"""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -8,6 +29,7 @@ import json
 
 @dataclass
 class TokenizerConfig:
+    """Specification for a byte-BPE tokenizer. Not a trained tokenizer."""
     kind: str = "byte-bpe"
     vocab_size: int = 32768
     lowercase: bool = False
@@ -29,6 +51,7 @@ class TokenizerConfig:
 
 @dataclass
 class TransformerConfig:
+    """Specification for a decoder-only transformer architecture. Not a trained model."""
     d_model: int = 2048
     n_layers: int = 24
     n_heads: int = 16
@@ -93,6 +116,7 @@ class TransformerConfig:
 
 @dataclass
 class TrainingConfig:
+    """Training hyperparameters for a hypothetical training run. Not a trained checkpoint."""
     max_steps: int = 500000
     batch_size: int = 256
     micro_batch_size: int = 8
@@ -173,6 +197,7 @@ class TrainingConfig:
 
 @dataclass
 class InferenceConfig:
+    """Inference parameters for the routing layer. Actual inference requires a trained model."""
     max_new_tokens: int = 2048
     temperature: float = 0.6
     top_p: float = 0.92
@@ -227,7 +252,19 @@ class InferenceConfig:
 
 @dataclass
 class LLMConfig:
-    name: str = "KernelWeave-Reasoner"
+    """
+    Architecture specification for a hypothetical language model.
+    
+    This is NOT a trained model. It defines:
+    - What the architecture would look like if implemented
+    - Hyperparameters for training
+    - Parameter count estimates (from architecture spec, not trained weights)
+    
+    Use `compact_frontier_spec()` or `reasoner_frontier_spec()` to get
+    predefined architecture specifications.
+    """
+    
+    name: str = "KernelWeave-Reasoner-Spec"
     tokenizer: TokenizerConfig = field(default_factory=TokenizerConfig)
     transformer: TransformerConfig = field(default_factory=TransformerConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
@@ -236,12 +273,13 @@ class LLMConfig:
     safety_mode: str = "strict"
     notes: list[str] = field(
         default_factory=lambda: [
-            "The compact frontier config is tuned for long context and reasoning depth, not only raw size.",
-            "The system should earn its confidence through evidence, not vibes.",
-            "Kernel reuse is built in and should stay active during both inference and training simulation.",
+            "ARCHITECTURE SPECIFICATION, NOT A TRAINED MODEL.",
+            "This config estimates parameter counts for a hypothetical architecture.",
+            "To train a model: implement in PyTorch/JAX and follow training/ docs.",
+            "Kernel reuse routing is built into the specification.",
         ]
     )
-    architecture_version: str = "reasoner-v4"
+    architecture_version: str = "reasoner-spec-v4"
     model_family: str = "decoder-only"
     built_in_skill_bank: bool = True
     built_in_curiosity_loop: bool = True
@@ -264,9 +302,15 @@ class LLMConfig:
         return asdict(self)
 
     @classmethod
-    def compact_frontier(cls) -> "LLMConfig":
+    def compact_frontier_spec(cls) -> "LLMConfig":
+        """
+        Compact architecture specification (~1.2B params estimated).
+        
+        This is NOT a trained model. It's a config that estimates what
+        a compact model architecture would look like if trained.
+        """
         return cls(
-            name="KernelWeave-Compact-Frontier",
+            name="KernelWeave-Compact-Frontier-Spec",
             tokenizer=TokenizerConfig(vocab_size=32768, max_merge_rounds=8000),
             transformer=TransformerConfig(
                 d_model=1536,
@@ -326,11 +370,12 @@ class LLMConfig:
             memory_budget_tokens=131072,
             safety_mode="strict",
             notes=[
-                "Compact preset for low-cost inference and training simulation.",
-                "Built-in skill bank remains active; it is not an external skills file.",
-                "Long context exists, but the system should compress and route aggressively.",
+                "ARCHITECTURE SPEC, NOT TRAINED MODEL.",
+                "Compact spec for architecture planning and parameter estimation.",
+                "Built-in skill bank routing is part of the spec, not a trained component.",
+                "Long context target exists in the spec; actual implementation needs training.",
             ],
-            architecture_version="compact-frontier-v4",
+            architecture_version="compact-frontier-spec-v4",
             model_family="decoder-only",
             built_in_skill_bank=True,
             built_in_curiosity_loop=True,
@@ -339,8 +384,25 @@ class LLMConfig:
         )
 
     @classmethod
-    def reasoner_frontier(cls) -> "LLMConfig":
+    def reasoner_frontier_spec(cls) -> "LLMConfig":
+        """
+        Full-scale architecture specification (~2.4B params estimated).
+        
+        This is NOT a trained model. It's a config that estimates what
+        a reasoning-focused model architecture would look like if trained.
+        """
         return cls()
+
+    # Keep backward compatibility aliases
+    @classmethod
+    def compact_frontier(cls) -> "LLMConfig":
+        """Deprecated: Use compact_frontier_spec() instead."""
+        return cls.compact_frontier_spec()
+
+    @classmethod
+    def reasoner_frontier(cls) -> "LLMConfig":
+        """Deprecated: Use reasoner_frontier_spec() instead."""
+        return cls.reasoner_frontier_spec()
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "LLMConfig":

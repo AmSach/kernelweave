@@ -1,3 +1,37 @@
+"""
+Training simulation module — NOT actual model training.
+
+IMPORTANT: This module does NOT train neural networks.
+======================================================
+There are:
+  - NO model weights
+  - NO PyTorch, JAX, or tensor operations
+  - NO backpropagation
+  - NO gradient updates
+  - NO checkpoints
+
+What this module ACTUALLY does:
+  - Simulates training progress for planning purposes
+  - Estimates what training metrics might look like
+  - Tracks hypothetical training snapshots
+  - Builds training manifests for architecture planning
+
+The `Trainer.step()` method simulates a training step by computing
+synthetic metrics based on batch quality and validation accuracy inputs.
+It does NOT actually train anything.
+
+This is useful for:
+  - Planning training runs and estimating costs
+  - Understanding the training curriculum structure
+  - Simulating how kernel reuse might develop during training
+  - Building manifests for hypothetical training configurations
+
+For actual training, you would need to:
+  1. Implement the transformer in PyTorch/JAX
+  2. Write real training loops with backpropagation
+  3. Train on actual datasets
+  4. Export checkpoints
+"""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -17,6 +51,7 @@ from .manifest import TrainingManifest, default_frontier_manifest
 
 @dataclass
 class TrainingSnapshot:
+    """Simulated training snapshot — NOT from actual training."""
     step: int
     loss: float
     perplexity: float
@@ -38,6 +73,7 @@ class TrainingSnapshot:
 
 @dataclass
 class TrainingPlan:
+    """Training plan for a hypothetical training run."""
     stage: str
     total_steps: int
     target_loss: float
@@ -62,6 +98,16 @@ class TrainingPlan:
 
 
 class Trainer:
+    """
+    Training simulator — NOT a real trainer.
+    
+    This class simulates what training progress might look like.
+    It does NOT actually train a neural network.
+    
+    Use `step()` with synthetic batch quality and validation accuracy
+    to generate simulated training snapshots for planning.
+    """
+    
     def __init__(self, config: LLMConfig, model: KernelWeaveLLM | None = None, kernel_store: KernelStore | None = None):
         self.config = config
         self.config.validate()
