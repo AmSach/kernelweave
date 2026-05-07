@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from kernelweave import KernelRuntime, KernelStore, TraceEvent, compile_trace_to_kernel, load_sample_store, ModelCatalog, ModelPreset, backend_from_preset, MockBackend
+from kernelweave import KernelRuntime, KernelStore, TraceEvent, compile_trace_to_kernel, load_sample_store, ModelCatalog, ModelPreset, backend_from_preset, MockBackend, KernelWeaveLLM, LLMConfig
 from kernelweave.cli import install_samples
 from kernelweave.metrics import cosine_similarity, coverage, jaccard_similarity
 
@@ -65,3 +65,15 @@ def test_model_catalog_and_mock_backend(tmp_path: Path):
     response = backend.generate("hello")
     assert response.model == "mock-model"
     assert response.text == "hello from mock"
+
+
+def test_kernel_weave_llm_responds_with_mock_backend(tmp_path: Path):
+    store = load_sample_store(tmp_path)
+    install_samples(store)
+    preset = ModelPreset(id="mock", provider="openai-compatible", model="mock-model", base_url="http://127.0.0.1:11434/v1")
+    backend = MockBackend(preset, response_text="wrapped response")
+    wrapper = KernelWeaveLLM(LLMConfig.compact_frontier(), kernel_store=store, backend=backend)
+    result = wrapper.respond("compare two artifacts")
+    assert result["mode"] == "hybrid"
+    assert result["text"] == "wrapped response"
+    assert result["routing"]["routing"] in {"kernel", "generate", "agent", "skill"}

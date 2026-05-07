@@ -60,10 +60,10 @@ class SkillKernel:
             tests=list(kernel.tests),
             confidence=kernel.status.confidence,
             source_trace_ids=list(kernel.source_trace_ids),
-            tags=list(kernel.tags or []),
-            rationale=kernel.rationale,
-            version=kernel.version,
-            drift_penalty=kernel.status.drift_penalty,
+            tags=list(getattr(kernel, "tags", []) or []),
+            rationale=str(getattr(kernel, "rationale", "")),
+            version=int(getattr(kernel, "version", 1)),
+            drift_penalty=float(getattr(kernel.status, "drift_penalty", 0.0)),
             active=kernel.status.state not in {"retired", "rejected"},
         )
 
@@ -88,13 +88,9 @@ class SkillKernel:
                 confidence=self.confidence,
                 failures=0,
                 passes=1,
-                drift_penalty=self.drift_penalty,
-                version=self.version,
             ),
             source_trace_ids=list(self.source_trace_ids),
             version=self.version,
-            tags=list(self.tags),
-            rationale=self.rationale,
         )
 
     def score_prompt(self, prompt: str) -> dict[str, float]:

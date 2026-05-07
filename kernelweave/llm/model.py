@@ -41,6 +41,7 @@ import json
 from .config import LLMConfig
 from .tokenizer import SimpleTokenizer
 from .agent import AgentPlanner
+from .providers import ModelBackend, ModelResponse
 from ..calibration import predict_runtime_confidence
 from ..kernel import KernelStore
 from ..runtime import ExecutionEngine, KernelRuntime
@@ -73,40 +74,25 @@ class ForwardTrace:
 
 class KernelWeaveLLM:
     """
-    Kernel routing and simulation layer — NOT a trained neural network.
-    
-    ================================================================
-    IMPORTANT: This class does NOT perform actual neural inference.
-    ================================================================
-    
-    There are no learned weights. This class:
-      1. Estimates parameter counts from architecture config specs
-      2. Routes prompts to skill kernels stored as JSON objects  
-      3. Simulates what a trained model "would" do based on kernel matching
-      4. Tracks routing decisions and evidence
-    
-    The `forward()` method does NOT compute tensor operations.
-    It encodes text with a simple tokenizer and routes to kernels.
-    
-    If you want to use a real LLM, you need to:
-      - Train a model with the architecture spec defined in LLMConfig
-      - Load the trained weights into a PyTorch/JAX model
-      - Use that model for actual inference
-    
-    This class is useful for:
-      - Architecture specification and parameter estimation
-      - Kernel routing logic integration testing
-      - Simulation of routing behavior without a live model
-      - Planning agent integration with the skill bank
-    
-    For actual kernel execution, see KernelRuntime and ExecutionEngine.
+    Kernel routing and simulation layer — not a trained neural network.
+
+    This class can also wrap a real model backend. In that mode it routes
+    a prompt through KernelWeave first, then calls the backend with a
+    kernel-aware system prompt.
     """
     
-    def __init__(self, config: LLMConfig, tokenizer: SimpleTokenizer | None = None, kernel_store: KernelStore | None = None):
+    def __init__(
+        self,
+        config: LLMConfig,
+        tokenizer: SimpleTokenizer | None = None,
+        kernel_store: KernelStore | None = None,
+        backend: ModelBackend | None = None,
+    ):
         self.config = config
         self.config.validate()
         self.tokenizer = tokenizer or SimpleTokenizer(self.config.tokenizer)
         self.kernel_store = kernel_store
+        self.backend = backend
         self.skill_bank = SkillKernelBank()
         if kernel_store is not None:
             self.skill_bank.import_from_store(kernel_store)
@@ -114,6 +100,9 @@ class KernelWeaveLLM:
         self.summary = self._estimate_parameters()
         self.last_state: dict[str, Any] = {"tokens": [], "trace": []}
         self.executor = ExecutionEngine(kernel_store) if kernel_store is not None else None
+
+    def set_backend(self, backend: ModelBackend | None) -> None:
+        self.backend = backend
 
     def _estimate_parameters(self) -> ParameterSummary:
         t = self.config.transformer
@@ -200,6 +189,55 @@ class KernelWeaveLLM:
             "curiosity_questions": curiosity_questions,
             "agent_plan": agent_plan,
             "execution": execution,
+        }
+
+    def _kernel_system_prompt(self, routing: dict[str, Any], extra_system_prompt: str = "") -> str:
+        parts: list[str] = []
+        if extra_system_prompt.strip():
+            parts.append(extra_system_prompt.strip())
+        parts.append(self.config.inference.system_prompt.strip())
+        parts.append("KernelWeave routing layer active. Follow the kernel contract and respect evidence gates.")
+        parts.append(f"Routing mode: {routing.get('routing', 'generate')}.")
+        if routing.get("kernel_plan"):
+            parts.append("Kernel plan JSON:\n" + json.dumps(routing["kernel_plan"], indent=2, sort_keys=True))
+        if routing.get("agent_plan"):
+            parts.append("Agent plan JSON:\n" + json.dumps(routing["agent_plan"], indent=2, sort_keys=True))
+        questions = routing.get("curiosity_questions") or []
+        if questions:
+            parts.append("Curiosity questions:\n- " + "\n- ".join(questions))
+        return "\n\n".join(part for part in parts if part)
+
+    def respond(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> dict[str, Any]:
+        routing = self.route_prompt(prompt)
+        trace = self.forward(prompt)
+        if self.backend is None:
+            return {
+                "mode": "routing-only",
+                "routing": routing,
+                "trace": trace,
+                "response": None,
+                "text": "",
+            }
+        effective_system_prompt = self._kernel_system_prompt(routing, extra_system_prompt=system_prompt)
+        response = self.backend.generate(
+            prompt,
+            system_prompt=effective_system_prompt,
+            temperature=temperature if temperature is not None else self.config.inference.temperature,
+            max_tokens=max_tokens if max_tokens is not None else self.config.inference.max_new_tokens,
+        )
+        return {
+            "mode": "hybrid",
+            "routing": routing,
+            "trace": trace,
+            "response": response.to_dict(),
+            "text": response.text,
+            "system_prompt": effective_system_prompt,
         }
 
     def forward(self, prompt: str) -> dict[str, Any]:

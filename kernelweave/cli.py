@@ -7,7 +7,8 @@ import json
 from .compiler import compile_trace_to_kernel
 from .kernel import KernelStore, TraceEvent, load_sample_store
 from .runtime import KernelRuntime
-from .llm.providers import ModelCatalog, MockBackend, run_preset
+from .llm import LLMConfig, KernelWeaveLLM
+from .llm.providers import ModelCatalog, MockBackend, backend_from_preset, run_preset
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -53,6 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
     model_run.add_argument("preset_id")
     model_run.add_argument("prompt")
     model_run.add_argument("--models-dir", type=Path, default=None)
+    model_run.add_argument("--kernel-store", type=Path, default=None)
     model_run.add_argument("--system-prompt", default="")
     model_run.add_argument("--temperature", type=float, default=None)
     model_run.add_argument("--max-tokens", type=int, default=None)
@@ -128,23 +130,19 @@ def main() -> None:
             return
         if args.model_cmd == "run":
             preset = catalog.get(args.preset_id)
-            if getattr(args, "mock", False):
-                backend = MockBackend(preset, response_text=args.mock_response)
-                response = backend.generate(
-                    args.prompt,
-                    system_prompt=args.system_prompt,
-                    temperature=args.temperature,
-                    max_tokens=args.max_tokens,
-                )
+            if getattr(args, "kernel_store", None) is not None:
+                kernel_store = load_sample_store(args.kernel_store)
             else:
-                response = run_preset(
-                    args.prompt,
-                    preset,
-                    system_prompt=args.system_prompt,
-                    temperature=args.temperature,
-                    max_tokens=args.max_tokens,
-                )
-            print(json.dumps(response.to_dict(), indent=2, sort_keys=True))
+                kernel_store = None
+            backend = MockBackend(preset, response_text=args.mock_response) if getattr(args, "mock", False) else backend_from_preset(preset)
+            wrapper = KernelWeaveLLM(LLMConfig.reasoner_frontier_spec(), kernel_store=kernel_store, backend=backend)
+            result = wrapper.respond(
+                args.prompt,
+                system_prompt=args.system_prompt,
+                temperature=args.temperature,
+                max_tokens=args.max_tokens,
+            )
+            print(json.dumps(result, indent=2, sort_keys=True))
             return
 
     store = load_sample_store(args.store)
