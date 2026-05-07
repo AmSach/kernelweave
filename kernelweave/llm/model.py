@@ -99,7 +99,7 @@ class KernelWeaveLLM:
         self.agent_planner = AgentPlanner(self.skill_bank)
         self.summary = self._estimate_parameters()
         self.last_state: dict[str, Any] = {"tokens": [], "trace": []}
-        self.executor = ExecutionEngine(kernel_store) if kernel_store is not None else None
+        self.executor = ExecutionEngine(kernel_store, backend=backend) if kernel_store is not None else None
 
     def set_backend(self, backend: ModelBackend | None) -> None:
         self.backend = backend

@@ -142,6 +142,18 @@ def main() -> None:
                 temperature=args.temperature,
                 max_tokens=args.max_tokens,
             )
+            # Record feedback for learning loop
+            if kernel_store is not None and result.get("text"):
+                kernel_store.record_runtime_feedback(
+                    prompt=args.prompt,
+                    kernel_id=result.get("routing", {}).get("kernel_plan", {}).get("kernel_id") if result.get("routing", {}).get("kernel_plan") else None,
+                    mode=result.get("routing", {}).get("routing", "generate"),
+                    reason=result.get("routing", {}).get("routing", "generate"),
+                    confidence=result.get("routing", {}).get("confidence", 0.5),
+                    evidence_debt=1.0 - result.get("routing", {}).get("confidence", 0.5),
+                    response_text=result.get("text", ""),
+                    observed={"success": bool(result.get("text"))},
+                )
             print(json.dumps(result, indent=2, sort_keys=True))
             return
 
