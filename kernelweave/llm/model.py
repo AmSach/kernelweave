@@ -45,7 +45,7 @@ from .providers import ModelBackend, ModelResponse
 from ..calibration import predict_runtime_confidence
 from ..kernel import KernelStore
 from ..runtime import ExecutionEngine, KernelRuntime
-from ..metrics import clamp, conflict_terms, jaccard_similarity, normalize_text, semantic_similarity, sigmoid
+from ..metrics import clamp, conflict_terms, jaccard_similarity, normalize_text, semantic_similarity, sigmoid, infer_task_family
 from .skills import SkillKernelBank
 
 
@@ -248,7 +248,7 @@ class KernelWeaveLLM:
                 reason="model response",
                 confidence=routing.get("confidence", 0.0),
                 evidence_debt=1.0 - routing.get("confidence", 0.0),
-                task_family=routing.get("agent_plan", {}).get("steps", [{}])[0].get("title", "") if routing.get("routing") == "agent" else "",
+                task_family=infer_task_family(prompt),
                 response_text=response.text,
                 observed={"success": success, "auto_compiled": bool(kernel_candidate)}
             )
@@ -270,38 +270,32 @@ class KernelWeaveLLM:
         from ..metrics import infer_task_family
         import hashlib
         
-        agent_plan = routing.get("agent_plan", {})
-        steps = agent_plan.get("steps", [])
-        if not steps and not response_text.strip():
-            return None
-        
-        # Derive task family from prompt semantics, not step titles
+        # Use the actual prompt semantics, not agent plan strategy
         task_family = infer_task_family(prompt)
         description = prompt.strip()[:200]
         
-        # Override with agent plan's objective if available and more specific
-        if agent_plan.get("strategy") and len(steps) > 1:
-            # Use the agent's overall intent, not individual step titles
-            task_family = agent_plan.get("strategy", task_family)
-            first_objective = steps[0].get("objective", "") if steps else ""
-            if first_objective and len(first_objective) > len(task_family):
-                description = first_objective
-        
+        # Extract actual trace from response, not synthetic agent plan
         trace_id = f"auto-{hashlib.sha256(prompt.encode()).hexdigest()[:12]}"
         
         events = [
             TraceEvent(kind="plan", payload={"text": description}),
         ]
         
-        for step in steps[:5]:
-            events.append(TraceEvent(
-                kind="tool" if step.get("tools") else "plan",
-                payload={"text": step.get("title", ""), "tool": step.get("tools", [""])[0] if step.get("tools") else ""}
-            ))
+        # Parse actual reasoning from the response if possible
+        response_lower = response_text.lower()
         
+        # Look for reasoning patterns in the actual response
+        if "first" in response_lower or "step 1" in response_lower or "begin" in response_lower:
+            events.append(TraceEvent(kind="plan", payload={"text": "structured reasoning detected"}))
+        
+        if "because" in response_lower or "therefore" in response_lower or "evidence" in response_lower:
+            events.append(TraceEvent(kind="evidence", payload={"text": "reasoning evidence found"}))
+        
+        if "check" in response_lower or "verify" in response_lower or "confirm" in response_lower:
+            events.append(TraceEvent(kind="verification", payload={"text": "verification step detected"}))
+        
+        # Always include the response as the decision
         events.extend([
-            TraceEvent(kind="evidence", payload={"text": f"completed task: {task_family}"}),
-            TraceEvent(kind="verification", payload={"text": response_text[:200]}),
             TraceEvent(kind="decision", payload={"text": response_text[:500]}),
         ])
         

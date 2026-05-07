@@ -1,75 +1,95 @@
 # KernelWeave
 
-A self-compiling kernel routing system for language models.
+A kernel routing and verification system for language models.
 
-## What this is
+## What this actually is
 
-A routing layer that:
-- Matches prompts to stored skill kernels using **embeddings + calibration**
-- **Executes kernels** against a real backend and **verifies outputs** against postconditions
-- **Extracts kernels automatically** from successful model responses
-- Records feedback and **auto-promotes** high-confidence patterns into new kernels
-- Plugs into any OpenAI/Anthropic/open-source model via presets
+**A caching layer for verified reasoning patterns.**
 
-## The closed loop (now real)
+When a language model solves a task successfully, KernelWeave:
+- Stores the reasoning pattern as a typed kernel
+- Verifies future outputs against postconditions before caching
+- Routes similar prompts to cached kernels
+- Accumulates verified competence over time
 
-1. **Route** — Match prompt to kernel using embeddings + calibrated confidence
-2. **Execute** — If kernel matches, run it through the model with kernel-aware prompting
-3. **Verify** — Check output against postconditions and evidence requirements
-4. **Record** — Log feedback with success/failure score
-5. **Learn** — After 3+ successful runs on same task family, **auto-promote** a new kernel
-6. **Reuse** — Next time, the new kernel is available for routing
+## What works now
 
-## What's working
+- **Semantic routing** — Embedding-based similarity + calibration scoring
+- **Postcondition verification** — Checks outputs against kernel constraints
+- **Feedback accumulation** — Records success/failure for each kernel
+- **Auto-promotion** — High-confidence repeated successes become candidate kernels
+- **Model-agnostic** — Works with any OpenAI/Anthropic/openai-compatible backend
+
+## What doesn't work yet
+
+### Real self-compilation
+Kernels are extracted from prompts + response text, not from observed reasoning traces. The model's actual chain-of-thought, tool calls, and intermediate states aren't captured. That requires structured generation or a separate observation layer.
+
+### Kernel composition
+If you have a "structured comparison" kernel and an "evidence extraction" kernel, there's no mechanism to combine them. Composition over a kernel algebra is an open research problem.
+
+### Constrained generation
+The kernel informs the model via system prompt, but doesn't constrain the output space during generation. The model can still output anything — verification happens after the fact. A frontier system would use kernels as structured decoding constraints during token generation.
+
+## Real contribution
+
+**"Postcondition verification as a routing signal."**
+
+The novel part isn't the routing (that's retrieval) or the kernels (that's program synthesis). It's using verification against formal postconditions to decide whether to trust cached reasoning for future prompts.
+
+Testable claim: For repeated task families, routing + verification beats vanilla RAG on output quality and cost.
+
+## What's needed for a paper
+
+1. **Benchmark** — Run on ToolBench, AgentBench, or a custom benchmark with repeatable tasks
+2. **Baselines** — Compare against vanilla RAG, BM25 retrieval, no verification
+3. **Metrics** — Routing precision/recall, output quality, cost per query
+4. **Ablations** — Does verification actually improve routing decisions?
+
+Without numbers, it's a prototype. With numbers, it's a 4-page workshop paper with a clear contribution.
+
+## Usage
 
 ```bash
-# Initialize a kernel store
+# Initialize kernel store
 python -m kernelweave.cli init ./store
-
-# Add sample kernels
 python -m kernelweave.cli add-sample ./store
 
-# Run with model backend + auto-compile
-python -m kernelweave.cli model run qwen0_5 "compare two artifacts" \\
-  --kernel-store ./store \\
+# Run with model backend
+python -m kernelweave.cli model run qwen0_5 "compare two artifacts" \
+  --kernel-store ./store \
   --auto-compile
 
-# The kernel candidate gets created automatically
-python -m kernelweave.cli list ./store
+# Verify routing
+python -m kernelweave.cli plan ./store "summarize differences between files"
 ```
 
-## Execution + verification
+## Architecture
 
-When a kernel matches:
-1. Backend executes the kernel plan with structured system prompt
-2. Output is verified against postconditions (keyword matching)
-3. Evidence requirements are checked
-4. Result is scored and recorded as feedback
-5. High-confidence repeated successes trigger auto-promotion
-
-## Model-generated kernels
-
-The `--auto-compile` flag:
-- Captures the model's reasoning process from agent plan
-- Extracts it as a trace (plan → steps → evidence → verification → decision)
-- Compiles into a kernel candidate (status: "candidate")
-- Stores it for future routing
-
-This is the **self-compiling** part: the model's successful problem-solving becomes reusable structure.
+```
+prompt → embed → kernel match → execute kernel OR generate
+                                          ↓
+                                    verify output
+                                          ↓
+                                    record feedback
+                                          ↓
+                              auto-promote if high confidence
+```
 
 ## Components
 
-- `kernelweave/kernel.py` — Kernel store + feedback recording + auto-promotion
-- `kernelweave/runtime.py` — Routing, execution, verification
+- `kernelweave/runtime.py` — Routing + verification
+- `kernelweave/kernel.py` — Kernel store + feedback accumulation  
 - `kernelweave/calibration.py` — Logistic regression confidence model
-- `kernelweave/compiler.py` — Trace → kernel compilation
-- `kernelweave/llm/model.py` — Wrapper that closes the loop
-- `models/` — Presets for Qwen, OpenAI, Anthropic
+- `kernelweave/llm/model.py` — Model wrapper with kernel-aware prompts
 
-## What this still isn't
+## When kernels are worth it
 
-- NOT a neural network
-- NOT training weights
-- NOT replacing the base model
+**High repetition** — Customer support, data pipelines, routine analysis  
+**Low repetition** — Creative writing, one-off research, exploratory chat
 
-It's a **compounding capability layer** on top of any model. The model does the work; KernelWeave remembers and reuses it.
+The overhead of compilation, matching, and verification only pays off when the same task family appears many times.
+
+## Status
+
+Working prototype. Not frontier. Not a trained model. A useful piece of infrastructure for LLM-based systems with repeated tasks.
