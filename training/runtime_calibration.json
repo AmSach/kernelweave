@@ -1,0 +1,7 @@
+[
+  {"features": {"semantic": 0.96, "description_semantic": 0.91, "coverage": 1.0, "confidence": 0.88, "drift": 0.05, "conflict_count": 0, "support": 0.72, "length_ratio": 0.9, "intent_match": 1.0}, "label": 0.98, "note": "near-perfect reused kernel"},
+  {"features": {"semantic": 0.84, "description_semantic": 0.79, "coverage": 0.88, "confidence": 0.76, "drift": 0.08, "conflict_count": 0, "support": 0.64, "length_ratio": 0.85, "intent_match": 1.0}, "label": 0.90, "note": "strong match"},
+  {"features": {"semantic": 0.35, "description_semantic": 0.28, "coverage": 0.10, "confidence": 0.40, "drift": 0.32, "conflict_count": 1, "support": 0.18, "length_ratio": 0.4, "intent_match": 0.0}, "label": 0.12, "note": "bad conflict"},
+  {"features": {"semantic": 0.55, "description_semantic": 0.50, "coverage": 0.42, "confidence": 0.60, "drift": 0.15, "conflict_count": 0, "support": 0.44, "length_ratio": 0.7, "intent_match": 1.0}, "label": 0.62, "note": "medium confidence"},
+  {"features": {"semantic": 0.18, "description_semantic": 0.12, "coverage": 0.02, "confidence": 0.32, "drift": 0.40, "conflict_count": 2, "support": 0.09, "length_ratio": 0.2, "intent_match": 0.0}, "label": 0.03, "note": "reject unsafe mismatch"}
+]

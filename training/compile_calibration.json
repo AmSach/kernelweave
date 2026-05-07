@@ -1,0 +1,58 @@
+[
+  {
+    "features": {
+      "compression_gain": 0.55,
+      "conflict_count": 0.0,
+      "distinct_tools": 0.5,
+      "evidence_count": 0.75,
+      "evidence_density": 0.9,
+      "failure_risk": 0.18,
+      "reuse_value": 0.72,
+      "trace_length": 0.4
+    },
+    "label": 0.88,
+    "note": "good compiled trace"
+  },
+  {
+    "features": {
+      "compression_gain": 0.1,
+      "conflict_count": 1.0,
+      "distinct_tools": 0.1,
+      "evidence_count": 0.15,
+      "evidence_density": 0.2,
+      "failure_risk": 0.8,
+      "reuse_value": 0.18,
+      "trace_length": 0.2
+    },
+    "label": 0.08,
+    "note": "conflict and low evidence"
+  },
+  {
+    "features": {
+      "compression_gain": 0.6,
+      "conflict_count": 0.0,
+      "distinct_tools": 0.8,
+      "evidence_count": 0.85,
+      "evidence_density": 1.0,
+      "failure_risk": 0.12,
+      "reuse_value": 0.82,
+      "trace_length": 0.7
+    },
+    "label": 0.96,
+    "note": "excellent compilation"
+  },
+  {
+    "features": {
+      "compression_gain": 0.18,
+      "conflict_count": 0.0,
+      "distinct_tools": 0.25,
+      "evidence_count": 0.3,
+      "evidence_density": 0.35,
+      "failure_risk": 0.55,
+      "reuse_value": 0.25,
+      "trace_length": 0.3
+    },
+    "label": 0.34,
+    "note": "borderline kernel"
+  }
+]

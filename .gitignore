@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+build/
+styletmp/
+kernelweave-training-pack.zip
