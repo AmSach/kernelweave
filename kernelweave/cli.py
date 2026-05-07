@@ -60,6 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     model_run.add_argument("--max-tokens", type=int, default=None)
     model_run.add_argument("--mock", action="store_true")
     model_run.add_argument("--mock-response", default="")
+    model_run.add_argument("--auto-compile", action="store_true", help="automatically compile successful responses into kernel candidates")
 
     return parser
 

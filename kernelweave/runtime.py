@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 import json
+import re
 
 from .kernel import KernelStore
-from .metrics import clamp, cosine_similarity, coverage, jaccard_similarity
+from .metrics import clamp, cosine_similarity, coverage, jaccard_similarity, semantic_similarity
 from .calibration import predict_runtime_confidence, runtime_features
 
 
@@ -16,6 +17,55 @@ class RuntimeDecision:
     confidence: float
     reason: str
     score: float
+
+
+@dataclass
+class VerificationResult:
+    passed: bool
+    score: float
+    matched_conditions: list[str]
+    failed_conditions: list[str]
+    evidence_found: list[str]
+    evidence_missing: list[str]
+
+
+def verify_output_against_postconditions(output: str, postconditions: list[str], evidence_requirements: list[str] | None = None) -> VerificationResult:
+    """Verify model output against kernel postconditions and evidence requirements."""
+    output_lower = output.lower()
+    matched = []
+    failed = []
+    
+    for condition in postconditions:
+        condition_lower = condition.lower()
+        keywords = re.findall(r'\b\w{3,}\b', condition_lower)
+        if any(kw in output_lower for kw in keywords):
+            matched.append(condition)
+        else:
+            failed.append(condition)
+    
+    evidence_found = []
+    evidence_missing = []
+    if evidence_requirements:
+        for req in evidence_requirements:
+            req_lower = req.lower()
+            keywords = re.findall(r'\b\w{3,}\b', req_lower)
+            if any(kw in output_lower for kw in keywords):
+                evidence_found.append(req)
+            else:
+                evidence_missing.append(req)
+    
+    base_score = len(matched) / max(1, len(postconditions))
+    evidence_score = len(evidence_found) / max(1, len(evidence_requirements)) if evidence_requirements else 1.0
+    total_score = 0.7 * base_score + 0.3 * evidence_score
+    
+    return VerificationResult(
+        passed=len(failed) == 0 and total_score >= 0.5,
+        score=clamp(total_score),
+        matched_conditions=matched,
+        failed_conditions=failed,
+        evidence_found=evidence_found,
+        evidence_missing=evidence_missing
+    )
 
 
 class KernelRuntime:
@@ -94,6 +144,7 @@ class KernelRuntime:
                 "preconditions": kernel.preconditions,
                 "postconditions": kernel.postconditions,
                 "rollback": kernel.rollback,
+                "evidence_requirements": kernel.evidence_requirements,
             }
         return {
             "mode": "generate",
@@ -111,7 +162,62 @@ class ExecutionEngine:
         self.store = store
         self.backend = backend
 
+    def execute_kernel(self, kernel, prompt: str) -> dict[str, Any]:
+        """Execute a kernel against the backend and return results with verification."""
+        if self.backend is None:
+            return {
+                "executed": False,
+                "error": "no backend available",
+                "mode": "simulated",
+            }
+        
+        steps_text = "\n".join(
+            f"{i+1}. {step.get('action', 'step')}: {step.get('text', step.get('tool', ''))}"
+            for i, step in enumerate(kernel.steps)
+        )
+        
+        system_prompt = (
+            f"Execute the following kernel plan for task family '{kernel.task_family}':\n"
+            f"{steps_text}\n\n"
+            f"Preconditions: {', '.join(kernel.preconditions)}\n"
+            f"Evidence requirements: {', '.join(kernel.evidence_requirements)}\n"
+            f"Expected output: satisfy the postconditions: {', '.join(kernel.postconditions)}\n\n"
+            f"After completing the plan, explicitly state what evidence you found and verify each postcondition."
+        )
+        
+        try:
+            response = self.backend.generate(prompt, system_prompt=system_prompt)
+            output_text = response.text
+            
+            verification = verify_output_against_postconditions(
+                output_text,
+                kernel.postconditions,
+                kernel.evidence_requirements
+            )
+            
+            return {
+                "executed": True,
+                "mode": "real",
+                "response_text": output_text,
+                "verification": {
+                    "passed": verification.passed,
+                    "score": verification.score,
+                    "matched_conditions": verification.matched_conditions,
+                    "failed_conditions": verification.failed_conditions,
+                    "evidence_found": verification.evidence_found,
+                    "evidence_missing": verification.evidence_missing,
+                },
+                "plan": kernel.steps,
+            }
+        except Exception as e:
+            return {
+                "executed": False,
+                "mode": "error",
+                "error": str(e),
+            }
+
     def execute_plan(self, plan: dict[str, Any], prompt: str) -> dict[str, Any]:
+        """Execute a routing plan, running kernels through the backend if available."""
         if self.store is None:
             return {
                 "mode": plan.get("mode", "generate"),
@@ -119,32 +225,47 @@ class ExecutionEngine:
                 "reason": plan.get("reason", "no store available"),
                 "confidence": plan.get("confidence", 0.0),
                 "prompt": prompt,
-                "execution": "simulated",
+                "execution": "no-store",
             }
-        if plan.get("mode") == "kernel" and plan.get("kernel_id") and self.backend is not None:
-            kernel = self.store.get_kernel(plan["kernel_id"])
-            steps_text = "\n".join(f"{i+1}. {step.get('action', 'step')}: {step.get('text', step.get('tool', ''))}" for i, step in enumerate(kernel.steps))
-            system_prompt = f"Execute the following kernel plan for task family '{kernel.task_family}':\n{steps_text}\n\nPreconditions: {', '.join(kernel.preconditions)}\nExpected output: satisfy the postconditions: {', '.join(kernel.postconditions)}"
-            try:
-                response = self.backend.generate(prompt, system_prompt=system_prompt)
-                return {
-                    "mode": "kernel",
-                    "kernel_id": kernel.kernel_id,
-                    "confidence": plan.get("confidence", 0.0),
-                    "prompt": prompt,
-                    "execution": "real",
-                    "response_text": response.text,
-                    "plan": kernel.steps,
-                }
-            except Exception as e:
-                return {
-                    "mode": "kernel",
-                    "kernel_id": kernel.kernel_id,
-                    "confidence": plan.get("confidence", 0.0),
-                    "prompt": prompt,
-                    "execution": "error",
-                    "error": str(e),
-                }
+        
+        mode = plan.get("mode", "generate")
+        kernel_id = plan.get("kernel_id")
+        
+        if mode == "kernel" and kernel_id and self.backend is not None:
+            kernel = self.store.get_kernel(kernel_id)
+            execution_result = self.execute_kernel(kernel, prompt)
+            
+            if execution_result.get("executed"):
+                verification = execution_result.get("verification", {})
+                success = verification.get("passed", False)
+                score = verification.get("score", 0.0)
+                
+                if self.store is not None:
+                    self.store.record_runtime_feedback(
+                        prompt=prompt,
+                        kernel_id=kernel_id,
+                        mode="kernel",
+                        reason="executed and verified",
+                        confidence=score,
+                        evidence_debt=1.0 - score,
+                        task_family=kernel.task_family,
+                        response_text=execution_result.get("response_text", ""),
+                        observed={
+                            "success": success,
+                            "verification_score": score,
+                            "matched_conditions": verification.get("matched_conditions", []),
+                            "failed_conditions": verification.get("failed_conditions", []),
+                        }
+                    )
+            
+            return {
+                "mode": "kernel",
+                "kernel_id": kernel_id,
+                "confidence": plan.get("confidence", 0.0),
+                "prompt": prompt,
+                **execution_result,
+            }
+        
         runtime = KernelRuntime(self.store)
         result = runtime.run(prompt)
         result["requested_plan"] = plan

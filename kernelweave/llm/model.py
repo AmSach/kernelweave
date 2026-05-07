@@ -213,6 +213,7 @@ class KernelWeaveLLM:
         system_prompt: str = "",
         temperature: float | None = None,
         max_tokens: int | None = None,
+        auto_compile: bool = False,
     ) -> dict[str, Any]:
         routing = self.route_prompt(prompt)
         trace = self.forward(prompt)
@@ -231,6 +232,27 @@ class KernelWeaveLLM:
             temperature=temperature if temperature is not None else self.config.inference.temperature,
             max_tokens=max_tokens if max_tokens is not None else self.config.inference.max_new_tokens,
         )
+        
+        kernel_candidate = None
+        if auto_compile and self.kernel_store is not None and routing.get("routing") in {"generate", "agent"}:
+            kernel_candidate = self._extract_kernel_from_response(prompt, response.text, routing)
+            if kernel_candidate:
+                self.kernel_store.add_kernel(kernel_candidate)
+        
+        if self.kernel_store is not None:
+            success = routing.get("routing") in {"kernel", "skill"} or bool(kernel_candidate)
+            self.kernel_store.record_runtime_feedback(
+                prompt=prompt,
+                kernel_id=kernel_candidate.kernel_id if kernel_candidate else None,
+                mode=routing.get("routing", "generate"),
+                reason="model response",
+                confidence=routing.get("confidence", 0.0),
+                evidence_debt=1.0 - routing.get("confidence", 0.0),
+                task_family=routing.get("agent_plan", {}).get("steps", [{}])[0].get("title", "") if routing.get("routing") == "agent" else "",
+                response_text=response.text,
+                observed={"success": success, "auto_compiled": bool(kernel_candidate)}
+            )
+        
         return {
             "mode": "hybrid",
             "routing": routing,
@@ -238,7 +260,54 @@ class KernelWeaveLLM:
             "response": response.to_dict(),
             "text": response.text,
             "system_prompt": effective_system_prompt,
+            "kernel_candidate": kernel_candidate.to_dict() if kernel_candidate else None,
         }
+
+    def _extract_kernel_from_response(self, prompt: str, response_text: str, routing: dict[str, Any]) -> Any:
+        """Extract a kernel candidate from a successful model response."""
+        from ..kernel import TraceEvent
+        from ..compiler import compile_trace_to_kernel
+        import hashlib
+        
+        agent_plan = routing.get("agent_plan", {})
+        steps = agent_plan.get("steps", [])
+        if not steps and not response_text.strip():
+            return None
+        
+        task_family = "general"
+        description = prompt.strip()[:200]
+        
+        if steps:
+            task_family = steps[0].get("title", "general")
+            description = steps[0].get("objective", description)
+        
+        trace_id = f"auto-{hashlib.sha256(prompt.encode()).hexdigest()[:12]}"
+        
+        events = [
+            TraceEvent(kind="plan", payload={"text": description}),
+        ]
+        
+        for step in steps[:5]:
+            events.append(TraceEvent(
+                kind="tool" if step.get("tools") else "plan",
+                payload={"text": step.get("title", ""), "tool": step.get("tools", [""])[0] if step.get("tools") else ""}
+            ))
+        
+        events.extend([
+            TraceEvent(kind="evidence", payload={"text": f"completed task: {task_family}"}),
+            TraceEvent(kind="verification", payload={"text": response_text[:200]}),
+            TraceEvent(kind="decision", payload={"text": response_text[:500]}),
+        ])
+        
+        kernel = compile_trace_to_kernel(
+            trace_id=trace_id,
+            task_family=task_family,
+            description=description,
+            events=events,
+            expected_output={"result": response_text[:256]}
+        )
+        kernel.status.state = "candidate"
+        return kernel
 
     def forward(self, prompt: str) -> dict[str, Any]:
         token_ids = self.tokenizer.encode(prompt, add_special_tokens=True)
