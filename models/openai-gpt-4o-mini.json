@@ -1,0 +1,19 @@
+{
+  "id": "openai-gpt-4o-mini",
+  "provider": "openai",
+  "model": "gpt-4o-mini",
+  "api_key_env": "OPENAI_API_KEY",
+  "system_prompt": "You are a careful, exact assistant.",
+  "temperature": 0.2,
+  "max_tokens": 1024,
+  "timeout_seconds": 60,
+  "headers": {},
+  "notes": [
+    "OpenAI preset.",
+    "Set OPENAI_API_KEY in Settings > Advanced.",
+    "Select this preset from the CLI.",
+    "Duplicate this file to add more OpenAI models."
+  ],
+  "context_window": 128000,
+  "default": false
+}

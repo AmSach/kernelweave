@@ -3,7 +3,7 @@ set -euo pipefail
 python - <<'PY'
 from pathlib import Path
 from kernelweave.llm import LLMConfig
-cfg = LLMConfig.reasoner_frontier()
+cfg = LLMConfig.reasoner_frontier_spec()
 Path('training').mkdir(exist_ok=True)
 cfg.save(Path('training/config.json'))
 print('saved training/config.json')

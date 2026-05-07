@@ -81,6 +81,24 @@ This repo is a full prototype for the **kernel routing system**, not for a train
 python -m kernelweave.cli --help
 ```
 
+## Pluggable model presets
+
+KernelWeave can now point at other models instead of pretending to be one itself.
+
+Preset files live in `models/` and can be copied or edited for other endpoints:
+- `models/qwen0_5.json`
+- `models/openai-gpt-4o-mini.json`
+- `models/anthropic-claude-3-5-sonnet.json`
+
+CLI examples:
+```bash
+python -m kernelweave.cli model list
+python -m kernelweave.cli model show qwen0_5
+python -m kernelweave.cli model run qwen0_5 "hello" --mock --mock-response "ok"
+```
+
+For real calls, set the matching API key in your environment and pick the preset ID you want.
+
 ## Design files
 - `file 'docs/ARCHITECTURE.md'`
 - `file 'docs/ALGORITHM.md'`

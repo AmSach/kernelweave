@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from kernelweave import KernelRuntime, KernelStore, TraceEvent, compile_trace_to_kernel, load_sample_store
+from kernelweave import KernelRuntime, KernelStore, TraceEvent, compile_trace_to_kernel, load_sample_store, ModelCatalog, ModelPreset, backend_from_preset, MockBackend
 from kernelweave.cli import install_samples
 from kernelweave.metrics import cosine_similarity, coverage, jaccard_similarity
 
@@ -50,3 +50,18 @@ def test_store_summary(tmp_path: Path):
     summary = store.summary()
     assert summary["kernels"] >= 2
     assert summary["traces"] >= 2
+
+
+def test_model_catalog_and_mock_backend(tmp_path: Path):
+    model_dir = tmp_path / "models"
+    model_dir.mkdir()
+    preset_path = model_dir / "mock.json"
+    preset_path.write_text(
+        '{"id":"mock","provider":"openai-compatible","model":"mock-model","base_url":"http://127.0.0.1:11434/v1","default":true}'
+    )
+    catalog = ModelCatalog.from_paths([model_dir])
+    preset = catalog.get("mock")
+    backend = MockBackend(preset, response_text="hello from mock")
+    response = backend.generate("hello")
+    assert response.model == "mock-model"
+    assert response.text == "hello from mock"

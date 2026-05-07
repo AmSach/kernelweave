@@ -10,7 +10,7 @@ They are used to:
   - Configure the kernel routing layer
 
 There are NO weights, NO checkpoints, NO trained parameters.
-The `compact_frontier()` and `reasoner_frontier()` methods return
+The `compact_frontier_spec()` and `reasoner_frontier_spec()` methods return
 architecture specifications, not trained models.
 
 To actually use these specs:

@@ -183,7 +183,7 @@ def config_model_params_billion(config: LLMConfig) -> float:
 
 
 def default_frontier_manifest(config: LLMConfig | None = None) -> TrainingManifest:
-    config = config or LLMConfig.reasoner_frontier()
+    config = config or LLMConfig.reasoner_frontier_spec()
     config.validate()
     return TrainingManifest(
         project_name="KernelWeave",

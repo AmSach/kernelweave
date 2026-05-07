@@ -1,0 +1,19 @@
+{
+  "id": "qwen0_5",
+  "provider": "openai-compatible",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "base_url": "",
+  "api_key_env": "OPENAI_API_KEY",
+  "system_prompt": "You are a careful, exact assistant.",
+  "temperature": 0.2,
+  "max_tokens": 1024,
+  "timeout_seconds": 60,
+  "headers": {},
+  "notes": [
+    "Starter preset for a small open model. Update base_url to a local endpoint or compatible host.",
+    "If using OpenRouter or another compatible host, set base_url accordingly.",
+    "This preset is intentionally editable and can be duplicated for other models."
+  ],
+  "context_window": 32768,
+  "default": true
+}

@@ -7,6 +7,7 @@ import json
 from .compiler import compile_trace_to_kernel
 from .kernel import KernelStore, TraceEvent, load_sample_store
 from .runtime import KernelRuntime
+from .llm.providers import ModelCatalog, MockBackend, run_preset
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -37,6 +38,26 @@ def build_parser() -> argparse.ArgumentParser:
 
     info_p = sub.add_parser("info", help="summarize store status")
     info_p.add_argument("store", type=Path)
+
+    model_p = sub.add_parser("model", help="manage pluggable model presets")
+    model_sub = model_p.add_subparsers(dest="model_cmd", required=True)
+
+    model_list = model_sub.add_parser("list", help="list model presets")
+    model_list.add_argument("--models-dir", type=Path, default=None)
+
+    model_show = model_sub.add_parser("show", help="show a model preset")
+    model_show.add_argument("preset_id")
+    model_show.add_argument("--models-dir", type=Path, default=None)
+
+    model_run = model_sub.add_parser("run", help="run a prompt against a preset")
+    model_run.add_argument("preset_id")
+    model_run.add_argument("prompt")
+    model_run.add_argument("--models-dir", type=Path, default=None)
+    model_run.add_argument("--system-prompt", default="")
+    model_run.add_argument("--temperature", type=float, default=None)
+    model_run.add_argument("--max-tokens", type=int, default=None)
+    model_run.add_argument("--mock", action="store_true")
+    model_run.add_argument("--mock-response", default="")
 
     return parser
 
@@ -85,9 +106,47 @@ def install_samples(store: KernelStore) -> None:
     store.add_kernel(kernel2)
 
 
+def _load_catalog(models_dir: Path | None) -> ModelCatalog:
+    if models_dir is None:
+        return ModelCatalog.load_default()
+    if models_dir.exists():
+        return ModelCatalog.from_paths([models_dir])
+    return ModelCatalog()
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
+
+    if args.cmd == "model":
+        catalog = _load_catalog(getattr(args, "models_dir", None))
+        if args.model_cmd == "list":
+            print(json.dumps([preset.to_dict() for preset in catalog.list()], indent=2, sort_keys=True))
+            return
+        if args.model_cmd == "show":
+            print(json.dumps(catalog.get(args.preset_id).to_dict(), indent=2, sort_keys=True))
+            return
+        if args.model_cmd == "run":
+            preset = catalog.get(args.preset_id)
+            if getattr(args, "mock", False):
+                backend = MockBackend(preset, response_text=args.mock_response)
+                response = backend.generate(
+                    args.prompt,
+                    system_prompt=args.system_prompt,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                )
+            else:
+                response = run_preset(
+                    args.prompt,
+                    preset,
+                    system_prompt=args.system_prompt,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                )
+            print(json.dumps(response.to_dict(), indent=2, sort_keys=True))
+            return
+
     store = load_sample_store(args.store)
 
     if args.cmd == "init":

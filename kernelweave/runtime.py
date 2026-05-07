@@ -72,6 +72,26 @@ class KernelRuntime:
         }
 
 
+class ExecutionEngine:
+    def __init__(self, store: KernelStore | None = None):
+        self.store = store
+
+    def execute_plan(self, plan: dict[str, Any], prompt: str) -> dict[str, Any]:
+        if self.store is None:
+            return {
+                "mode": plan.get("mode", "generate"),
+                "kernel_id": plan.get("kernel_id"),
+                "reason": plan.get("reason", "no store available"),
+                "confidence": plan.get("confidence", 0.0),
+                "prompt": prompt,
+                "execution": "simulated",
+            }
+        runtime = KernelRuntime(self.store)
+        result = runtime.run(prompt)
+        result["requested_plan"] = plan
+        return result
+
+
 def plan_for_prompt(store: KernelStore, prompt: str) -> str:
     runtime = KernelRuntime(store)
     return json.dumps(runtime.run(prompt), indent=2, sort_keys=True)

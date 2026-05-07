@@ -4,6 +4,7 @@ from .tokenizer import SimpleTokenizer, TokenizerReport
 from .train import Trainer, TrainingPlan, TrainingSnapshot
 from .skills import SkillKernel, SkillKernelBank, SkillRoute, SkillBankManifest
 from .agent import AgentPlanner, AgentPlan, AgentStep, AgentTrace
+from .providers import ModelBackend, ModelCatalog, ModelPreset, ModelResponse, MockBackend, OpenAICompatibleBackend, AnthropicBackend, backend_from_preset, run_preset
 
 __all__ = [
     "InferenceConfig",
@@ -27,4 +28,13 @@ __all__ = [
     "AgentPlan",
     "AgentStep",
     "AgentTrace",
+    "ModelBackend",
+    "ModelCatalog",
+    "ModelPreset",
+    "ModelResponse",
+    "MockBackend",
+    "OpenAICompatibleBackend",
+    "AnthropicBackend",
+    "backend_from_preset",
+    "run_preset",
 ]
