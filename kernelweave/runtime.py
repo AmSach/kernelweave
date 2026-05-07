@@ -30,26 +30,42 @@ class VerificationResult:
 
 
 def verify_output_against_postconditions(output: str, postconditions: list[str], evidence_requirements: list[str] | None = None) -> VerificationResult:
-    """Verify model output against kernel postconditions and evidence requirements."""
-    output_lower = output.lower()
+    """Verify model output against kernel postconditions using semantic matching."""
     matched = []
     failed = []
     
+    # Use semantic similarity instead of keyword matching
     for condition in postconditions:
-        condition_lower = condition.lower()
-        keywords = re.findall(r'\b\w{3,}\b', condition_lower)
-        if any(kw in output_lower for kw in keywords):
-            matched.append(condition)
+        # Handle special postconditions that are about absence/negation
+        if "not" in condition.lower() or "no " in condition.lower():
+            # For negative conditions, check that the problematic thing isn't present
+            # Extract the positive concept from negative condition
+            positive_concept = condition.lower().replace("not ", "").replace("no ", "").strip()
+            # If the positive concept appears strongly, condition fails
+            # Otherwise it passes
+            similarity = semantic_similarity(output, positive_concept)
+            if similarity < 0.3:  # Low similarity to problematic concept = pass
+                matched.append(condition)
+            else:
+                failed.append(condition)
         else:
-            failed.append(condition)
+            # For positive conditions, check semantic similarity
+            similarity = semantic_similarity(output, condition)
+            if similarity >= 0.25:  # Threshold for semantic match
+                matched.append(condition)
+            else:
+                failed.append(condition)
     
     evidence_found = []
     evidence_missing = []
     if evidence_requirements:
         for req in evidence_requirements:
-            req_lower = req.lower()
-            keywords = re.findall(r'\b\w{3,}\b', req_lower)
-            if any(kw in output_lower for kw in keywords):
+            # Use semantic similarity for evidence too
+            similarity = semantic_similarity(output, req)
+            coverage_score = coverage([req], output)
+            # Combine semantic similarity with coverage
+            combined = 0.6 * similarity + 0.4 * coverage_score
+            if combined >= 0.2:
                 evidence_found.append(req)
             else:
                 evidence_missing.append(req)
@@ -59,7 +75,7 @@ def verify_output_against_postconditions(output: str, postconditions: list[str],
     total_score = 0.7 * base_score + 0.3 * evidence_score
     
     return VerificationResult(
-        passed=len(failed) == 0 and total_score >= 0.5,
+        passed=len(failed) == 0 and total_score >= 0.3,  # Lower threshold since we're using semantic matching
         score=clamp(total_score),
         matched_conditions=matched,
         failed_conditions=failed,

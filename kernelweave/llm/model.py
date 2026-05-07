@@ -267,6 +267,7 @@ class KernelWeaveLLM:
         """Extract a kernel candidate from a successful model response."""
         from ..kernel import TraceEvent
         from ..compiler import compile_trace_to_kernel
+        from ..metrics import infer_task_family
         import hashlib
         
         agent_plan = routing.get("agent_plan", {})
@@ -274,12 +275,17 @@ class KernelWeaveLLM:
         if not steps and not response_text.strip():
             return None
         
-        task_family = "general"
+        # Derive task family from prompt semantics, not step titles
+        task_family = infer_task_family(prompt)
         description = prompt.strip()[:200]
         
-        if steps:
-            task_family = steps[0].get("title", "general")
-            description = steps[0].get("objective", description)
+        # Override with agent plan's objective if available and more specific
+        if agent_plan.get("strategy") and len(steps) > 1:
+            # Use the agent's overall intent, not individual step titles
+            task_family = agent_plan.get("strategy", task_family)
+            first_objective = steps[0].get("objective", "") if steps else ""
+            if first_objective and len(first_objective) > len(task_family):
+                description = first_objective
         
         trace_id = f"auto-{hashlib.sha256(prompt.encode()).hexdigest()[:12]}"
         
