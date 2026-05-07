@@ -1,84 +1,75 @@
 # KernelWeave
 
-A kernel routing system for language models with learning capabilities.
+A self-compiling kernel routing system for language models.
 
 ## What this is
 
 A routing layer that:
-- Matches prompts to stored skill kernels using **embedding similarity + calibrated scoring**
-- Falls back to raw model generation when no kernel matches
-- Records interaction outcomes and can auto-promote repeated successes into new kernels
-- Works with any OpenAI/Anthropic/openai-compatible model backend
+- Matches prompts to stored skill kernels using **embeddings + calibration**
+- **Executes kernels** against a real backend and **verifies outputs** against postconditions
+- **Extracts kernels automatically** from successful model responses
+- Records feedback and **auto-promotes** high-confidence patterns into new kernels
+- Plugs into any OpenAI/Anthropic/open-source model via presets
 
-## What this is NOT
+## The closed loop (now real)
 
-- **NOT a trained neural network** — there are no weights, no PyTorch/JAX
-- **NOT AGI** — it's a routing layer with learning, not a general intelligence
-- **NOT magic** — kernel matching requires semantic similarity to existing kernels
+1. **Route** — Match prompt to kernel using embeddings + calibrated confidence
+2. **Execute** — If kernel matches, run it through the model with kernel-aware prompting
+3. **Verify** — Check output against postconditions and evidence requirements
+4. **Record** — Log feedback with success/failure score
+5. **Learn** — After 3+ successful runs on same task family, **auto-promote** a new kernel
+6. **Reuse** — Next time, the new kernel is available for routing
 
-## Recent improvements (v0.2.0)
-
-✅ **Embedding-based routing**: Uses sentence-transformers (all-MiniLM-L6-v2) for semantic similarity instead of pure lexical matching
-
-✅ **Calibration model wired**: Logistic regression model now influences routing decisions (40% weight)
-
-✅ **Lower threshold**: 0.50 instead of 0.68 — paraphrases now match
-
-✅ **Real kernel execution**: Kernels can actually run via model backend instead of just returning plans
-
-✅ **CLI learning loop**: `model run --kernel-store <path>` records feedback outcomes
-
-## Paraphrase handling
-
-**Before** (lexical only):
-- "compare two artifacts and explain differences" → ✅ kernel (0.73)
-- "compare two PDF documents and summarize their differences" → ❌ generate (0.67)
-
-**After** (embedding + calibration):
-- "compare two artifacts and explain differences" → ✅ kernel (0.756)
-- "compare two PDF documents and summarize their differences" → ✅ kernel (0.711)
-- "diff two configs" → ✅ kernel (0.604) — **this used to fail**
-- "analyze differences between two files" → ✅ kernel (0.768)
-
-## Quick start
+## What's working
 
 ```bash
 # Initialize a kernel store
 python -m kernelweave.cli init ./store
 
-# Install sample kernels
+# Add sample kernels
 python -m kernelweave.cli add-sample ./store
 
-# Route a prompt
-python -m kernelweave.cli plan ./store "compare two artifacts"
+# Run with model backend + auto-compile
+python -m kernelweave.cli model run qwen0_5 "compare two artifacts" \\
+  --kernel-store ./store \\
+  --auto-compile
 
-# Run with a model backend
-python -m kernelweave.cli model run qwen0_5 "compare two artifacts" --kernel-store ./store
+# The kernel candidate gets created automatically
+python -m kernelweave.cli list ./store
 ```
 
-## Architecture
+## Execution + verification
 
-- **Kernel store**: JSON persistence for kernels, traces, and runtime feedback
-- **Runtime router**: Embedding + calibration-based matching
-- **Execution engine**: Can actually execute kernel plans via model backend
-- **Auto-promotion**: 3+ successful interactions with a task family → new kernel
+When a kernel matches:
+1. Backend executes the kernel plan with structured system prompt
+2. Output is verified against postconditions (keyword matching)
+3. Evidence requirements are checked
+4. Result is scored and recorded as feedback
+5. High-confidence repeated successes trigger auto-promotion
 
-## Limitations
+## Model-generated kernels
 
-- Embeddings are loaded lazily; first call is slower
-- Kernel matching still requires some semantic overlap with existing kernels
-- Not all model backends support structured kernel execution
-- The learning loop only works when `--kernel-store` is provided
+The `--auto-compile` flag:
+- Captures the model's reasoning process from agent plan
+- Extracts it as a trace (plan → steps → evidence → verification → decision)
+- Compiles into a kernel candidate (status: "candidate")
+- Stores it for future routing
 
-## Status
+This is the **self-compiling** part: the model's successful problem-solving becomes reusable structure.
 
-Working prototype with real improvements over pure lexical routing. Tests pass. Paraphrases now match. The core routing is less brittle.
+## Components
 
-For the actual code, see:
-- `kernelweave/runtime.py` — routing logic
-- `kernelweave/kernel.py` — store + feedback + auto-promotion
-- `kernelweave/calibration.py` — logistic regression calibration
+- `kernelweave/kernel.py` — Kernel store + feedback recording + auto-promotion
+- `kernelweave/runtime.py` — Routing, execution, verification
+- `kernelweave/calibration.py` — Logistic regression confidence model
+- `kernelweave/compiler.py` — Trace → kernel compilation
+- `kernelweave/llm/model.py` — Wrapper that closes the loop
+- `models/` — Presets for Qwen, OpenAI, Anthropic
 
-## Paper draft
+## What this still isn't
 
-See `paper/main.tex` — but note the claims there are ambitious relative to current implementation.
+- NOT a neural network
+- NOT training weights
+- NOT replacing the base model
+
+It's a **compounding capability layer** on top of any model. The model does the work; KernelWeave remembers and reuses it.
