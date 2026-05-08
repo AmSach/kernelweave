@@ -364,9 +364,61 @@ class TraceGenerator:
         issues = ["bugs", "security issues", "performance problems", "style issues", "unused imports"]
         errors = ["TypeError", "ValueError", "ImportError", "AttributeError", "SyntaxError"]
         
+        # Differences and similarities for comparison
+        diffs = ["different variable names", "different function signatures", "different import structure", "different class hierarchy", "different error handling"]
+        sims = ["similar module structure", "similar naming conventions", "similar documentation style", "similar test coverage"]
+        
+        # Issues and recommendations for analysis
+        issue_texts = ["unused variable on line 42", "missing type hint", "potential null pointer", "deprecated API usage", "missing error handling"]
+        rec_texts = ["add type hints", "implement error handling", "refactor to use modern API", "add unit tests", "improve documentation"]
+        severities = ["low", "medium", "high", "critical"]
+        good_texts = ["good test coverage", "clean code structure", "proper documentation", "modern Python practices"]
+        
+        # Aspects and features for comparison
+        aspects = ["error handling", "performance", "code style", "architecture", "documentation", "testing"]
+        features = ["async support", "type hints", "comprehensive tests", "detailed docs", "modular design"]
+        
+        # Files for search
+        file_names = ["main.py", "utils.py", "config.py", "test_main.py", "helpers.py", "constants.py"]
+        
+        # Content for generation
+        titles = ["Analysis Report", "Code Review Summary", "Performance Audit", "Security Assessment", "Technical Documentation"]
+        contents = ["This document provides a comprehensive analysis...", "The following report details the key findings...", "After thorough review, we identified...", "This analysis covers all major aspects...", "The technical assessment reveals..."]
+        summaries = ["Key findings indicate significant improvements needed.", "Overall, the codebase is well-structured.", "Several optimization opportunities were identified.", "The analysis reveals a solid foundation with room for growth."]
+        points = ["Improved performance metrics", "Enhanced security posture", "Better code maintainability", "Clearer documentation", "More comprehensive tests"]
+        
+        # Debugging
+        fixes = ["added null check before access", "fixed variable name typo", "added missing import", "corrected function signature", "added proper error handling"]
+        causes = ["null reference without check", "variable naming inconsistency", "missing module import", "incompatible type conversion", "unhandled edge case"]
+        diff_snippets = ["- old_value\\n+ new_value", "- if x:\\n+ if x is not None:", "- import old\\n+ import new", "- def foo()\\n+ def foo(x: int)"]
+        
+        # Summarization
+        documents = ["the technical report", "the codebase documentation", "the project README", "the architecture overview", "the API documentation"]
+        findings = ["improved code quality", "enhanced security", "better performance", "clearer documentation", "more robust error handling"]
+        
+        # Transformation
+        outputs = ['{\\n  "result": "success"\\n}', 'name: value\\nother: data', '# Result\\n\\nSuccess', '<result>success</result>']
+        stat_texts = ["5 fields converted", "10 records processed", "structure preserved", "format validated"]
+        
+        # Testing
+        test_codes = ["def test_function():\\n    assert True", "def test_edge_case():\\n    result = process(None)\\n    assert result is not None", "def test_integration():\\n    output = integrate(input_data)\\n    validate(output)"]
+        coverages = ["85%", "92%", "78%", "95%", "88%"]
+        
+        # Code snippets
+        codes = ["def process(data):\\n    return data", "class Handler:\\n    def handle(self, x):\\n        return x * 2", "async def fetch():\\n    return await get()"]
+        modules = ["main", "utils", "handler", "processor", "converter"]
+        functions = ["process_data", "validate_input", "transform_output", "handle_request", "parse_config"]
+        functionalities = ["edge cases", "error handling", "input validation", "output formatting", "integration points"]
+        scenarios = ["empty input", "null values", "large datasets", "concurrent access", "network failure"]
+        
+        # Subjects and tasks
+        subjects = ["the codebase", "the architecture", "the API design", "the database schema", "the deployment pipeline"]
+        tasks = ["generate report", "create summary", "analyze performance", "review security", "document changes"]
+        
         n = random.randint(1, 5)
         
         return {
+            # Basic variables
             "file": random.choice(files),
             "file_a": random.choice(files),
             "file_b": random.choice(files),
@@ -381,56 +433,81 @@ class TraceGenerator:
             "issue_type": random.choice(issues),
             "error": random.choice(errors),
             "n": str(n),
-            "input": "input data",
-            "source": "data.json",
-            "topic": "architecture",
-            "subject": "the codebase",
-            "task": "complete the operation",
-            "document": "the document",
-            "module": "the module",
-            "function": "the function",
-            "code": "the code",
-            "functionality": "core functionality",
-            "scenario": "edge cases",
-            # Response-specific
-            "diff_1": "variable naming differs",
-            "diff_2": "function implementation varies",
-            "diff_3": "import order is different",
-            "aspect": "implementation approach",
-            "sim_1": "both use similar patterns",
-            "sim_2": "shared dependencies",
-            "feature_a": "feature A",
-            "feature_b": "feature B",
-            "issue_1": "unused variable",
-            "issue_2": "missing error handling",
-            "line_1": "10",
-            "line_2": "25",
-            "severity": "medium",
-            "rec_1": "add error handling",
-            "rec_2": "remove unused code",
-            "good_1": "proper documentation",
-            "file_1": "file1.py",
-            "file_2": "file2.py",
-            "file_3": "file3.py",
-            "n_1": "5",
-            "n_2": "3",
-            "n_3": "7",
-            "total": "15",
-            "title": "Report",
-            "content": "Content here",
-            "summary": "Summary of findings",
-            "point_1": "key point 1",
-            "point_2": "key point 2",
-            "point_3": "key point 3",
-            "fix": "added null check",
-            "cause": "null pointer dereference",
-            "diff": "- old\\n+ new",
-            "findings": "important results",
-            "output": "transformed output",
-            "stats": "Processed 100 items",
-            "tests": "def test_x(): assert True",
-            "coverage": "85%",
-            "test_code": "test code here",
+            
+            # Code and modules
+            "code": random.choice(codes),
+            "module": random.choice(modules),
+            "function": random.choice(functions),
+            "functionality": random.choice(functionalities),
+            "scenario": random.choice(scenarios),
+            
+            # Source and subject
+            "source": random.choice(files),
+            "subject": random.choice(subjects),
+            "task": random.choice(tasks),
+            
+            # Comparison variables
+            "diff_1": random.choice(diffs),
+            "diff_2": random.choice(diffs),
+            "diff_3": random.choice(diffs),
+            "sim_1": random.choice(sims),
+            "sim_2": random.choice(sims),
+            "aspect": random.choice(aspects),
+            "aspect_1": random.choice(aspects),
+            "aspect_2": random.choice(aspects),
+            "aspect_3": random.choice(aspects),
+            "feature_a": random.choice(features),
+            "feature_b": random.choice(features),
+            
+            # Analysis variables
+            "issue_1": random.choice(issue_texts),
+            "issue_2": random.choice(issue_texts),
+            "line_1": str(random.randint(10, 100)),
+            "line_2": str(random.randint(10, 100)),
+            "rec_1": random.choice(rec_texts),
+            "rec_2": random.choice(rec_texts),
+            "severity": random.choice(severities),
+            "good_1": random.choice(good_texts),
+            
+            # Search variables
+            "file_1": random.choice(file_names),
+            "file_2": random.choice(file_names),
+            "file_3": random.choice(file_names),
+            "n_1": str(random.randint(1, 10)),
+            "n_2": str(random.randint(1, 10)),
+            "n_3": str(random.randint(1, 10)),
+            "total": str(random.randint(5, 50)),
+            
+            # Generation variables
+            "title": random.choice(titles),
+            "content": random.choice(contents),
+            "summary": random.choice(summaries),
+            "point_1": random.choice(points),
+            "point_2": random.choice(points),
+            "point_3": random.choice(points),
+            "topic": random.choice(aspects),
+            
+            # Debugging variables
+            "fix": random.choice(fixes),
+            "diff": random.choice(diff_snippets),
+            "cause": random.choice(causes),
+            
+            # Summarization variables
+            "document": random.choice(documents),
+            "findings": random.choice(findings),
+            
+            # Transformation variables
+            "input": random.choice(files),
+            "output": random.choice(outputs),
+            "stats": random.choice(stat_texts),
+            
+            # Testing variables
+            "tests": random.choice(test_codes),
+            "test_code": random.choice(test_codes),
+            "coverage": random.choice(coverages),
+            
+            # Result (fallback)
+            "result": "task completed successfully",
         }
 
 
@@ -635,4 +712,21 @@ class KaggleTrainer:
     def _format_sample(self, sample: TrainingSample) -> str:
         """Format a sample for training."""
         # Qwen chat format
-        return f"user\n{sample.prompt}"
+        return f"user\n{sample.prompt}\nassistant\n{sample.response}"
+    
+    def save_model(self) -> None:
+        """Save the trained model."""
+        if self._model is None:
+            raise RuntimeError("No model to save. Run train() first.")
+        
+        save_path = self.output_dir / "final_model"
+        save_path.mkdir(parents=True, exist_ok=True)
+        
+        # Save model and tokenizer
+        self._model.save_pretrained(str(save_path))
+        self._tokenizer.save_pretrained(str(save_path))
+        
+        print(f"✓ Model saved to {save_path}")
+        print(f"\nTo load:")
+        print(f'  model = AutoModelForCausalLM.from_pretrained("{save_path}")')
+        print(f'  tokenizer = AutoTokenizer.from_pretrained("{save_path}")')
