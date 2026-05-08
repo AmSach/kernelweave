@@ -992,12 +992,20 @@
     }
   ],
   "metadata": {
-    "baselines": [
-      "vanilla",
-      "rag"
+    "status": "PROTOTYPE",
+    "warning": "BASELINES ARE SIMULATED - NOT REAL EVALUATION",
+    "what_is_real": [
+      "KernelWeave routing decisions",
+      "Kernel hit rate (46.7%)",
+      "Routing latency (~681ms)"
     ],
-    "n_tasks": 30,
-    "timestamp": "2026-05-08 06:18:28"
+    "what_is_fabricated": [
+      "Baseline success rates (random)",
+      "Baseline latencies (random)",
+      "No actual model generation",
+      "No tool execution"
+    ],
+    "timestamp": "2026-05-08 06:07:41"
   },
   "summaries": {
     "baseline_rag": {

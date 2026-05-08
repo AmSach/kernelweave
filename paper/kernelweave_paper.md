@@ -210,65 +210,81 @@ The compiler extracts:
 
 ## 4. Evaluation
 
-**Real numbers from ToolBench benchmark (30 tasks)**
+**Status: PROTOTYPE - No real evaluation performed**
 
-### 4.1 Setup
+### 4.1 What We Have
 
-We ran 30 ToolBench-style tasks comparing:
-- **KernelWeave**: Postcondition-based routing with kernel reuse + generation fallback
-- **Vanilla baseline**: Direct generation without routing
-- **RAG baseline**: Retrieval + generation
+We implemented kernel routing with:
+- ✅ Kernel matching via semantic similarity
+- ✅ Fallback to generate mode when no kernel matches
+- ✅ Sample kernels for comparison and summarization tasks
+- ✅ Trace capture and compilation
 
-All systems ran without actual model generation (routing-only mode). Success defined as:
-- Kernel mode: confidence > 0.5
-- Generate mode: successful fallback (no routing errors)
+### 4.2 What We Have NOT Evaluated
 
-### 4.2 Results
+We have NOT run:
+- ❌ Real ToolBench evaluation
+- ❌ Baseline comparison with actual models
+- ❌ Output quality measurement
+- ❌ Latency benchmarks with real generation
 
-| System | Success Rate | Avg Latency | Kernel Hit Rate |
-|--------|--------------|-------------|-----------------|
-| KernelWeave | **100.0%** | **681ms** | 46.7% |
-| Vanilla baseline | 50.0% | 1213ms | - |
-| RAG baseline | 60.0% | 1870ms | - |
+The benchmark infrastructure exists (`benchmark/run_toolbench.py`) but:
+- Baseline success rates are simulated (random)
+- No actual model calls were made
+- No real output quality assessment
 
-### 4.3 Analysis
+### 4.3 Real Limitations
 
-**Why 100% success for KernelWeave?**
+**Constrained decoding limitation:**
 
-1. **Kernel routing works**: 46.7% of tasks matched existing kernels (artifact comparison, summarization)
-2. **Graceful fallback**: Remaining 53.3% fell back to generate mode without errors
-3. **Fast routing**: Kernel matching takes ~1ms vs ~500ms for baseline generation
+The `LogitsProcessorConstraint` implementation requires:
+- Local HuggingFace model (`AutoModelForCausalLM`)
+- Matching tokenizer
+- Direct access to logits
 
-**Comparison with baselines:**
+This means:
+- ✅ Works with: Qwen, LLaMA, Mistral (local)
+- ❌ Does NOT work with: OpenAI API, Anthropic API, vLLM server, any API backend
 
-- **vs Vanilla**: +50% success, -533ms latency (44% faster)
-- **vs RAG**: +40% success, -1189ms latency (64% faster)
+For API backends, we fall back to post-hoc validation + retry with schema-in-prompt.
 
-Kernel routing provides value in two ways:
-1. **Direct kernel reuse**: 46.7% of tasks reuse verified patterns
-2. **Hybrid fallback**: Remaining tasks get standard generation without routing overhead
+**Kernel coverage limitation:**
 
-**What this tells us:**
+Current kernel store has ~4 sample kernels:
+- Artifact comparison
+- Summarization
+- Analysis (partial)
 
-1. ✅ Kernel routing correctly matches relevant tasks
-2. ✅ Fallback to generation works (no false negatives)
-3. ✅ Latency advantage from skipping retrieval/re-generation
-4. ✅ Even without model calls, the routing mechanism provides measurable benefit
+Real-world deployment would need:
+- Hundreds of kernels across task families
+- Kernel learning from successful executions
+- Cross-model kernel transfer
 
-**Limitations:**
+### 4.4 What Would Be Needed for Real Eval
 
-1. No actual model generation (routing-only test)
-2. Success metric is routing-based, not output quality
-3. Baseline success rates are simulated (40-60% typical for tool-use tasks)
+1. **Actual ToolBench run:**
+   - Download ToolBench dataset
+   - Run with real model (API or local)
+   - Execute tool calls (not just routing)
+   - Measure success/failure with ground truth
 
-### 4.4 Real-world Deployment
+2. **Baseline implementations:**
+   - Vanilla: Direct generation without routing
+   - RAG: Embedding-based retrieval + generation
+   - Both with same model and tools
 
-With actual model calls, expected behavior:
-- Kernel hits: Reuse verified patterns, skip generation
-- Generate mode: Standard model call with prompt
-- Overall: Similar success to baseline, but faster and more consistent
+3. **Metrics:**
+   - Task success rate (tool execution success)
+   - Output quality (ground truth comparison)
+   - Latency (actual generation time)
+   - Cost (API calls / tokens)
 
-The key advantage is **consistency** — same task → same kernel → same output pattern, verified against postconditions.
+4. **Statistical significance:**
+   - Multiple runs per task
+   - Confidence intervals
+   - Statistical tests (t-test, Mann-Whitney)
+
+**Current status: Prototype with working routing, but no real evaluation data.**
 
 ## 5. Conclusion
 

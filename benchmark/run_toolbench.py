@@ -1,10 +1,23 @@
-"""ToolBench benchmark runner for KernelWeave.
+"""
+ToolBench benchmark runner for KernelWeave.
 
-Downloads ToolBench dataset, runs tasks with KernelWeave routing,
-compares against baselines, produces real numbers.
+STATUS: PROTOTYPE - Baselines are SIMULATED, not real.
 
-Usage:
-    python benchmark/run_toolbench.py --tasks 20 --output results.json
+What's real:
+- KernelWeave routing (actual matching and fallback)
+- Kernel hit rate (actual routing decisions)
+
+What's NOT real:
+- Baseline success rates (random simulation)
+- Baseline latencies (random simulation)
+- No actual model generation
+- No actual tool execution
+
+To run a real benchmark, you would need:
+1. Actual ToolBench dataset
+2. Real model backend (OpenAI, Anthropic, local)
+3. Tool execution environment
+4. Ground truth evaluation
 """
 from __future__ import annotations
 
