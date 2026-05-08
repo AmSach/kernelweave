@@ -3,10 +3,12 @@ pyproject.toml
 kernelweave/__init__.py
 kernelweave/calibration.py
 kernelweave/cli.py
+kernelweave/cli_rc1.py
 kernelweave/compiler.py
 kernelweave/constrained.py
 kernelweave/kernel.py
 kernelweave/metrics.py
+kernelweave/model.py
 kernelweave/runtime.py
 kernelweave.egg-info/PKG-INFO
 kernelweave.egg-info/SOURCES.txt
@@ -40,10 +42,14 @@ kernelweave/llm/providers.py
 kernelweave/llm/skills.py
 kernelweave/llm/tokenizer.py
 kernelweave/llm/train.py
+kernelweave/memory/__init__.py
+kernelweave/promotion/__init__.py
 kernelweave/trace/__init__.py
 kernelweave/trace/capture.py
 kernelweave/trace/events.py
 kernelweave/trace/instrument.py
+kernelweave/training/__init__.py
+kernelweave/verifier/__init__.py
 tests/test_compose.py
 tests/test_constrained_grammar.py
 tests/test_failure.py

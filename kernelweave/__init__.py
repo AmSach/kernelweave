@@ -66,6 +66,45 @@ from .compose import (
     CompositionBuilder,
 )
 
+# REVOLUTIONARY: Training
+from .training import (
+    ExecutionTrace as TrainingTrace,
+    TraceCollector,
+    TraceTrainer,
+    TrainingConfig as TrainingPipelineConfig,
+)
+
+# REVOLUTIONARY: Verifier
+from .verifier import (
+    VerifierHierarchy,
+    VerificationResult,
+    HeuristicVerifier,
+    ToolExecutionVerifier,
+    LLMJudgeVerifier,
+    verify_output,
+)
+
+# REVOLUTIONARY: Memory
+from .memory import (
+    KernelMemory,
+    MemoryExecutionResult,
+)
+
+# REVOLUTIONARY: Promotion
+from .promotion import (
+    AutoPromoter,
+    PromotionConfig,
+    PromotedKernel,
+)
+
+# REVOLUTIONARY: Model
+from .model import (
+    KernelNativeModel,
+    KernelNativeConfig,
+    ExecutionResult,
+    create_model,
+)
+
 __all__ = [
     "Kernel",
     "KernelStatus",
@@ -131,4 +170,25 @@ __all__ = [
     "AnthropicBackend",
     "backend_from_preset",
     "run_preset",
+    
+    # REVOLUTIONARY
+    "TrainingTrace",
+    "TraceCollector",
+    "TraceTrainer",
+    "TrainingPipelineConfig",
+    "VerifierHierarchy",
+    "VerificationResult",
+    "HeuristicVerifier",
+    "ToolExecutionVerifier",
+    "LLMJudgeVerifier",
+    "verify_output",
+    "KernelMemory",
+    "MemoryExecutionResult",
+    "AutoPromoter",
+    "PromotionConfig",
+    "PromotedKernel",
+    "KernelNativeModel",
+    "KernelNativeConfig",
+    "ExecutionResult",
+    "create_model",
 ]
