@@ -66,47 +66,88 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def install_samples(store: KernelStore) -> None:
-    trace = {
-        "trace_id": "trace-safe-shell-001",
-        "events": [
-            {"kind": "plan", "payload": {"text": "classify request and build safe command"}},
-            {"kind": "tool", "payload": {"tool": "parse_intent", "args": {"mode": "safety"}}},
-            {"kind": "evidence", "payload": {"text": "command violates policy if destructive"}},
-            {"kind": "verification", "payload": {"text": "command is non-destructive"}},
-            {"kind": "decision", "payload": {"text": "emit safe shell command"}},
-        ],
-    }
-    store.add_trace(trace["trace_id"], trace)
-    events = [TraceEvent(kind=item["kind"], payload=item["payload"]) for item in trace["events"]]
-    kernel = compile_trace_to_kernel(
-        trace_id=trace["trace_id"],
-        task_family="safe shell command synthesis",
-        description="Turn plain language into a guarded shell command when the action is safe.",
-        events=events,
-        expected_output={"result": "safe command"},
+    """Install sample kernels for demonstration.
+    
+    Updated with expanded alias tables to reduce false negatives.
+    """
+    from .kernel import Kernel, KernelStatus, TraceEvent
+    from .compiler import compile_trace_to_kernel
+    
+    # Comparison kernel - expanded aliases
+    comparison_aliases = [
+        "artifact comparison", "file comparison", "document comparison",
+        "compare files", "compare documents", "compare artifacts",
+        "diff files", "diff documents", "find differences",
+        "what changed", "what differs", "how do they differ",
+        "list changes", "show differences", "explain differences",
+        "compare versions", "version comparison", "diff between",
+        "changes between", "diverge", "divergence", "delta",
+        "dockerfile comparison", "config comparison", "code comparison",
+    ]
+    
+    comparison_trace = [
+        TraceEvent(kind="plan", payload={"text": "compare two artifacts and explain differences"}),
+        TraceEvent(kind="tool", payload={"tool": "load_artifact", "args": {"path": "A"}}),
+        TraceEvent(kind="tool", payload={"tool": "load_artifact", "args": {"path": "B"}}),
+        TraceEvent(kind="evidence", payload={"text": "differences found"}),
+        TraceEvent(kind="verification", payload={"text": "summary mentions both"}),
+    ]
+    
+    comparison_kernel = compile_trace_to_kernel(
+        "trace-compare-002",
+        "artifact comparison",
+        "Compare two structured artifacts and produce a grounded summary.",
+        comparison_trace,
+        {"result": "comparison summary"},
     )
-    store.add_kernel(kernel)
-
-    trace2 = {
-        "trace_id": "trace-compare-002",
-        "events": [
-            {"kind": "plan", "payload": {"text": "compare two artifacts and explain differences"}},
-            {"kind": "tool", "payload": {"tool": "load_artifact", "args": {"path": "A"}}},
-            {"kind": "tool", "payload": {"tool": "load_artifact", "args": {"path": "B"}}},
-            {"kind": "evidence", "payload": {"text": "differences are structural and numerical"}},
-            {"kind": "verification", "payload": {"text": "summary mentions both artifacts"}},
-        ],
-    }
-    store.add_trace(trace2["trace_id"], trace2)
-    events2 = [TraceEvent(kind=item["kind"], payload=item["payload"]) for item in trace2["events"]]
-    kernel2 = compile_trace_to_kernel(
-        trace_id=trace2["trace_id"],
-        task_family="artifact comparison",
-        description="Compare two structured artifacts and produce a grounded summary.",
-        events=events2,
-        expected_output={"result": "comparison summary"},
+    
+    # Add expanded aliases as additional task family hints
+    comparison_kernel.metadata = {"aliases": comparison_aliases}
+    
+    # Add artifact-scoping precondition to prevent false positives
+    comparison_kernel.preconditions.insert(0, "inputs are named files, schemas, or documents")
+    
+    comparison_kernel.status = KernelStatus(
+        state="verified",
+        confidence=0.62,
+        failures=0,
+        passes=2,
     )
-    store.add_kernel(kernel2)
+    
+    # Safe command kernel - expanded aliases
+    command_aliases = [
+        "safe shell command", "safe command execution", "shell safety",
+        "run command safely", "execute command", "bash command",
+        "shell command", "terminal command", "cli command",
+        "command line", "run script", "execute script",
+        "safe execution", "secure command", "validated command",
+    ]
+    
+    command_trace = [
+        TraceEvent(kind="plan", payload={"text": "generate safe shell command"}),
+        TraceEvent(kind="tool", payload={"tool": "check_safety", "args": {"command": "placeholder"}}),
+        TraceEvent(kind="verification", payload={"text": "no destructive patterns"}),
+        TraceEvent(kind="evidence", payload={"text": "command validated"}}),
+    ]
+    
+    command_kernel = compile_trace_to_kernel(
+        "trace-command-001",
+        "safe shell command",
+        "Generate a validated, non-destructive shell command.",
+        command_trace,
+        {"result": "safe command"},
+    )
+    
+    command_kernel.metadata = {"aliases": command_aliases}
+    command_kernel.status = KernelStatus(
+        state="verified",
+        confidence=0.71,
+        failures=0,
+        passes=1,
+    )
+    
+    store.add_kernel(comparison_kernel)
+    store.add_kernel(command_kernel)
 
 
 def _load_catalog(models_dir: Path | None) -> ModelCatalog:

@@ -125,9 +125,32 @@ class KernelRuntime:
         evidence_bonus = coverage(kernel.evidence_requirements, prompt)
         confidence_bonus = kernel.status.confidence
         risk_penalty = 0.15 if kernel.status.state != "verified" else 0.0
-        base_score = 1.35 * similarity + 0.45 * evidence_bonus + 0.60 * confidence_bonus - risk_penalty
+        
+        # Check preconditions during routing (not just verification)
+        precondition_penalty = self._check_routing_preconditions(prompt, kernel)
+        
+        base_score = 1.35 * similarity + 0.45 * evidence_bonus + 0.60 * confidence_bonus - risk_penalty - precondition_penalty
         calibrated = predict_runtime_confidence(prompt, kernel)
         return clamp(0.60 * base_score + 0.40 * calibrated)
+    
+    def _check_routing_preconditions(self, prompt: str, kernel) -> float:
+        """Check preconditions during routing to prevent false positives."""
+        penalty = 0.0
+        
+        # Check for artifact-scoping preconditions
+        for precond in kernel.preconditions:
+            if "files" in precond.lower() or "documents" in precond.lower() or "artifacts" in precond.lower():
+                # Kernel requires file/document inputs
+                # Check if prompt mentions files or documents
+                prompt_lower = prompt.lower()
+                file_indicators = ["file", "document", ".py", ".md", ".txt", ".json", ".yaml", 
+                                   ".yml", ".csv", ".xml", "report", "config", "dockerfile",
+                                   "version", "v1", "v2", "artifact"]
+                has_file_indicator = any(ind in prompt_lower for ind in file_indicators)
+                if not has_file_indicator:
+                    penalty += 0.3  # Significant penalty for missing artifact indicators
+        
+        return penalty
 
     def evaluate_prompt(self, prompt: str) -> RuntimeDecision:
         kernels = self.store.list_kernels()

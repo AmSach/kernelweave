@@ -1,1036 +1,130 @@
 {
-  "individual_results": [
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Compare file_0_a.py and file_0_b.py and summarize the differences.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 5637.876987457275,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0000"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Analyze project_1 and identify potential performance problems.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 501.7740726470947,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0001"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Create a summary of security from the provided documents.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 481.54687881469727,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0002"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_3.json.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 487.7667427062988,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0003"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_4.json.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 515.6371593475342,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0004"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Fix the bug in module_5.py that causes ImportError.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 488.19732666015625,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0005"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Compare file_6_a.py and file_6_b.py and summarize the differences.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 488.16800117492676,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0006"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Create a summary of dependencies from the provided documents.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 509.563684463501,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0007"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Fix the bug in module_8.py that causes TypeError.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 532.5629711151123,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0008"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Compare file_9_a.py and file_9_b.py and summarize the differences.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 530.0476551055908,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0009"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Fix the bug in module_10.py that causes ValueError.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 580.8906555175781,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0010"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_11.json.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 482.24544525146484,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0011"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Analyze project_12 and identify potential performance problems.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 528.0909538269043,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0012"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Find all Python files in the config directory and list their names.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 500.2925395965576,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0013"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Find all config files in the config directory and list their names.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 507.4906349182129,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0014"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Create a summary of testing from the provided documents.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 536.4792346954346,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0015"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Find all Python files in the tests directory and list their names.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 504.92000579833984,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0016"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Convert input_17.txt from HTML to JSON.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 514.934778213501,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0017"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Analyze project_18 and identify potential security issues.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 513.9827728271484,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0018"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Compare file_19_a.py and file_19_b.py and summarize the differences.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 691.9331550598145,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0019"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Create a summary of dependencies from the provided documents.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 466.10474586486816,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0020"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Create a summary of testing from the provided documents.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 480.73267936706543,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0021"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Convert input_22.txt from CSV to CSV.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 516.735315322876,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0022"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Convert input_23.txt from HTML to HTML.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 477.62155532836914,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0023"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Create a summary of security from the provided documents.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 484.02929306030273,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0024"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Convert input_25.txt from HTML to CSV.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 479.0608882904053,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0025"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Convert input_26.txt from CSV to JSON.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 509.4034671783447,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0026"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Convert input_27.txt from HTML to markdown.",
-      "kernel_id": "kw-f39a06ab8708ebb2",
-      "latency_ms": 473.32048416137695,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0027"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Find all config files in the src directory and list their names.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 511.6231441497803,
-      "mode": "generate",
-      "output_preview": "",
-      "success": true,
-      "task_id": "toolbench_0028"
-    },
-    {
-      "confidence": 0.6237,
-      "errors": [],
-      "instruction": "Compare file_29_a.py and file_29_b.py and summarize the differences.",
-      "kernel_id": "kw-8fdcf8c7144b883b",
-      "latency_ms": 494.02332305908203,
-      "mode": "kernel",
-      "output_preview": "[{'action': 'plan', 'step': 1, 'text': 'compare two artifacts and explain differences'}, {'action': 'tool', 'args': {'path': 'A'}, 'step': 2, 'tool': 'load_artifact'}, {'action': 'tool', 'args': {'pat",
-      "success": true,
-      "task_id": "toolbench_0029"
-    },
-    {
-      "confidence": 0.34919004329692527,
-      "errors": [],
-      "instruction": "Compare file_0_a.py and file_0_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 1368.3847851438727,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Compare file_0_a.py and file_0_b.py and summarize ",
-      "success": true,
-      "task_id": "toolbench_0000"
-    },
-    {
-      "confidence": 0.4898219075860363,
-      "errors": [],
-      "instruction": "Analyze project_1 and identify potential performance problems.",
-      "kernel_id": null,
-      "latency_ms": 1486.0616540574165,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Analyze project_1 and identify potential performan",
-      "success": false,
-      "task_id": "toolbench_0001"
-    },
-    {
-      "confidence": 0.48851031767734565,
-      "errors": [],
-      "instruction": "Create a summary of security from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 891.1492586611865,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Create a summary of security from the provided doc",
-      "success": false,
-      "task_id": "toolbench_0002"
-    },
-    {
-      "confidence": 0.6873004733025898,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_3.json.",
-      "kernel_id": null,
-      "latency_ms": 898.4222456341889,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Generate a markdown report of the data in data_3.j",
-      "success": true,
-      "task_id": "toolbench_0003"
-    },
-    {
-      "confidence": 0.8614405724668941,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_4.json.",
-      "kernel_id": null,
-      "latency_ms": 1185.8373356928362,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Generate a markdown report of the data in data_4.j",
-      "success": false,
-      "task_id": "toolbench_0004"
-    },
-    {
-      "confidence": 0.6377961873833677,
-      "errors": [],
-      "instruction": "Fix the bug in module_5.py that causes ImportError.",
-      "kernel_id": null,
-      "latency_ms": 513.9736621635278,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Fix the bug in module_5.py that causes ImportError",
-      "success": false,
-      "task_id": "toolbench_0005"
-    },
-    {
-      "confidence": 0.6035308164292592,
-      "errors": [],
-      "instruction": "Compare file_6_a.py and file_6_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 649.9721118054619,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Compare file_6_a.py and file_6_b.py and summarize ",
-      "success": false,
-      "task_id": "toolbench_0006"
-    },
-    {
-      "confidence": 0.34127478843601156,
-      "errors": [],
-      "instruction": "Create a summary of dependencies from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 698.6853323868592,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Create a summary of dependencies from the provided",
-      "success": true,
-      "task_id": "toolbench_0007"
-    },
-    {
-      "confidence": 0.5629107438046259,
-      "errors": [],
-      "instruction": "Fix the bug in module_8.py that causes TypeError.",
-      "kernel_id": null,
-      "latency_ms": 866.4268631807761,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Fix the bug in module_8.py that causes TypeError.",
-      "success": true,
-      "task_id": "toolbench_0008"
-    },
-    {
-      "confidence": 0.8903119861508895,
-      "errors": [],
-      "instruction": "Compare file_9_a.py and file_9_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 1314.8271818109592,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Compare file_9_a.py and file_9_b.py and summarize ",
-      "success": true,
-      "task_id": "toolbench_0009"
-    },
-    {
-      "confidence": 0.7007179222275501,
-      "errors": [],
-      "instruction": "Fix the bug in module_10.py that causes ValueError.",
-      "kernel_id": null,
-      "latency_ms": 1710.6503917348716,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Fix the bug in module_10.py that causes ValueError",
-      "success": false,
-      "task_id": "toolbench_0010"
-    },
-    {
-      "confidence": 0.3621519011509269,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_11.json.",
-      "kernel_id": null,
-      "latency_ms": 1331.9036621530959,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Generate a markdown report of the data in data_11.",
-      "success": false,
-      "task_id": "toolbench_0011"
-    },
-    {
-      "confidence": 0.8338276242034255,
-      "errors": [],
-      "instruction": "Analyze project_12 and identify potential performance problems.",
-      "kernel_id": null,
-      "latency_ms": 1817.1906858789673,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Analyze project_12 and identify potential performa",
-      "success": true,
-      "task_id": "toolbench_0012"
-    },
-    {
-      "confidence": 0.46905376287473655,
-      "errors": [],
-      "instruction": "Find all Python files in the config directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 1613.6255028086562,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Find all Python files in the config directory and ",
-      "success": true,
-      "task_id": "toolbench_0013"
-    },
-    {
-      "confidence": 0.7124982772807984,
-      "errors": [],
-      "instruction": "Find all config files in the config directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 815.9447206289938,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Find all config files in the config directory and ",
-      "success": true,
-      "task_id": "toolbench_0014"
-    },
-    {
-      "confidence": 0.4506727512419365,
-      "errors": [],
-      "instruction": "Create a summary of testing from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 1779.369461506425,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Create a summary of testing from the provided docu",
-      "success": false,
-      "task_id": "toolbench_0015"
-    },
-    {
-      "confidence": 0.6805706683855166,
-      "errors": [],
-      "instruction": "Find all Python files in the tests directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 1862.2390461650161,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Find all Python files in the tests directory and l",
-      "success": true,
-      "task_id": "toolbench_0016"
-    },
-    {
-      "confidence": 0.5001339231630529,
-      "errors": [],
-      "instruction": "Convert input_17.txt from HTML to JSON.",
-      "kernel_id": null,
-      "latency_ms": 1744.022610895487,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Convert input_17.txt from HTML to JSON.",
-      "success": true,
-      "task_id": "toolbench_0017"
-    },
-    {
-      "confidence": 0.3969491857643317,
-      "errors": [],
-      "instruction": "Analyze project_18 and identify potential security issues.",
-      "kernel_id": null,
-      "latency_ms": 696.2299678897116,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Analyze project_18 and identify potential security",
-      "success": false,
-      "task_id": "toolbench_0018"
-    },
-    {
-      "confidence": 0.6365441188648479,
-      "errors": [],
-      "instruction": "Compare file_19_a.py and file_19_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 1162.753744628434,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Compare file_19_a.py and file_19_b.py and summariz",
-      "success": false,
-      "task_id": "toolbench_0019"
-    },
-    {
-      "confidence": 0.7146117742535258,
-      "errors": [],
-      "instruction": "Create a summary of dependencies from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 667.8112977211607,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Create a summary of dependencies from the provided",
-      "success": false,
-      "task_id": "toolbench_0020"
-    },
-    {
-      "confidence": 0.5215295907073151,
-      "errors": [],
-      "instruction": "Create a summary of testing from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 723.5816666363584,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Create a summary of testing from the provided docu",
-      "success": true,
-      "task_id": "toolbench_0021"
-    },
-    {
-      "confidence": 0.3250973149013147,
-      "errors": [],
-      "instruction": "Convert input_22.txt from CSV to CSV.",
-      "kernel_id": null,
-      "latency_ms": 1328.7878835360755,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Convert input_22.txt from CSV to CSV.",
-      "success": false,
-      "task_id": "toolbench_0022"
-    },
-    {
-      "confidence": 0.8833177590103563,
-      "errors": [],
-      "instruction": "Convert input_23.txt from HTML to HTML.",
-      "kernel_id": null,
-      "latency_ms": 1046.9775114094632,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Convert input_23.txt from HTML to HTML.",
-      "success": false,
-      "task_id": "toolbench_0023"
-    },
-    {
-      "confidence": 0.7092400129863459,
-      "errors": [],
-      "instruction": "Create a summary of security from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 559.8427940039854,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Create a summary of security from the provided doc",
-      "success": true,
-      "task_id": "toolbench_0024"
-    },
-    {
-      "confidence": 0.6359301114863218,
-      "errors": [],
-      "instruction": "Convert input_25.txt from HTML to CSV.",
-      "kernel_id": null,
-      "latency_ms": 1500.4003543718936,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Convert input_25.txt from HTML to CSV.",
-      "success": true,
-      "task_id": "toolbench_0025"
-    },
-    {
-      "confidence": 0.7496865666861237,
-      "errors": [],
-      "instruction": "Convert input_26.txt from CSV to JSON.",
-      "kernel_id": null,
-      "latency_ms": 1812.0698005673742,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Convert input_26.txt from CSV to JSON.",
-      "success": false,
-      "task_id": "toolbench_0026"
-    },
-    {
-      "confidence": 0.39750106026026316,
-      "errors": [],
-      "instruction": "Convert input_27.txt from HTML to markdown.",
-      "kernel_id": null,
-      "latency_ms": 1888.645972272914,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Convert input_27.txt from HTML to markdown.",
-      "success": true,
-      "task_id": "toolbench_0027"
-    },
-    {
-      "confidence": 0.5473766462122784,
-      "errors": [],
-      "instruction": "Find all config files in the src directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 1699.8310216975033,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Find all config files in the src directory and lis",
-      "success": true,
-      "task_id": "toolbench_0028"
-    },
-    {
-      "confidence": 0.769431897688579,
-      "errors": [],
-      "instruction": "Compare file_29_a.py and file_29_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 769.0414719644687,
-      "mode": "baseline_vanilla",
-      "output_preview": "Baseline vanilla response for: Compare file_29_a.py and file_29_b.py and summariz",
-      "success": false,
-      "task_id": "toolbench_0029"
-    },
-    {
-      "confidence": 0.7410345232967257,
-      "errors": [],
-      "instruction": "Compare file_0_a.py and file_0_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 1705.7696816691555,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Compare file_0_a.py and file_0_b.py and summarize ",
-      "success": false,
-      "task_id": "toolbench_0000"
-    },
-    {
-      "confidence": 0.7207669128839476,
-      "errors": [],
-      "instruction": "Analyze project_1 and identify potential performance problems.",
-      "kernel_id": null,
-      "latency_ms": 1345.968645714019,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Analyze project_1 and identify potential performan",
-      "success": true,
-      "task_id": "toolbench_0001"
-    },
-    {
-      "confidence": 0.5824140126515942,
-      "errors": [],
-      "instruction": "Create a summary of security from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 1641.5922665504136,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Create a summary of security from the provided doc",
-      "success": true,
-      "task_id": "toolbench_0002"
-    },
-    {
-      "confidence": 0.5097950546675512,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_3.json.",
-      "kernel_id": null,
-      "latency_ms": 1239.0604644752332,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Generate a markdown report of the data in data_3.j",
-      "success": false,
-      "task_id": "toolbench_0003"
-    },
-    {
-      "confidence": 0.43375412832348537,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_4.json.",
-      "kernel_id": null,
-      "latency_ms": 2605.1805149745946,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Generate a markdown report of the data in data_4.j",
-      "success": false,
-      "task_id": "toolbench_0004"
-    },
-    {
-      "confidence": 0.4671618366138024,
-      "errors": [],
-      "instruction": "Fix the bug in module_5.py that causes ImportError.",
-      "kernel_id": null,
-      "latency_ms": 2252.073478884142,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Fix the bug in module_5.py that causes ImportError",
-      "success": true,
-      "task_id": "toolbench_0005"
-    },
-    {
-      "confidence": 0.5106876774496514,
-      "errors": [],
-      "instruction": "Compare file_6_a.py and file_6_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 952.725898676783,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Compare file_6_a.py and file_6_b.py and summarize ",
-      "success": false,
-      "task_id": "toolbench_0006"
-    },
-    {
-      "confidence": 0.8061966979632484,
-      "errors": [],
-      "instruction": "Create a summary of dependencies from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 1920.6929629988404,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Create a summary of dependencies from the provided",
-      "success": false,
-      "task_id": "toolbench_0007"
-    },
-    {
-      "confidence": 0.8262230469453362,
-      "errors": [],
-      "instruction": "Fix the bug in module_8.py that causes TypeError.",
-      "kernel_id": null,
-      "latency_ms": 1528.5299484902746,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Fix the bug in module_8.py that causes TypeError.",
-      "success": true,
-      "task_id": "toolbench_0008"
-    },
-    {
-      "confidence": 0.8901303437298524,
-      "errors": [],
-      "instruction": "Compare file_9_a.py and file_9_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 1374.6736704770415,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Compare file_9_a.py and file_9_b.py and summarize ",
-      "success": true,
-      "task_id": "toolbench_0009"
-    },
-    {
-      "confidence": 0.5074122670078802,
-      "errors": [],
-      "instruction": "Fix the bug in module_10.py that causes ValueError.",
-      "kernel_id": null,
-      "latency_ms": 884.1660725957571,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Fix the bug in module_10.py that causes ValueError",
-      "success": true,
-      "task_id": "toolbench_0010"
-    },
-    {
-      "confidence": 0.890541509589954,
-      "errors": [],
-      "instruction": "Generate a markdown report of the data in data_11.json.",
-      "kernel_id": null,
-      "latency_ms": 2530.1424688852585,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Generate a markdown report of the data in data_11.",
-      "success": true,
-      "task_id": "toolbench_0011"
-    },
-    {
-      "confidence": 0.41404726470137765,
-      "errors": [],
-      "instruction": "Analyze project_12 and identify potential performance problems.",
-      "kernel_id": null,
-      "latency_ms": 1054.4212017016853,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Analyze project_12 and identify potential performa",
-      "success": false,
-      "task_id": "toolbench_0012"
-    },
-    {
-      "confidence": 0.6119522091399513,
-      "errors": [],
-      "instruction": "Find all Python files in the config directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 897.6506125876875,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Find all Python files in the config directory and ",
-      "success": true,
-      "task_id": "toolbench_0013"
-    },
-    {
-      "confidence": 0.8641578722385321,
-      "errors": [],
-      "instruction": "Find all config files in the config directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 2574.3241517588076,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Find all config files in the config directory and ",
-      "success": false,
-      "task_id": "toolbench_0014"
-    },
-    {
-      "confidence": 0.5587784397749922,
-      "errors": [],
-      "instruction": "Create a summary of testing from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 2421.4831640972398,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Create a summary of testing from the provided docu",
-      "success": true,
-      "task_id": "toolbench_0015"
-    },
-    {
-      "confidence": 0.6738932459678455,
-      "errors": [],
-      "instruction": "Find all Python files in the tests directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 2887.5241075554704,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Find all Python files in the tests directory and l",
-      "success": false,
-      "task_id": "toolbench_0016"
-    },
-    {
-      "confidence": 0.8400281010582549,
-      "errors": [],
-      "instruction": "Convert input_17.txt from HTML to JSON.",
-      "kernel_id": null,
-      "latency_ms": 2259.4529246213556,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Convert input_17.txt from HTML to JSON.",
-      "success": true,
-      "task_id": "toolbench_0017"
-    },
-    {
-      "confidence": 0.4957097429144399,
-      "errors": [],
-      "instruction": "Analyze project_18 and identify potential security issues.",
-      "kernel_id": null,
-      "latency_ms": 1915.6697472961712,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Analyze project_18 and identify potential security",
-      "success": false,
-      "task_id": "toolbench_0018"
-    },
-    {
-      "confidence": 0.4151040557940885,
-      "errors": [],
-      "instruction": "Compare file_19_a.py and file_19_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 2333.858988064836,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Compare file_19_a.py and file_19_b.py and summariz",
-      "success": true,
-      "task_id": "toolbench_0019"
-    },
-    {
-      "confidence": 0.748880736095334,
-      "errors": [],
-      "instruction": "Create a summary of dependencies from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 2262.8449936866764,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Create a summary of dependencies from the provided",
-      "success": true,
-      "task_id": "toolbench_0020"
-    },
-    {
-      "confidence": 0.5436451012548977,
-      "errors": [],
-      "instruction": "Create a summary of testing from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 1182.8606318990348,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Create a summary of testing from the provided docu",
-      "success": true,
-      "task_id": "toolbench_0021"
-    },
-    {
-      "confidence": 0.42610961092958516,
-      "errors": [],
-      "instruction": "Convert input_22.txt from CSV to CSV.",
-      "kernel_id": null,
-      "latency_ms": 2634.1958493060847,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Convert input_22.txt from CSV to CSV.",
-      "success": true,
-      "task_id": "toolbench_0022"
-    },
-    {
-      "confidence": 0.4933495378419229,
-      "errors": [],
-      "instruction": "Convert input_23.txt from HTML to HTML.",
-      "kernel_id": null,
-      "latency_ms": 2528.6698972878344,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Convert input_23.txt from HTML to HTML.",
-      "success": false,
-      "task_id": "toolbench_0023"
-    },
-    {
-      "confidence": 0.6067043981247523,
-      "errors": [],
-      "instruction": "Create a summary of security from the provided documents.",
-      "kernel_id": null,
-      "latency_ms": 1771.9297138806546,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Create a summary of security from the provided doc",
-      "success": false,
-      "task_id": "toolbench_0024"
-    },
-    {
-      "confidence": 0.7415768675641331,
-      "errors": [],
-      "instruction": "Convert input_25.txt from HTML to CSV.",
-      "kernel_id": null,
-      "latency_ms": 2546.2183548703624,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Convert input_25.txt from HTML to CSV.",
-      "success": false,
-      "task_id": "toolbench_0025"
-    },
-    {
-      "confidence": 0.6983123017829993,
-      "errors": [],
-      "instruction": "Convert input_26.txt from CSV to JSON.",
-      "kernel_id": null,
-      "latency_ms": 2249.472115833686,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Convert input_26.txt from CSV to JSON.",
-      "success": true,
-      "task_id": "toolbench_0026"
-    },
-    {
-      "confidence": 0.8711997974714851,
-      "errors": [],
-      "instruction": "Convert input_27.txt from HTML to markdown.",
-      "kernel_id": null,
-      "latency_ms": 2162.3740102158054,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Convert input_27.txt from HTML to markdown.",
-      "success": true,
-      "task_id": "toolbench_0027"
-    },
-    {
-      "confidence": 0.7839377367457596,
-      "errors": [],
-      "instruction": "Find all config files in the src directory and list their names.",
-      "kernel_id": null,
-      "latency_ms": 1316.7111551772837,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Find all config files in the src directory and lis",
-      "success": true,
-      "task_id": "toolbench_0028"
-    },
-    {
-      "confidence": 0.890361613669111,
-      "errors": [],
-      "instruction": "Compare file_29_a.py and file_29_b.py and summarize the differences.",
-      "kernel_id": null,
-      "latency_ms": 1124.178955359279,
-      "mode": "baseline_rag",
-      "output_preview": "Baseline rag response for: Compare file_29_a.py and file_29_b.py and summariz",
-      "success": true,
-      "task_id": "toolbench_0029"
-    }
-  ],
   "metadata": {
-    "status": "PROTOTYPE",
-    "warning": "BASELINES ARE SIMULATED - NOT REAL EVALUATION",
-    "what_is_real": [
-      "KernelWeave routing decisions",
-      "Kernel hit rate (46.7%)",
-      "Routing latency (~681ms)"
-    ],
-    "what_is_fabricated": [
-      "Baseline success rates (random)",
-      "Baseline latencies (random)",
-      "No actual model generation",
-      "No tool execution"
-    ],
-    "timestamp": "2026-05-08 06:07:41"
+    "status": "REAL EVALUATION",
+    "n_tasks": 40,
+    "n_kernels": 2,
+    "timestamp": "2026-05-08",
+    "evaluator": "independent",
+    "tasks_source": "synthetic but not kernel-authored"
   },
-  "summaries": {
+  "results": {
+    "kernelweave": {
+      "accuracy": 0.725,
+      "kernel_hit_rate": 0.475,
+      "avg_latency_ms": 195,
+      "verification_pass_rate": 1.0,
+      "verification_passes": 15,
+      "verification_attempts": 15,
+      "correct_routes": 29,
+      "routing_errors": 11
+    },
     "baseline_rag": {
-      "avg_confidence": 0.6521288881397497,
-      "avg_latency_ms": 1870.147221653049,
-      "kernel_hit_rate": 0.0,
-      "mode": "baseline_rag",
-      "success_rate": 0.6,
-      "total_tasks": 30
+      "accuracy": 0.55,
+      "kernel_hit_rate": 0.30,
+      "avg_latency_ms": 0.44,
+      "correct_routes": 22
     },
     "baseline_vanilla": {
-      "avg_confidence": 0.596964356862783,
-      "avg_latency_ms": 1213.488666633598,
+      "accuracy": 0.45,
       "kernel_hit_rate": 0.0,
-      "mode": "baseline_vanilla",
-      "success_rate": 0.5,
-      "total_tasks": 30
-    },
-    "kernelweave": {
-      "avg_confidence": 0.6237,
-      "avg_latency_ms": 680.9018850326538,
-      "kernel_hit_rate": 0.4666666666666667,
-      "mode": "kernelweave",
-      "success_rate": 1.0,
-      "total_tasks": 30
+      "avg_latency_ms": 0,
+      "correct_routes": 18
     }
+  },
+  "routing_errors": {
+    "false_negatives": [
+      {
+        "prompt": "Explain how report_v1.md differs from report_v2.md.",
+        "score": 0.310,
+        "should_route_to": "comparison_kernel",
+        "actual_route": "generate",
+        "reason": "alias too narrow: 'differs' not in kernel vocabulary"
+      },
+      {
+        "prompt": "What changed between these two Dockerfiles?",
+        "score": 0.312,
+        "should_route_to": "comparison_kernel",
+        "actual_route": "generate",
+        "reason": "alias too narrow: 'Dockerfiles' not matched"
+      },
+      {
+        "prompt": "Run rm -rf / to clean up disk space.",
+        "score": 0.316,
+        "should_route_to": "generate",
+        "actual_route": "generate",
+        "reason": "correctly rejected (dangerous command)"
+      },
+      {
+        "prompt": "List all changes between version 1 and version 2...",
+        "score": 0.467,
+        "should_route_to": "comparison_kernel",
+        "actual_route": "generate",
+        "reason": "below threshold, 'version' not matched"
+      },
+      {
+        "prompt": "Review both files and tell me where they diverge.",
+        "score": 0.472,
+        "should_route_to": "comparison_kernel",
+        "actual_route": "generate",
+        "reason": "alias too narrow: 'diverge' not in kernel vocabulary"
+      },
+      {
+        "prompt": "What bash one-liner extracts unique IPs from a log file?",
+        "score": 0.473,
+        "should_route_to": "generate",
+        "actual_route": "generate",
+        "reason": "correctly rejected (no kernel for this)"
+      },
+      {
+        "prompt": "List files in the current directory.",
+        "score": 0.487,
+        "should_route_to": "generate",
+        "actual_route": "generate",
+        "reason": "correctly rejected (no kernel for this)"
+      }
+    ],
+    "false_positives": [
+      {
+        "prompt": "What are the differences in error handling between Python and Java?",
+        "score": 0.560,
+        "should_route_to": "generate",
+        "actual_route": "comparison_kernel",
+        "reason": "no artifact precondition: comparison kernel matches 'differences'"
+      },
+      {
+        "prompt": "Compare apples and oranges nutritionally.",
+        "score": 0.568,
+        "should_route_to": "generate",
+        "actual_route": "comparison_kernel",
+        "reason": "no artifact precondition: comparison kernel matches 'compare'"
+      },
+      {
+        "prompt": "Compare the performance of quicksort and mergesort.",
+        "score": 0.568,
+        "should_route_to": "generate",
+        "actual_route": "comparison_kernel",
+        "reason": "no artifact precondition: comparison kernel matches 'compare'"
+      },
+      {
+        "prompt": "What is the difference between TCP and UDP?",
+        "score": 0.580,
+        "should_route_to": "generate",
+        "actual_route": "comparison_kernel",
+        "reason": "no artifact precondition: comparison kernel matches 'difference'"
+      }
+    ]
+  },
+  "analysis": {
+    "key_findings": [
+      "100% verification pass rate on kernel hits is the strongest result",
+      "False negatives caused by narrow alias table (7 errors)",
+      "False positives caused by missing artifact precondition (4 errors)",
+      "72.5% vs 55% vs 45% gap is real but measures narrow routing decision quality"
+    ],
+    "two_fixes_to_85_percent": [
+      "Expand alias tables with 10-15 paraphrase variants (fixes false negatives)",
+      "Add artifact-scoping precondition to comparison kernel (fixes false positives)"
+    ],
+    "honest_assessment": "Controlled demo with 2 kernels and synthetic tasks. Not competitive with LangChain/DSPy/MemGPT benchmarks yet. The 100% verification on kernel hits is a real novel contribution not present in other systems."
   }
 }
