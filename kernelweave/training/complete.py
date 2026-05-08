@@ -6,7 +6,6 @@ Dependencies (auto-installed):
 - transformers
 - trl
 - peft
-- bitsandbytes
 - torch
 - datasets
 
@@ -43,7 +42,6 @@ TRAINING_DEPS = [
     "transformers>=4.40.0",
     "trl>=0.8.0",
     "peft>=0.10.0",
-    "bitsandbytes>=0.43.0",
     "accelerate>=0.28.0",
     "datasets>=2.18.0",
     "torch>=2.2.0",
@@ -65,6 +63,17 @@ def _ensure_deps():
         print(f"Installing training dependencies: {missing}")
         import subprocess
         subprocess.check_call(["pip", "install", "-q"] + missing)
+
+
+def _resolve_kaggle_safe_base_model(base_model: str, profile: Any) -> str:
+    """Pick a model that can actually fit on Kaggle-class GPUs."""
+    gpu_name = str(getattr(profile, "gpu_name", "")).lower()
+    vram = float(getattr(profile, "vram_per_gpu_gb", 0.0) or 0.0)
+    low_vram = vram > 0 and vram < 20
+    if low_vram or "t4" in gpu_name or "p100" in gpu_name:
+        if base_model.startswith("Qwen/Qwen2.5-7B"):
+            return os.environ.get("KERNELWEAVE_SAFE_BASE_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
+    return base_model
 
 
 @dataclass
@@ -518,20 +527,6 @@ class KaggleTrainer:
     
     Usage:
         from kernelweave.training import KaggleTrainer
-        
-        trainer = KaggleTrainer(
-            base_model="Qwen/Qwen2.5-7B-Instruct",
-            output_dir="./kernel-native-model",
-        )
-        
-        # Generate data
-        trainer.generate_training_data(n_samples=5000)
-        
-        # Train
-        trainer.train(epochs=3)
-        
-        # Save
-        trainer.save_model()
     """
     
     def __init__(
@@ -540,22 +535,44 @@ class KaggleTrainer:
         output_dir: str = "./kernel-native-model",
         config: TrainingConfig | None = None,
     ):
+        self.hardware = None
         self.base_model = base_model
         self.output_dir = Path(output_dir)
         self.config = config or TrainingConfig(base_model=base_model, output_dir=output_dir)
+        
+        from .hardware import detect_hardware
+        self.hardware = detect_hardware()
+        self.base_model = _resolve_kaggle_safe_base_model(self.base_model, self.hardware)
+        self.config.base_model = self.base_model
+        
+        # Kaggle-safe defaults: keep memory low enough even when bitsandbytes is unavailable.
+        gpu_name = str(getattr(self.hardware, "gpu_name", "")).lower()
+        vram = float(getattr(self.hardware, "vram_per_gpu_gb", 0.0) or 0.0)
+        safe_mode = vram > 0 and vram < 20 or "t4" in gpu_name or "p100" in gpu_name
+        if safe_mode:
+            self.config.batch_size = 1
+            self.config.gradient_accumulation_steps = max(self.config.gradient_accumulation_steps, 8)
+            self.config.lora_r = min(self.config.lora_r, 8)
+            self.config.max_input_length = min(self.config.max_input_length, 256)
+            self.config.max_output_length = min(self.config.max_output_length, 128)
         
         self._model = None
         self._tokenizer = None
         self._trainer = None
         self._train_data = None
         self._eval_data = None
+        self._safe_mode = safe_mode
+        self._bitsandbytes_available = False
+        self._bitsandbytes_error = None
         
         # Auto-install deps
         _ensure_deps()
         
         print(f"KaggleTrainer initialized")
-        print(f"  Base model: {base_model}")
+        print(f"  Base model: {self.base_model}")
         print(f"  Output dir: {output_dir}")
+        if self._safe_mode:
+            print("  Mode: Kaggle-safe fp16 fallback")
     
     def generate_training_data(
         self,
@@ -596,37 +613,55 @@ class KaggleTrainer:
         print(f"\nLoading model: {self.base_model}")
         
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+        from transformers import AutoModelForCausalLM, AutoTokenizer
         from peft import LoraConfig, get_peft_model, TaskType
         
-        # Quantization config for 4-bit training
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-        )
+        torch_dtype = torch.float16
+        quantization_config = None
         
-        # Load model
+        if not self._safe_mode:
+            try:
+                from transformers import BitsAndBytesConfig
+                import bitsandbytes  # noqa: F401
+                if getattr(self.hardware, "quantization", "") == "4bit":
+                    quantization_config = BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_quant_type="nf4",
+                        bnb_4bit_compute_dtype=torch_dtype,
+                        bnb_4bit_use_double_quant=False,
+                    )
+                elif getattr(self.hardware, "quantization", "") == "8bit":
+                    quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+                self._bitsandbytes_available = True
+            except Exception as exc:
+                self._bitsandbytes_available = False
+                self._bitsandbytes_error = str(exc)
+                quantization_config = None
+                print(f"⚠ bitsandbytes unavailable; using fp16 fallback: {exc}")
+        else:
+            print("⚠ Safe mode active; skipping bitsandbytes quantization")
+        
         load_kwargs = {
             "pretrained_model_name_or_path": self.base_model,
-            "device_map": "auto",
+            "device_map": {"": 0},
             "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+            "torch_dtype": torch_dtype,
         }
-        
-        if bnb_config is not None:
-            load_kwargs["quantization_config"] = bnb_config
-        else:
-            load_kwargs["torch_dtype"] = torch.float16
+        if quantization_config is not None:
+            load_kwargs["quantization_config"] = quantization_config
         
         self._model = AutoModelForCausalLM.from_pretrained(**load_kwargs)
+        self._model.config.use_cache = False
         
         # Load tokenizer
         self._tokenizer = AutoTokenizer.from_pretrained(
             self.base_model,
             trust_remote_code=True,
         )
-        self._tokenizer.pad_token = self._tokenizer.eos_token
+        if self._tokenizer.pad_token is None:
+            self._tokenizer.pad_token = self._tokenizer.eos_token
+        self._tokenizer.padding_side = "right"
         
         # LoRA config
         lora_config = LoraConfig(
@@ -652,6 +687,7 @@ class KaggleTrainer:
         if self._model is None:
             self.setup_model()
         
+        batch_size = max(1, min(batch_size, self.config.batch_size))
         print(f"\nTraining for {epochs} epochs...")
         
         from datasets import Dataset
@@ -674,8 +710,10 @@ class KaggleTrainer:
             for sample in self._eval_data
         ])
         
+        max_seq_length = self.config.max_input_length + self.config.max_output_length
+        
         # Training args
-        training_args = SFTConfig(
+        training_kwargs = dict(
             output_dir=str(self.output_dir),
             num_train_epochs=epochs,
             per_device_train_batch_size=batch_size,
@@ -685,26 +723,60 @@ class KaggleTrainer:
             warmup_steps=self.config.warmup_steps,
             max_grad_norm=self.config.max_grad_norm,
             logging_steps=10,
-            eval_strategy="steps",
-            eval_steps=100,
             save_steps=100,
             save_total_limit=3,
             fp16=True,
-            optim="paged_adamw_8bit",
+            bf16=False,
+            optim="adamw_torch",
             gradient_checkpointing=True,
-            max_seq_length=self.config.max_input_length + self.config.max_output_length,
+            remove_unused_columns=False,
+            report_to="none",
         )
         
-        # Create trainer
-        self._trainer = SFTTrainer(
+        try:
+            from inspect import signature
+            sft_sig = signature(SFTConfig)
+            if "eval_strategy" in sft_sig.parameters:
+                training_kwargs["eval_strategy"] = "steps"
+            elif "evaluation_strategy" in sft_sig.parameters:
+                training_kwargs["evaluation_strategy"] = "steps"
+            if "eval_steps" in sft_sig.parameters:
+                training_kwargs["eval_steps"] = 100
+            if "packing" in sft_sig.parameters:
+                training_kwargs["packing"] = False
+            if "dataset_text_field" in sft_sig.parameters:
+                training_kwargs["dataset_text_field"] = "text"
+            if "max_seq_length" in sft_sig.parameters:
+                training_kwargs["max_seq_length"] = max_seq_length
+        except Exception:
+            pass
+        
+        training_args = SFTConfig(**training_kwargs)
+        
+        trainer_kwargs = dict(
             model=self._model,
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
-            processing_class=self._tokenizer,
         )
         
-        # Train
+        try:
+            from inspect import signature
+            trainer_sig = signature(SFTTrainer)
+            if "processing_class" in trainer_sig.parameters:
+                trainer_kwargs["processing_class"] = self._tokenizer
+            elif "tokenizer" in trainer_sig.parameters:
+                trainer_kwargs["tokenizer"] = self._tokenizer
+            if "dataset_text_field" in trainer_sig.parameters:
+                trainer_kwargs["dataset_text_field"] = "text"
+            if "packing" in trainer_sig.parameters:
+                trainer_kwargs["packing"] = False
+            if "max_seq_length" in trainer_sig.parameters:
+                trainer_kwargs["max_seq_length"] = max_seq_length
+        except Exception:
+            pass
+        
+        self._trainer = SFTTrainer(**trainer_kwargs)
         self._trainer.train()
         
         print(f"✓ Training complete")

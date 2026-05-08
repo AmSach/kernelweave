@@ -42,6 +42,16 @@ class HardwareProfile:
         }
 
 
+def _resolve_base_model(base_model: str, profile: HardwareProfile) -> str:
+    """Choose a Kaggle-safe base model when the requested one is too large."""
+    low_vram = profile.vram_per_gpu_gb < 20 or profile.quantization in {"4bit", "8bit"}
+    if low_vram and base_model in {"Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen2.5-7B", "Qwen/Qwen2.5-7B-Chat"}:
+        safe_model = os.environ.get("KERNELWEAVE_SAFE_BASE_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
+        print(f"\n⚠ Kaggle-safe fallback: replacing {base_model} with {safe_model} for low-VRAM training")
+        return safe_model
+    return base_model
+
+
 def detect_hardware() -> HardwareProfile:
     """Auto-detect GPU hardware and return optimal settings.
     
@@ -338,7 +348,6 @@ def apply_hardware_profile(config: 'TrainingConfig', profile: HardwareProfile) -
     return config
 
 
-# Convenience function for auto-training
 def auto_train(
     base_model: str = "Qwen/Qwen2.5-7B-Instruct",
     output_dir: str = "./kernel-native-model",
@@ -355,7 +364,7 @@ def auto_train(
     
     # Create config with optimal settings
     config = TrainingConfig(
-        base_model=base_model,
+        base_model=_resolve_base_model(base_model, profile),
         output_dir=output_dir,
         batch_size=profile.batch_size,
         gradient_accumulation_steps=profile.gradient_accumulation,
@@ -367,7 +376,7 @@ def auto_train(
     
     # Create trainer
     trainer = KaggleTrainer(
-        base_model=base_model,
+        base_model=config.base_model,
         output_dir=output_dir,
         config=config,
     )
@@ -375,8 +384,8 @@ def auto_train(
     # Generate data
     trainer.generate_training_data(n_samples=n_samples)
     
-    # Setup model with appropriate quantization
-    trainer.setup_model(quantization=profile.quantization)
+    # Setup model with the trainer's own Kaggle-safe defaults
+    trainer.setup_model()
     
     # Train
     trainer.train(epochs=epochs, batch_size=config.batch_size)
@@ -400,26 +409,27 @@ def train_kernel_native(
     # Import here to avoid circular dependency
     from .complete import KaggleTrainer
     
+    profile = detect_hardware()
+    resolved_base_model = _resolve_base_model(base_model, profile)
+    
     if batch_size is not None:
-        # Manual override
-        profile = detect_hardware()
         profile.batch_size = batch_size
         
         config = TrainingConfig(
-            base_model=base_model,
+            base_model=resolved_base_model,
             output_dir=output_dir,
             batch_size=batch_size,
             **kwargs,
         )
         
         trainer = KaggleTrainer(
-            base_model=base_model,
+            base_model=resolved_base_model,
             output_dir=output_dir,
             config=config,
         )
         
         trainer.generate_training_data(n_samples=n_samples)
-        trainer.setup_model(quantization=profile.quantization)
+        trainer.setup_model()
         trainer.train(epochs=epochs, batch_size=batch_size)
         trainer.save_model()
         
@@ -427,7 +437,7 @@ def train_kernel_native(
     else:
         # Auto-detect
         return auto_train(
-            base_model=base_model,
+            base_model=resolved_base_model,
             output_dir=output_dir,
             n_samples=n_samples,
             epochs=epochs,

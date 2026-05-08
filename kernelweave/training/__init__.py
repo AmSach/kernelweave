@@ -12,6 +12,13 @@ Quick Start (Kaggle):
         epochs=3,
     )
 """
+import os
+
+if (os.environ.get("KAGGLE_KERNEL_RUN_TYPE") or os.environ.get("KAGGLE_URL_BASE")) and "CUDA_VISIBLE_DEVICES" not in os.environ:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
 from .complete import (
     TrainingConfig,
     TrainingSample,
