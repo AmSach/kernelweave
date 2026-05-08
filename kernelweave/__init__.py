@@ -1,6 +1,7 @@
 from .kernel import Kernel, KernelStatus, KernelStore, TraceEvent, load_sample_store
 from .compiler import CompilationStats, compile_trace_to_kernel, score_kernel
 from .runtime import KernelRuntime, plan_for_prompt
+from .cli import install_samples
 from .metrics import clamp, cosine_similarity, coverage, jaccard_similarity, normalize_text, sigmoid
 from .llm import (
     AnthropicBackend,
@@ -70,6 +71,7 @@ __all__ = [
     "KernelStore",
     "TraceEvent",
     "load_sample_store",
+    "install_samples",
     "CompilationStats",
     "compile_trace_to_kernel",
     "score_kernel",
