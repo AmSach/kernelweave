@@ -34,6 +34,36 @@ from .llm import (
     run_preset,
 )
 
+# Constrained generation
+from .constrained import (
+    ConstrainedDecoder,
+    ConstrainedResponse,
+    ConstrainedGrammar,
+    ConstrainedTokenSampler,
+    postconditions_to_grammar,
+    validate_against_grammar,
+)
+
+# Trace capture
+from .trace import (
+    ReasoningStep,
+    ToolCall,
+    EvidenceCapture,
+    VerificationCheck,
+    ExecutionTrace,
+    TraceCapture,
+)
+
+# Composition
+from .compose import (
+    compose_sequence,
+    compose_parallel,
+    compose_conditional,
+    compose_loop,
+    detect_conflicts,
+    CompositionBuilder,
+)
+
 __all__ = [
     "Kernel",
     "KernelStatus",
@@ -51,6 +81,24 @@ __all__ = [
     "jaccard_similarity",
     "normalize_text",
     "sigmoid",
+    "ConstrainedDecoder",
+    "ConstrainedResponse",
+    "ConstrainedGrammar",
+    "ConstrainedTokenSampler",
+    "postconditions_to_grammar",
+    "validate_against_grammar",
+    "ReasoningStep",
+    "ToolCall",
+    "EvidenceCapture",
+    "VerificationCheck",
+    "ExecutionTrace",
+    "TraceCapture",
+    "compose_sequence",
+    "compose_parallel",
+    "compose_conditional",
+    "compose_loop",
+    "detect_conflicts",
+    "CompositionBuilder",
     "InferenceConfig",
     "LLMConfig",
     "TokenizerConfig",
