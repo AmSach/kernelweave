@@ -1,4 +1,5 @@
 from .kernel import Kernel, KernelStatus, KernelStore, TraceEvent, load_sample_store
+from .kernels import install_kernel_library, ALL_KERNELS, kernel_summary
 from .compiler import CompilationStats, compile_trace_to_kernel, score_kernel
 from .runtime import KernelRuntime, plan_for_prompt
 from .cli import install_samples

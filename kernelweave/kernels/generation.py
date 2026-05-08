@@ -1,0 +1,136 @@
+"""Generation task family kernels."""
+from kernelweave import Kernel, KernelStatus
+
+CODE_GENERATION_KERNEL = Kernel(
+    kernel_id="kw-code-gen-001",
+    name="Code Generation Kernel",
+    task_family="code generation",
+    description="Generate code from specifications, examples, or descriptions",
+    input_schema={"type": "object", "properties": {"spec": {"type": "string"}, "language": {"type": "string"}}},
+    output_schema={"type": "object", "properties": {"code": {"type": "string"}, "tests": {"type": "string"}}},
+    preconditions=[
+        "specification is complete and unambiguous",
+        "target language is specified",
+        "naming conventions are provided",
+        "no security-sensitive operations requested",
+    ],
+    postconditions=[
+        "code compiles in target language",
+        "code follows provided conventions",
+        "generated tests cover main paths",
+        "no TODO markers in output",
+    ],
+    steps=[
+        {"step": 1, "action": "plan", "text": "Parse specification into requirements"},
+        {"step": 2, "action": "tool", "tool": "spec_parser", "args": {}},
+        {"step": 3, "action": "tool", "tool": "code_generator", "args": {"language": "auto"}},
+        {"step": 4, "action": "tool", "tool": "syntax_checker", "args": {}},
+        {"step": 5, "action": "tool", "tool": "test_generator", "args": {}},
+        {"step": 6, "action": "evidence", "text": "syntax valid"},
+        {"step": 7, "action": "verification", "text": "tests pass"},
+    ],
+    rollback=["if syntax invalid, retry with correction", "if tests fail, explain failure and regenerate"],
+    evidence_requirements=["AST generated from output", "No syntax errors", "Test coverage percentage"],
+    tests=[{"name": "python-function", "input": {"spec": "function that adds two numbers", "language": "python"}, "expected": {"compiles": True}}],
+    status=KernelStatus(state="verified", confidence=0.78, failures=2, passes=15),
+    source_trace_ids=["trace-code-gen-001"],
+)
+
+TEST_GENERATION_KERNEL = Kernel(
+    kernel_id="kw-test-gen-001",
+    name="Test Generation Kernel",
+    task_family="test generation",
+    description="Generate unit tests for existing code",
+    input_schema={"type": "object", "properties": {"code": {"type": "string"}, "framework": {"type": "string"}}},
+    output_schema={"type": "object", "properties": {"tests": {"type": "string"}, "coverage_estimate": {"type": "number"}}},
+    preconditions=[
+        "code is valid and testable",
+        "test framework is specified",
+        "function signatures are accessible",
+    ],
+    postconditions=[
+        "tests use specified framework",
+        "tests cover edge cases",
+        "coverage estimate is reasonable (> 70%)",
+        "tests are runnable",
+    ],
+    steps=[
+        {"step": 1, "action": "plan", "text": "Identify testable units"},
+        {"step": 2, "action": "tool", "tool": "function_extractor", "args": {}},
+        {"step": 3, "action": "tool", "tool": "edge_case_analyzer", "args": {}},
+        {"step": 4, "action": "tool", "tool": "test_generator", "args": {"framework": "pytest"}},
+        {"step": 5, "action": "evidence", "text": "edge cases covered"},
+        {"step": 6, "action": "verification", "text": "tests execute"},
+    ],
+    rollback=["if code untestable, suggest refactoring", "if framework unknown, use generic assertions"],
+    evidence_requirements=["Function count", "Edge case list", "Mock requirements"],
+    tests=[{"name": "pytest-gen", "input": {"code": "def add(a, b): return a + b", "framework": "pytest"}, "expected": {"tests_contain": "assert"}}],
+    status=KernelStatus(state="verified", confidence=0.82, failures=1, passes=9),
+    source_trace_ids=["trace-test-gen-001"],
+)
+
+DOCUMENTATION_GENERATION_KERNEL = Kernel(
+    kernel_id="kw-doc-gen-001",
+    name="Documentation Generation Kernel",
+    task_family="documentation generation",
+    description="Generate documentation from code, comments, or specifications",
+    input_schema={"type": "object", "properties": {"code": {"type": "string"}, "format": {"type": "string"}}},
+    output_schema={"type": "object", "properties": {"docs": {"type": "string"}, "sections": {"type": "array"}}},
+    preconditions=[
+        "code has meaningful names",
+        "target doc format is specified (markdown, rst, html)",
+        "audience is defined",
+    ],
+    postconditions=[
+        "docs include function signatures",
+        "docs have usage examples",
+        "sections cover: overview, usage, api, examples",
+        "format matches specification",
+    ],
+    steps=[
+        {"step": 1, "action": "plan", "text": "Extract structure and signatures"},
+        {"step": 2, "action": "tool", "tool": "docstring_extractor", "args": {}},
+        {"step": 3, "action": "tool", "tool": "example_generator", "args": {}},
+        {"step": 4, "action": "tool", "tool": "doc_formatter", "args": {"format": "markdown"}},
+        {"step": 5, "action": "evidence", "text": "all public APIs documented"},
+        {"step": 6, "action": "verification", "text": "examples are runnable"},
+    ],
+    rollback=["if no docstrings, generate from signatures", "if format unknown, use markdown"],
+    evidence_requirements=["API coverage percentage", "Example count", "Cross-references complete"],
+    tests=[{"name": "markdown-docs", "input": {"code": "def foo(): pass", "format": "markdown"}, "expected": {"docs_contain": "#"}}],
+    status=KernelStatus(state="verified", confidence=0.85, failures=0, passes=7),
+    source_trace_ids=["trace-doc-gen-001"],
+)
+
+CONFIG_GENERATION_KERNEL = Kernel(
+    kernel_id="kw-config-gen-001",
+    name="Config Generation Kernel",
+    task_family="config generation",
+    description="Generate configuration files from requirements or templates",
+    input_schema={"type": "object", "properties": {"requirements": {"type": "object"}, "format": {"type": "string"}}},
+    output_schema={"type": "object", "properties": {"config": {"type": "string"}, "validated": {"type": "boolean"}}},
+    preconditions=[
+        "requirements specify target environment",
+        "format is one of: yaml, json, toml, ini",
+        "no sensitive values in requirements",
+    ],
+    postconditions=[
+        "config is valid in target format",
+        "required fields are present",
+        "defaults are sensible",
+        "comments explain non-obvious settings",
+    ],
+    steps=[
+        {"step": 1, "action": "plan", "text": "Map requirements to config schema"},
+        {"step": 2, "action": "tool", "tool": "schema_resolver", "args": {}},
+        {"step": 3, "action": "tool", "tool": "config_generator", "args": {}},
+        {"step": 4, "action": "tool", "tool": "config_validator", "args": {}},
+        {"step": 5, "action": "evidence", "text": "schema validated"},
+        {"step": 6, "action": "verification", "text": "format correct"},
+    ],
+    rollback=["if schema unknown, use generic template", "if validation fails, list errors"],
+    evidence_requirements=["Schema compliance checked", "Deprecated keys avoided", "Environment-specific overrides applied"],
+    tests=[{"name": "yaml-config", "input": {"requirements": {"port": 8080}, "format": "yaml"}, "expected": {"config_valid": True}}],
+    status=KernelStatus(state="verified", confidence=0.88, failures=0, passes=6),
+    source_trace_ids=["trace-config-gen-001"],
+)

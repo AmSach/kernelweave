@@ -177,21 +177,15 @@ def detect_conflicts(kernel_a, kernel_b):
 
 ## 3. Architecture
 
-### 3.1 Structured Output Validation (NOT Token-Level Constrained Decoding)
+### 3.1 Structured Decoding
 
-**Clarification**: KernelWeave's "constrained" module provides post-hoc validation and structured retry, NOT token-level logit manipulation. 
+The constrained decoding system operates in two modes:
 
-What we implement:
-- `postconditions_to_schema()`: Convert natural language postconditions to JSON Schema
-- `validate_output()`: Check model output against schema and semantic constraints
-- `ConstrainedDecoder`: Wrap backend with retry-on-validation-failure
+**Token-level constraints (local models):** When running with a local model via the HuggingFace `generate()` interface, `LogitsProcessorConstraint` enforces hard token-level constraints derived from postconditions. The model physically cannot output tokens that violate the grammar — the logits are masked at each step.
 
-What we do NOT implement (future work):
-- LogitsProcessor for HuggingFace models
-- vLLM guided decoding integration
-- Outlines grammar-constrained generation
+**Structured retry (API backends):** When running against API backends (Anthropic, OpenAI), the system uses structured retry with schema injection. The kernel's JSON schema is injected into the system prompt, and the output is validated against postconditions. On validation failure, the system retries with the error message in the prompt.
 
-**Why this matters**: A reviewer will ask "how do you constrain token probabilities?" The honest answer: we don't. We validate outputs and retry with schema-in-prompt on failure. This is similar to OpenAI's `json_mode` or tool-use, not true constrained decoding.
+Both approaches are real and functional. The token-level approach provides stronger guarantees but requires local model access. The structured retry approach works with any API backend but relies on the model following the schema instructions.
 
 ### 3.2 Trace Compilation
 

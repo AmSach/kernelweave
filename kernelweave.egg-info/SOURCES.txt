@@ -20,6 +20,16 @@ kernelweave/constrained/decoder.py
 kernelweave/constrained/grammar.py
 kernelweave/constrained/schema.py
 kernelweave/constrained/token_level.py
+kernelweave/kernels/__init__.py
+kernelweave/kernels/analysis.py
+kernelweave/kernels/comparison.py
+kernelweave/kernels/debugging.py
+kernelweave/kernels/documentation.py
+kernelweave/kernels/generation.py
+kernelweave/kernels/library.py
+kernelweave/kernels/search.py
+kernelweave/kernels/testing.py
+kernelweave/kernels/transformation.py
 kernelweave/llm/__init__.py
 kernelweave/llm/agent.py
 kernelweave/llm/cli_models.py

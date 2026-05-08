@@ -152,21 +152,89 @@ class KernelRuntime:
         
         return penalty
 
+    def _check_preconditions(self, prompt: str, kernel) -> bool:
+        """Check if prompt satisfies kernel preconditions.
+        
+        This prevents false positives where a prompt matches the task family
+        semantically but violates the kernel's requirements.
+        
+        Example: "Compare apples and oranges" matches comparison kernel
+        semantically but violates "inputs are named files, schemas, or documents".
+        """
+        if not kernel.preconditions:
+            return True
+        
+        prompt_lower = prompt.lower()
+        
+        for condition in kernel.preconditions:
+            # Extract key requirements from preconditions
+            if "named files" in condition.lower() or "files" in condition.lower():
+                # Check if prompt references actual files
+                if not any(kw in prompt_lower for kw in ["file", ".py", ".js", ".json", ".yaml", ".md", ".txt", "/"]):
+                    return False
+            elif "schema" in condition.lower():
+                if not any(kw in prompt_lower for kw in ["schema", "json", "structure", "fields"]):
+                    return False
+            elif "documents" in condition.lower():
+                if not any(kw in prompt_lower for kw in ["document", "doc", "file", "text"]):
+                    return False
+        
+        return True
+
     def evaluate_prompt(self, prompt: str) -> RuntimeDecision:
+        """Evaluate prompt with composition fallback.
+        
+        If no single kernel scores above threshold but two kernels
+        together cover the prompt's semantic space, compose them.
+        """
         kernels = self.store.list_kernels()
-        best = None
-        best_score = -1.0
+        candidates = []
+        
         for item in kernels:
             kernel = self.store.get_kernel(item["kernel_id"])
+            if not self._check_preconditions(prompt, kernel):
+                continue
             score = self.score_prompt_against_kernel(prompt, kernel)
-            if score > best_score:
-                best_score = score
-                best = kernel
-        if best is None:
-            return RuntimeDecision(mode="generate", kernel_id=None, confidence=0.0, reason="no kernels available", score=0.0)
-        if best_score >= 0.50:
-            return RuntimeDecision(mode="kernel", kernel_id=best.kernel_id, confidence=best.status.confidence, reason=f"matched {best.task_family}", score=best_score)
-        return RuntimeDecision(mode="generate", kernel_id=best.kernel_id, confidence=best.status.confidence, reason="match too weak", score=best_score)
+            if score > 0.3:  # Lower threshold for composition candidates
+                candidates.append((kernel, score))
+        
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        
+        # Try single kernel match first
+        if candidates and candidates[0][1] >= 0.50:
+            best = candidates[0][0]
+            return RuntimeDecision(
+                mode="kernel",
+                kernel_id=best.kernel_id,
+                confidence=best.status.confidence,
+                reason=f"matched {best.task_family}",
+                score=candidates[0][1],
+            )
+        
+        # Composition fallback: if top 2 kernels together cover prompt
+        if len(candidates) >= 2:
+            from .compose import compose_sequence
+            k1, s1 = candidates[0]
+            k2, s2 = candidates[1]
+            combined_score = 0.6 * max(s1, s2) + 0.4 * min(s1, s2)
+            if combined_score >= 0.45:
+                composite = compose_sequence(k1, k2)
+                return RuntimeDecision(
+                    mode="kernel",
+                    kernel_id=composite.kernel.kernel_id,
+                    confidence=composite.kernel.status.confidence,
+                    reason=f"composed {k1.task_family} + {k2.task_family}",
+                    score=combined_score,
+                )
+        
+        # Fall through to generate
+        return RuntimeDecision(
+            mode="generate",
+            kernel_id=candidates[0][0].kernel_id if candidates else None,
+            confidence=candidates[0][0].status.confidence if candidates else 0.0,
+            reason="no kernel match above threshold",
+            score=candidates[0][1] if candidates else 0.0,
+        )
 
     def run(self, prompt: str) -> dict[str, Any]:
         decision = self.evaluate_prompt(prompt)

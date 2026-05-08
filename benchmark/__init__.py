@@ -490,3 +490,10 @@ def run_ablation_composition(
     return {
         "composition_benefit": 0.1,  # Estimated improvement
     }
+
+
+from .tasks import REAL_TOOLBENCH_TASKS, ToolBenchTask
+from .real_tasks import load_real_toolbench_tasks, load_from_huggingface
+from .baselines import create_baselines, DSPyRouting, LangGraphRouting, KernelWeaveRouting
+from .quality import score_output, QualityScore, compare_outputs
+from .run_comprehensive import run_comprehensive_benchmark

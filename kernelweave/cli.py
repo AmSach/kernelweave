@@ -66,88 +66,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def install_samples(store: KernelStore) -> None:
-    """Install sample kernels for demonstration.
+    """Install sample kernels and traces for testing."""
+    from .kernels import install_kernel_library
     
-    Updated with expanded alias tables to reduce false negatives.
-    """
-    from .kernel import Kernel, KernelStatus, TraceEvent
-    from .compiler import compile_trace_to_kernel
-    
-    # Comparison kernel - expanded aliases
-    comparison_aliases = [
-        "artifact comparison", "file comparison", "document comparison",
-        "compare files", "compare documents", "compare artifacts",
-        "diff files", "diff documents", "find differences",
-        "what changed", "what differs", "how do they differ",
-        "list changes", "show differences", "explain differences",
-        "compare versions", "version comparison", "diff between",
-        "changes between", "diverge", "divergence", "delta",
-        "dockerfile comparison", "config comparison", "code comparison",
-    ]
-    
-    comparison_trace = [
-        TraceEvent(kind="plan", payload={"text": "compare two artifacts and explain differences"}),
-        TraceEvent(kind="tool", payload={"tool": "load_artifact", "args": {"path": "A"}}),
-        TraceEvent(kind="tool", payload={"tool": "load_artifact", "args": {"path": "B"}}),
-        TraceEvent(kind="evidence", payload={"text": "differences found"}),
-        TraceEvent(kind="verification", payload={"text": "summary mentions both"}),
-    ]
-    
-    comparison_kernel = compile_trace_to_kernel(
-        "trace-compare-002",
-        "artifact comparison",
-        "Compare two structured artifacts and produce a grounded summary.",
-        comparison_trace,
-        {"result": "comparison summary"},
-    )
-    
-    # Add expanded aliases as additional task family hints
-    comparison_kernel.metadata = {"aliases": comparison_aliases}
-    
-    # Add artifact-scoping precondition to prevent false positives
-    comparison_kernel.preconditions.insert(0, "inputs are named files, schemas, or documents")
-    
-    comparison_kernel.status = KernelStatus(
-        state="verified",
-        confidence=0.62,
-        failures=0,
-        passes=2,
-    )
-    
-    # Safe command kernel - expanded aliases
-    command_aliases = [
-        "safe shell command", "safe command execution", "shell safety",
-        "run command safely", "execute command", "bash command",
-        "shell command", "terminal command", "cli command",
-        "command line", "run script", "execute script",
-        "safe execution", "secure command", "validated command",
-    ]
-    
-    command_trace = [
-        TraceEvent(kind="plan", payload={"text": "generate safe shell command"}),
-        TraceEvent(kind="tool", payload={"tool": "check_safety", "args": {"command": "placeholder"}}),
-        TraceEvent(kind="verification", payload={"text": "no destructive patterns"}),
-        TraceEvent(kind="evidence", payload={"text": "command validated"}),
-    ]
-    
-    command_kernel = compile_trace_to_kernel(
-        "trace-command-001",
-        "safe shell command",
-        "Generate a validated, non-destructive shell command.",
-        command_trace,
-        {"result": "safe command"},
-    )
-    
-    command_kernel.metadata = {"aliases": command_aliases}
-    command_kernel.status = KernelStatus(
-        state="verified",
-        confidence=0.71,
-        failures=0,
-        passes=1,
-    )
-    
-    store.add_kernel(comparison_kernel)
-    store.add_kernel(command_kernel)
+    count = install_kernel_library(store)
+    print(f"Installed {count} kernels from library")
 
 
 def _load_catalog(models_dir: Path | None) -> ModelCatalog:
