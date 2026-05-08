@@ -73,6 +73,9 @@ from .training import (
     TraceGenerator,
     KaggleTrainer,
     train_kernel_native,
+    auto_train,
+    detect_hardware,
+    HardwareProfile,
     TRAINING_DEPS,
 )
 
@@ -193,5 +196,8 @@ __all__ = [
     "TraceGenerator",
     "KaggleTrainer",
     "train_kernel_native",
+    "auto_train",
+    "detect_hardware",
+    "HardwareProfile",
     "TRAINING_DEPS",
 ]

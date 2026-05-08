@@ -17,9 +17,15 @@ from .complete import (
     TrainingSample,
     TraceGenerator,
     KaggleTrainer,
-    train_kernel_native,
-    TRAINING_DEPS,
     _ensure_deps,
+    TRAINING_DEPS,
+)
+from .hardware import (
+    detect_hardware,
+    auto_train,
+    train_kernel_native,
+    HardwareProfile,
+    apply_hardware_profile,
 )
 
 __all__ = [
@@ -28,6 +34,10 @@ __all__ = [
     "TraceGenerator",
     "KaggleTrainer",
     "train_kernel_native",
+    "auto_train",
+    "detect_hardware",
+    "HardwareProfile",
+    "apply_hardware_profile",
     "TRAINING_DEPS",
     "_ensure_deps",
 ]

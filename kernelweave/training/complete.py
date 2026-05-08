@@ -1,4 +1,4 @@
-"""Complete training system with inbuilt trace generation and LoRA fine-tuning.
+"""Complete training system with auto-detect hardware optimization.
 
 REVOLUTIONARY: Self-contained training that generates its own data from kernels.
 
@@ -531,12 +531,18 @@ class KaggleTrainer:
         )
         
         # Load model
-        self._model = AutoModelForCausalLM.from_pretrained(
-            self.base_model,
-            quantization_config=bnb_config,
-            device_map="auto",
-            trust_remote_code=True,
-        )
+        load_kwargs = {
+            "pretrained_model_name_or_path": self.base_model,
+            "device_map": "auto",
+            "trust_remote_code": True,
+        }
+        
+        if bnb_config is not None:
+            load_kwargs["quantization_config"] = bnb_config
+        else:
+            load_kwargs["torch_dtype"] = torch.float16
+        
+        self._model = AutoModelForCausalLM.from_pretrained(**load_kwargs)
         
         # Load tokenizer
         self._tokenizer = AutoTokenizer.from_pretrained(
@@ -629,112 +635,4 @@ class KaggleTrainer:
     def _format_sample(self, sample: TrainingSample) -> str:
         """Format a sample for training."""
         # Qwen chat format
-        return f"<|im_start|>user\n{sample.prompt}<|im_end|>\n<|im_start|>assistant\n{sample.response}<|im_end|>"
-    
-    def save_model(self, path: str | None = None) -> None:
-        """Save the trained model."""
-        if self._model is None:
-            raise ValueError("No model to save. Run train() first.")
-        
-        save_path = Path(path) if path else self.output_dir / "final_model"
-        save_path.mkdir(parents=True, exist_ok=True)
-        
-        # Save LoRA weights
-        self._model.save_pretrained(save_path)
-        self._tokenizer.save_pretrained(save_path)
-        
-        # Save config
-        config_path = save_path / "training_config.json"
-        with open(config_path, "w") as f:
-            json.dump(self.config.to_dict(), f, indent=2)
-        
-        print(f"✓ Model saved to {save_path}")
-        print(f"  To load: model = AutoModelForCausalLM.from_pretrained('{save_path}')")
-    
-    def push_to_hub(self, repo_id: str, token: str | None = None) -> None:
-        """Push model to HuggingFace Hub."""
-        if self._model is None:
-            raise ValueError("No model to push. Run train() first.")
-        
-        self._model.push_to_hub(repo_id, token=token)
-        self._tokenizer.push_to_hub(repo_id, token=token)
-        
-        print(f"✓ Model pushed to https://huggingface.co/{repo_id}")
-    
-    def evaluate(self, n_samples: int = 100) -> dict[str, float]:
-        """Evaluate the model."""
-        if self._model is None or self._tokenizer is None:
-            raise ValueError("No model to evaluate. Run train() first.")
-        
-        print(f"\nEvaluating on {n_samples} samples...")
-        
-        import torch
-        
-        correct = 0
-        total = 0
-        
-        for sample in self._eval_data[:n_samples]:
-            # Generate
-            inputs = self._tokenizer(
-                sample.prompt,
-                return_tensors="pt",
-                truncation=True,
-                max_length=self.config.max_input_length,
-            ).to(self._model.device)
-            
-            with torch.no_grad():
-                outputs = self._model.generate(
-                    **inputs,
-                    max_new_tokens=self.config.max_output_length,
-                    do_sample=False,
-                    pad_token_id=self._tokenizer.eos_token_id,
-                )
-            
-            response = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
-            response = response[len(sample.prompt):].strip()
-            
-            # Simple evaluation: check if task family is mentioned
-            if sample.task_family.lower() in response.lower():
-                correct += 1
-            total += 1
-        
-        accuracy = correct / max(1, total)
-        
-        results = {
-            "accuracy": accuracy,
-            "n_samples": n_samples,
-        }
-        
-        print(f"✓ Accuracy: {accuracy:.2%}")
-        
-        return results
-
-
-# Convenience functions
-def train_kernel_native(
-    base_model: str = "Qwen/Qwen2.5-7B-Instruct",
-    output_dir: str = "./kernel-native-model",
-    n_samples: int = 5000,
-    epochs: int = 3,
-    batch_size: int = 4,
-) -> KaggleTrainer:
-    """Complete training pipeline in one function call.
-    
-    Usage:
-        trainer = train_kernel_native(
-            base_model="Qwen/Qwen2.5-7B-Instruct",
-            output_dir="./model",
-            n_samples=5000,
-            epochs=3,
-        )
-    """
-    trainer = KaggleTrainer(
-        base_model=base_model,
-        output_dir=output_dir,
-    )
-    
-    trainer.generate_training_data(n_samples=n_samples)
-    trainer.train(epochs=epochs, batch_size=batch_size)
-    trainer.save_model()
-    
-    return trainer
+        return f"user\n{sample.prompt}"
