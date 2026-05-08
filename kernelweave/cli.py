@@ -127,7 +127,7 @@ def install_samples(store: KernelStore) -> None:
         TraceEvent(kind="plan", payload={"text": "generate safe shell command"}),
         TraceEvent(kind="tool", payload={"tool": "check_safety", "args": {"command": "placeholder"}}),
         TraceEvent(kind="verification", payload={"text": "no destructive patterns"}),
-        TraceEvent(kind="evidence", payload={"text": "command validated"}}),
+        TraceEvent(kind="evidence", payload={"text": "command validated"}),
     ]
     
     command_kernel = compile_trace_to_kernel(
