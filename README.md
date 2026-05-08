@@ -19,6 +19,7 @@ When a language model solves a task successfully, KernelWeave:
 - **Feedback accumulation** — Records success/failure for each kernel
 - **Auto-promotion** — High-confidence repeated successes become candidate kernels
 - **Model-agnostic** — Works with any OpenAI/Anthropic/openai-compatible backend
+- **Runnable training bundle** — a pure-Python Kaggle-safe calibration/tracing path that keeps the kernel architecture executable without HF/CUDA wheel drama
 
 ## What doesn't work yet
 
@@ -82,6 +83,7 @@ prompt → embed → kernel match → execute kernel OR generate
 - `kernelweave/kernel.py` — Kernel store + feedback accumulation  
 - `kernelweave/calibration.py` — Logistic regression confidence model
 - `kernelweave/llm/model.py` — Model wrapper with kernel-aware prompts
+- `kernelweave/training/` — pure-Python synthetic training / calibration path
 
 ## When kernels are worth it
 
@@ -93,3 +95,5 @@ The overhead of compilation, matching, and verification only pays off when the s
 ## Status
 
 Working prototype. Not frontier. Not a trained model. A useful piece of infrastructure for LLM-based systems with repeated tasks.
+
+For the full pre-restructure debugging trail, see `docs/RESTRUCTURING_HISTORY.md`.
