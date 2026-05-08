@@ -128,19 +128,45 @@ class KernelStore:
         self.kernels_dir.mkdir(parents=True, exist_ok=True)
         self.traces_dir.mkdir(parents=True, exist_ok=True)
         self.feedback_dir.mkdir(parents=True, exist_ok=True)
-        if not self.index_path.exists():
-            self.index_path.write_text(json.dumps({"kernels": [], "traces": []}, indent=2))
-        if not self.feedback_index_path.exists():
-            self.feedback_index_path.write_text(json.dumps({"feedback": []}, indent=2))
+        self._ensure_json_file(self.index_path, {"kernels": [], "traces": []})
+        self._ensure_json_file(self.feedback_index_path, {"feedback": []})
+
+    def _ensure_json_file(self, path: Path, default: dict[str, Any]) -> None:
+        if not path.exists() or path.stat().st_size == 0:
+            path.write_text(json.dumps(default, indent=2, sort_keys=True))
+            return
+        try:
+            json.loads(path.read_text())
+        except Exception:
+            path.write_text(json.dumps(default, indent=2, sort_keys=True))
 
     def _read_index(self) -> dict[str, Any]:
-        return json.loads(self.index_path.read_text())
+        try:
+            data = json.loads(self.index_path.read_text())
+            if not isinstance(data, dict):
+                raise ValueError("index must be an object")
+            data.setdefault("kernels", [])
+            data.setdefault("traces", [])
+            return data
+        except Exception:
+            default = {"kernels": [], "traces": []}
+            self.index_path.write_text(json.dumps(default, indent=2, sort_keys=True))
+            return default
 
     def _write_index(self, index: dict[str, Any]) -> None:
         self.index_path.write_text(json.dumps(index, indent=2, sort_keys=True))
 
     def _read_feedback_index(self) -> dict[str, Any]:
-        return json.loads(self.feedback_index_path.read_text())
+        try:
+            data = json.loads(self.feedback_index_path.read_text())
+            if not isinstance(data, dict):
+                raise ValueError("feedback index must be an object")
+            data.setdefault("feedback", [])
+            return data
+        except Exception:
+            default = {"feedback": []}
+            self.feedback_index_path.write_text(json.dumps(default, indent=2, sort_keys=True))
+            return default
 
     def _write_feedback_index(self, index: dict[str, Any]) -> None:
         self.feedback_index_path.write_text(json.dumps(index, indent=2, sort_keys=True))

@@ -1,0 +1,20 @@
+{
+  "folder": "investor",
+  "files": [
+    "README.md",
+    "architecture.md",
+    "v0.md",
+    "v1.md",
+    "v2.md",
+    "pitch.md",
+    "problem-solution.md",
+    "moat.md",
+    "roadmap.md",
+    "metrics.md",
+    "cost-model.md",
+    "faq.md",
+    "timeline.md",
+    "changelog.md",
+    "deck-outline.md"
+  ]
+}
