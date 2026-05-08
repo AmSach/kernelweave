@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Callable, Protocol
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import time
 import re
@@ -235,7 +235,7 @@ class TraceCapture:
     
     def _generate_trace_id(self) -> str:
         self._call_counter += 1
-        ts = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         return f"{self.trace_id_prefix}-{ts}-{self._call_counter:04d}"
     
     def generate_with_trace(

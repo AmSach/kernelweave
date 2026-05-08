@@ -246,13 +246,21 @@ def compose_parallel(
     name: str | None = None,
     merge_strategy: Literal["intersection", "union", "custom"] = "union",
 ) -> CompositionResult:
-    """Compose two kernels in parallel: A and B simultaneously.
+    """Compose kernels for parallel execution.
     
-    The resulting kernel:
-    - Merges preconditions from both
-    - Merges postconditions from both
-    - Runs both step sequences
-    - Requires both to succeed
+    LIMITATION: This operator assumes all kernels succeed.
+    It does NOT model failure semantics (partial success, rollback).
+    
+    In production, you would need:
+    - Failure isolation: if A fails, does B still run?
+    - Partial rollback: how to undo successful kernels if one fails
+    - Aggregation strategy: how to combine partial outputs
+    
+    Current implementation: unions preconditions and postconditions,
+    merges steps in parallel order, propagates average confidence.
+    
+    For production use, implement a ParallelExecutionRuntime that
+    handles these failure cases.
     """
     conflicts = detect_conflicts(kernel_a, kernel_b)
     

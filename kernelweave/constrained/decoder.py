@@ -224,3 +224,23 @@ class ConstrainedDecoder:
     def _add_schema_to_prompt(self, system_prompt: str) -> str:
         """Add schema constraints to system prompt for retry."""
         return system_prompt + f"\n\nCRITICAL: Output must be valid JSON matching this schema:\n{json.dumps(self.schema, indent=2)}"
+"""Structured decoding from kernel postconditions.
+
+This module provides STRUCTURED RETRY with schema-guided generation.
+It validates outputs against kernel postconditions and retries with
+constrained prompts on failure.
+
+IMPORTANT: This is NOT token-level constrained decoding (logit manipulation).
+For true constrained decoding, integrate with:
+- Hugging Face generate() with LogitsProcessor
+- vLLM guided decoding
+- Outlines grammar-constrained generation
+
+What this DOES provide:
+- Postcondition → JSON Schema conversion
+- Validation against semantic constraints
+- Structured retry with schema-in-prompt
+- Early termination on constraint satisfaction
+
+The "constrained" name refers to constraint validation, not logits.
+"""

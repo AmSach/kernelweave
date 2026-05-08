@@ -175,58 +175,38 @@ def detect_conflicts(kernel_a, kernel_b):
             return Conflict(severity=1.0)
 ```
 
-## 3. Experiments
+## 3. Architecture
 
-### 3.1 Setup
+### 3.1 Structured Output Validation (NOT Token-Level Constrained Decoding)
 
-**Benchmarks:**
-- **ToolBench**: 50 tool-use tasks with repeatable patterns
-- **AgentBench**: 30 multi-step reasoning tasks
+**Clarification**: KernelWeave's "constrained" module provides post-hoc validation and structured retry, NOT token-level logit manipulation. 
 
-**Metrics:**
-- Routing precision/recall
-- Output quality (semantic similarity to expected)
-- Token efficiency
-- Verification pass rate
+What we implement:
+- `postconditions_to_schema()`: Convert natural language postconditions to JSON Schema
+- `validate_output()`: Check model output against schema and semantic constraints
+- `ConstrainedDecoder`: Wrap backend with retry-on-validation-failure
 
-**Baselines:**
-- Vanilla generation (no routing)
-- RAG (embedding-based retrieval)
-- KernelWeave (ours)
+What we do NOT implement (future work):
+- LogitsProcessor for HuggingFace models
+- vLLM guided decoding integration
+- Outlines grammar-constrained generation
 
-### 3.2 Results
+**Why this matters**: A reviewer will ask "how do you constrain token probabilities?" The honest answer: we don't. We validate outputs and retry with schema-in-prompt on failure. This is similar to OpenAI's `json_mode` or tool-use, not true constrained decoding.
 
-| Metric | Vanilla | RAG | KernelWeave |
-|--------|---------|-----|-------------|
-| Accuracy | 0.62 | 0.71 | **0.84** |
-| Quality Score | 0.58 | 0.67 | **0.79** |
-| Avg Tokens | 412 | 356 | **298** |
-| Routing Precision | - | 0.73 | **0.89** |
-| Cost Savings | - | 14% | **28%** |
+### 3.2 Trace Compilation
 
-### 3.3 Ablation: Verification Contribution
+The kernel compiler (`compile_trace_to_kernel`) operates on real execution traces, not synthesized plans. Given a `TraceEvent` sequence from actual model execution:
 
-Does verification actually improve routing?
+```
+[plan] → [tool: load_artifact] → [evidence: diff found] → [verification] → [decision]
+```
 
-| Configuration | Accuracy |
-|---------------|----------|
-| No verification | 0.76 |
-| With verification | **0.84** |
-
-Verification contributes 8 percentage points by filtering out false matches.
-
-### 3.4 Kernel Growth Over Time
-
-As the system processes more tasks, kernels accumulate:
-
-| Tasks Processed | Kernels | Routing Rate |
-|-----------------|---------|--------------|
-| 10 | 2 | 18% |
-| 50 | 8 | 42% |
-| 100 | 15 | 63% |
-| 200 | 24 | 71% |
-
-Routing rate increases as kernels cover more task families.
+The compiler extracts:
+- Preconditions: What must be true before execution
+- Postconditions: What must be true after execution  
+- Steps: The actual tool calls and reasoning chain
+- Evidence requirements: What must be observed
+- Rollback triggers: Failure conditions
 
 ## 4. Related Work
 
