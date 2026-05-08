@@ -463,7 +463,7 @@ class VerifierHierarchy:
     ):
         self.heuristic = HeuristicVerifier() if enable_heuristic else None
         self.tool = ToolExecutionVerifier() if enable_tool else None
-        self.llm_judge = LLMJudgeVerifier(model=llm_judge_model) if enable_llm_judge else None
+        self.llm_judge = LLMJudgeVerifier(judge_model=llm_judge_model) if enable_llm_judge else None
     
     def verify(
         self,
