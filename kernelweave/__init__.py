@@ -68,10 +68,12 @@ from .compose import (
 
 # REVOLUTIONARY: Training
 from .training import (
-    ExecutionTrace as TrainingTrace,
-    TraceCollector,
-    TraceTrainer,
-    TrainingConfig as TrainingPipelineConfig,
+    TrainingConfig,
+    TrainingSample,
+    TraceGenerator,
+    KaggleTrainer,
+    train_kernel_native,
+    TRAINING_DEPS,
 )
 
 # REVOLUTIONARY: Verifier
@@ -172,10 +174,6 @@ __all__ = [
     "run_preset",
     
     # REVOLUTIONARY
-    "TrainingTrace",
-    "TraceCollector",
-    "TraceTrainer",
-    "TrainingPipelineConfig",
     "VerifierHierarchy",
     "VerificationResult",
     "HeuristicVerifier",
@@ -191,4 +189,9 @@ __all__ = [
     "KernelNativeConfig",
     "ExecutionResult",
     "create_model",
+    "TrainingSample",
+    "TraceGenerator",
+    "KaggleTrainer",
+    "train_kernel_native",
+    "TRAINING_DEPS",
 ]

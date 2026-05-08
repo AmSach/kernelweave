@@ -49,6 +49,7 @@ kernelweave/trace/capture.py
 kernelweave/trace/events.py
 kernelweave/trace/instrument.py
 kernelweave/training/__init__.py
+kernelweave/training/complete.py
 kernelweave/verifier/__init__.py
 tests/test_compose.py
 tests/test_constrained_grammar.py

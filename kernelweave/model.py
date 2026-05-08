@@ -34,7 +34,26 @@ from .kernel import Kernel, KernelStore, load_sample_store
 from .memory import KernelMemory, MemoryExecutionResult
 from .verifier import VerifierHierarchy, VerificationResult
 from .promotion import AutoPromoter, PromotionConfig
-from .training import ExecutionTrace, TraceCollector, TraceTrainer, TrainingConfig
+from .trace import ExecutionTrace
+from .training import TrainingConfig
+
+# Stub implementations for compatibility
+class TraceCollector:
+    """Stub for compatibility."""
+    def __init__(self, **kwargs):
+        self.traces = []
+    
+    def get_verified_traces(self):
+        return [t for t in self.traces if t.success]
+
+class TraceTrainer:
+    """Stub for compatibility."""
+    def __init__(self, **kwargs):
+        pass
+    
+    def train(self, traces, epochs=3):
+        return {"status": "not_implemented"}
+
 from .runtime import KernelRuntime
 
 

@@ -32,7 +32,7 @@ import hashlib
 
 from ..kernel import Kernel, KernelStatus, KernelStore
 from ..compiler import compile_trace_to_kernel
-from ..training import ExecutionTrace
+from ..trace import ExecutionTrace
 
 
 @dataclass

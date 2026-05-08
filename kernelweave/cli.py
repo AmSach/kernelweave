@@ -50,18 +50,20 @@ def build_parser() -> argparse.ArgumentParser:
     model_show.add_argument("preset_id")
     model_show.add_argument("--models-dir", type=Path, default=None)
 
-    model_run = model_sub.add_parser("run", help="run a prompt against a preset")
-    model_run.add_argument("preset_id")
+    model_run = model_sub.add_parser("run", help="run a prompt with kernel-native model")
     model_run.add_argument("prompt")
-    model_run.add_argument("--models-dir", type=Path, default=None)
-    model_run.add_argument("--kernel-store", type=Path, default=None)
-    model_run.add_argument("--system-prompt", default="")
-    model_run.add_argument("--temperature", type=float, default=None)
-    model_run.add_argument("--max-tokens", type=int, default=None)
-    model_run.add_argument("--mock", action="store_true")
-    model_run.add_argument("--mock-response", default="")
-    model_run.add_argument("--auto-compile", action="store_true", help="automatically compile successful responses into kernel candidates")
-
+    model_run.add_argument("--store", type=Path, default=None)
+    model_run.add_argument("--model-path", type=Path, default=None)
+    model_run.add_argument("--max-tokens", type=int, default=256)
+    
+    # Training commands
+    train_p = sub.add_parser("train", help="train kernel-native model")
+    train_p.add_argument("--base-model", default="Qwen/Qwen2.5-7B-Instruct")
+    train_p.add_argument("--output-dir", type=Path, default=Path("./kernel-native-model"))
+    train_p.add_argument("--samples", type=int, default=5000)
+    train_p.add_argument("--epochs", type=int, default=3)
+    train_p.add_argument("--batch-size", type=int, default=4)
+    
     return parser
 
 
@@ -152,6 +154,39 @@ def main() -> None:
         return
     if args.cmd == "info":
         print(json.dumps(store.summary(), indent=2, sort_keys=True))
+        return
+    
+    if args.cmd == "train":
+        from .training import KaggleTrainer
+        
+        print("=" * 60)
+        print("KERNELWEAVE TRAINING - ZERO EXTERNAL DATA")
+        print("=" * 60)
+        print()
+        
+        trainer = KaggleTrainer(
+            base_model=args.base_model,
+            output_dir=str(args.output_dir),
+        )
+        
+        # Generate data
+        trainer.generate_training_data(n_samples=args.samples)
+        
+        # Train
+        trainer.train(epochs=args.epochs, batch_size=args.batch_size)
+        
+        # Save
+        trainer.save_model()
+        
+        print()
+        print("=" * 60)
+        print("TRAINING COMPLETE")
+        print("=" * 60)
+        print(f"Model saved to: {args.output_dir}/final_model")
+        print()
+        print("To use:")
+        print(f'  model = AutoModelForCausalLM.from_pretrained("{args.output_dir}/final_model")')
+        print(f'  tokenizer = AutoTokenizer.from_pretrained("{args.output_dir}/final_model")')
         return
 
 
