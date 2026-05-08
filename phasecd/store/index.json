@@ -1,0 +1,203 @@
+{
+  "kernels": [
+    {
+      "digest": "58c733c8a433955f96d98bfdd1b0cd54dffa7bb63672f67955fcb3e900c27147",
+      "kernel_id": "kw-api-docs-001",
+      "name": "API Documentation Kernel",
+      "path": "kernels/kw-api-docs-001.json",
+      "status": "verified",
+      "task_family": "api documentation",
+      "version": 2
+    },
+    {
+      "digest": "8edb247786a96d9cd4174a69fee6a1f59c56349bfe937010298277d5641d39e2",
+      "kernel_id": "kw-artifact-compare-001",
+      "name": "Artifact Comparison Kernel",
+      "path": "kernels/kw-artifact-compare-001.json",
+      "status": "verified",
+      "task_family": "artifact comparison",
+      "version": 2
+    },
+    {
+      "digest": "e886d30f614d94b202e9e7c9aa82721a3b69430f6034a50da1961f582a96ea84",
+      "kernel_id": "kw-code-analysis-001",
+      "name": "Code Analysis Kernel",
+      "path": "kernels/kw-code-analysis-001.json",
+      "status": "verified",
+      "task_family": "code analysis",
+      "version": 2
+    },
+    {
+      "digest": "5113730d8875ea1c9e5f3a2b4e3e248335564fd966baa8e4bb2ed22811994f52",
+      "kernel_id": "kw-code-gen-001",
+      "name": "Code Generation Kernel",
+      "path": "kernels/kw-code-gen-001.json",
+      "status": "verified",
+      "task_family": "code generation",
+      "version": 2
+    },
+    {
+      "digest": "41b1807eb2b4e097d9ccbf1697d514b26a564d94e1378e955d4440a9a4a34cd2",
+      "kernel_id": "kw-code-search-001",
+      "name": "Code Search Kernel",
+      "path": "kernels/kw-code-search-001.json",
+      "status": "verified",
+      "task_family": "code search",
+      "version": 2
+    },
+    {
+      "digest": "e4dec032d3e63ad9dc52fb54ea1091a779bcd80e051a70753a31bc51e18065ba",
+      "kernel_id": "kw-config-gen-001",
+      "name": "Config Generation Kernel",
+      "path": "kernels/kw-config-gen-001.json",
+      "status": "verified",
+      "task_family": "config generation",
+      "version": 2
+    },
+    {
+      "digest": "21d1e864d8b7342249d80d4efa30a6dcc20117edddac6226adb865d1a507a420",
+      "kernel_id": "kw-coverage-analysis-001",
+      "name": "Coverage Analysis Kernel",
+      "path": "kernels/kw-coverage-analysis-001.json",
+      "status": "verified",
+      "task_family": "coverage analysis",
+      "version": 2
+    },
+    {
+      "digest": "9543b45cb2cd66b9d365d9c2cccc72a5ff8453d1a134b34f02dbb7ef5641b6eb",
+      "kernel_id": "kw-dep-search-001",
+      "name": "Dependency Search Kernel",
+      "path": "kernels/kw-dep-search-001.json",
+      "status": "verified",
+      "task_family": "dependency search",
+      "version": 2
+    },
+    {
+      "digest": "67044ccdeae3568c535a189323f899b4654ee30a7d58139d73b1dce4104f1ca9",
+      "kernel_id": "kw-diff-analysis-001",
+      "name": "Diff Analysis Kernel",
+      "path": "kernels/kw-diff-analysis-001.json",
+      "status": "verified",
+      "task_family": "diff analysis",
+      "version": 2
+    },
+    {
+      "digest": "9e7d34b55c7d06512767fde623b832cb18e5d6e5650f4808a35bb0690bc60a76",
+      "kernel_id": "kw-doc-gen-001",
+      "name": "Documentation Generation Kernel",
+      "path": "kernels/kw-doc-gen-001.json",
+      "status": "verified",
+      "task_family": "documentation generation",
+      "version": 2
+    },
+    {
+      "digest": "a99804840d9da4dc4991d097c5536eb3a91d91e11a902e37d92770d5c12cf31f",
+      "kernel_id": "kw-error-diagnose-001",
+      "name": "Error Diagnosis Kernel",
+      "path": "kernels/kw-error-diagnose-001.json",
+      "status": "verified",
+      "task_family": "error diagnosis",
+      "version": 2
+    },
+    {
+      "digest": "90b2084cb11f8f7f570f718e3a8321dba0b1d3ff54cccaef0ffb599c362cb804",
+      "kernel_id": "kw-format-convert-001",
+      "name": "Format Conversion Kernel",
+      "path": "kernels/kw-format-convert-001.json",
+      "status": "verified",
+      "task_family": "format conversion",
+      "version": 2
+    },
+    {
+      "digest": "6b9f7fe925d6fd12eff9a6c850962eb931379d9140f0acaeba649b715941c057",
+      "kernel_id": "kw-log-analysis-001",
+      "name": "Log Analysis Kernel",
+      "path": "kernels/kw-log-analysis-001.json",
+      "status": "verified",
+      "task_family": "log analysis",
+      "version": 2
+    },
+    {
+      "digest": "3b8ea103865f146808736eb415af334c31d01ecca6a1da61afaf04439c7b7a28",
+      "kernel_id": "kw-migrate-001",
+      "name": "Migration Kernel",
+      "path": "kernels/kw-migrate-001.json",
+      "status": "verified",
+      "task_family": "migration",
+      "version": 2
+    },
+    {
+      "digest": "ffff98e17b7b6f76139a68af3db0b02884a38ee22dd89645541a4c02e9fe79fe",
+      "kernel_id": "kw-pattern-search-001",
+      "name": "Pattern Search Kernel",
+      "path": "kernels/kw-pattern-search-001.json",
+      "status": "verified",
+      "task_family": "pattern search",
+      "version": 2
+    },
+    {
+      "digest": "5122e734d97d292804272ade99100b1824d23311739e5a08de5876f5d114f505",
+      "kernel_id": "kw-perf-profile-001",
+      "name": "Performance Profiling Kernel",
+      "path": "kernels/kw-perf-profile-001.json",
+      "status": "verified",
+      "task_family": "performance profiling",
+      "version": 2
+    },
+    {
+      "digest": "65cd08406704d30a88d21f43e28b0ce4cf1bbcb6e158d55926953e62ba96695f",
+      "kernel_id": "kw-readme-gen-001",
+      "name": "README Generation Kernel",
+      "path": "kernels/kw-readme-gen-001.json",
+      "status": "verified",
+      "task_family": "readme generation",
+      "version": 2
+    },
+    {
+      "digest": "8d7ee2c948a50c44fc600bc211e0af21b9e72ada749f61bf54fe716cae3de489",
+      "kernel_id": "kw-refactor-001",
+      "name": "Refactoring Kernel",
+      "path": "kernels/kw-refactor-001.json",
+      "status": "verified",
+      "task_family": "refactoring",
+      "version": 2
+    },
+    {
+      "digest": "7abc97bd48ecc3fc0df29b23725d3b93ebcbed4c312de76b66eabd2f0138f9dd",
+      "kernel_id": "kw-security-audit-001",
+      "name": "Security Audit Kernel",
+      "path": "kernels/kw-security-audit-001.json",
+      "status": "verified",
+      "task_family": "security audit",
+      "version": 2
+    },
+    {
+      "digest": "07e0491bea34ac4d7e6650d88d0d762cd3c384639d412d605dfc19f6910ca21d",
+      "kernel_id": "kw-test-debug-001",
+      "name": "Test Debugging Kernel",
+      "path": "kernels/kw-test-debug-001.json",
+      "status": "verified",
+      "task_family": "test debugging",
+      "version": 2
+    },
+    {
+      "digest": "c328b7af53b1ab248f9e4ef28bf695708378393bcd4f4bb109831329d3165ea4",
+      "kernel_id": "kw-test-gen-001",
+      "name": "Test Generation Kernel",
+      "path": "kernels/kw-test-gen-001.json",
+      "status": "verified",
+      "task_family": "test generation",
+      "version": 2
+    },
+    {
+      "digest": "9dbfefd97e344d13602037342f77b8edb8e3b107359658e2e55d841edf1f0983",
+      "kernel_id": "kw-version-compare-001",
+      "name": "Version Comparison Kernel",
+      "path": "kernels/kw-version-compare-001.json",
+      "status": "verified",
+      "task_family": "version comparison",
+      "version": 2
+    }
+  ],
+  "traces": []
+}

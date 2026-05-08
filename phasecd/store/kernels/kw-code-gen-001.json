@@ -1,0 +1,115 @@
+{
+  "description": "Generate code from specifications, examples, or descriptions",
+  "digest": "5113730d8875ea1c9e5f3a2b4e3e248335564fd966baa8e4bb2ed22811994f52",
+  "evidence_requirements": [
+    "AST generated from output",
+    "No syntax errors",
+    "Test coverage percentage"
+  ],
+  "input_schema": {
+    "properties": {
+      "language": {
+        "type": "string"
+      },
+      "spec": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-code-gen-001",
+  "name": "Code Generation Kernel",
+  "output_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "tests": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "code compiles in target language",
+    "code follows provided conventions",
+    "generated tests cover main paths",
+    "no TODO markers in output"
+  ],
+  "preconditions": [
+    "specification is complete and unambiguous",
+    "target language is specified",
+    "naming conventions are provided",
+    "no security-sensitive operations requested"
+  ],
+  "rollback": [
+    "if syntax invalid, retry with correction",
+    "if tests fail, explain failure and regenerate"
+  ],
+  "source_trace_ids": [
+    "trace-code-gen-001"
+  ],
+  "status": {
+    "confidence": 0.78,
+    "failures": 2,
+    "passes": 15,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse specification into requirements"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "spec_parser"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "language": "auto"
+      },
+      "step": 3,
+      "tool": "code_generator"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "syntax_checker"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 5,
+      "tool": "test_generator"
+    },
+    {
+      "action": "evidence",
+      "step": 6,
+      "text": "syntax valid"
+    },
+    {
+      "action": "verification",
+      "step": 7,
+      "text": "tests pass"
+    }
+  ],
+  "task_family": "code generation",
+  "tests": [
+    {
+      "expected": {
+        "compiles": true
+      },
+      "input": {
+        "language": "python",
+        "spec": "function that adds two numbers"
+      },
+      "name": "python-function"
+    }
+  ],
+  "version": 2
+}

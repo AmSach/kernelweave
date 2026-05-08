@@ -1,0 +1,16 @@
+{
+  "eval_rows": 23,
+  "kernels": 22,
+  "repo": "/home/.z/workspaces/con_d7kcq1mzmfXZeHOQ/kernelweave",
+  "rows_total": 112,
+  "store": "/home/workspace/KernelWeave_PhaseCD/store",
+  "targets": [
+    "composition",
+    "distillation",
+    "memory_retrieval",
+    "prompting",
+    "selection",
+    "trace_finetune"
+  ],
+  "train_rows": 89
+}

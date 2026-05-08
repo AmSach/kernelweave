@@ -1,0 +1,105 @@
+{
+  "description": "Generate README files from project structure and metadata",
+  "digest": "65cd08406704d30a88d21f43e28b0ce4cf1bbcb6e158d55926953e62ba96695f",
+  "evidence_requirements": [
+    "Install command verified",
+    "Usage examples tested",
+    "License detected"
+  ],
+  "input_schema": {
+    "properties": {
+      "metadata": {
+        "type": "object"
+      },
+      "project_path": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-readme-gen-001",
+  "name": "README Generation Kernel",
+  "output_schema": {
+    "properties": {
+      "readme": {
+        "type": "string"
+      },
+      "sections": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "sections include: install, usage, api, contributing",
+    "installation instructions are accurate",
+    "examples are runnable",
+    "license is correctly identified"
+  ],
+  "preconditions": [
+    "project has recognizable structure",
+    "package metadata exists (package.json, setup.py, etc.)",
+    "entry points are identifiable"
+  ],
+  "rollback": [
+    "if no metadata, generate from structure",
+    "if unclear purpose, request description"
+  ],
+  "source_trace_ids": [
+    "trace-readme-gen-001"
+  ],
+  "status": {
+    "confidence": 0.8,
+    "failures": 0,
+    "passes": 5,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Scan project structure"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "structure_analyzer"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "metadata_extractor"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "readme_generator"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "all sections generated"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "commands are valid"
+    }
+  ],
+  "task_family": "readme generation",
+  "tests": [
+    {
+      "expected": {
+        "has_install_section": true
+      },
+      "input": {
+        "project_path": "/tmp/project"
+      },
+      "name": "python-readme"
+    }
+  ],
+  "version": 2
+}

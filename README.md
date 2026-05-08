@@ -20,6 +20,7 @@ When a language model solves a task successfully, KernelWeave:
 - **Auto-promotion** — High-confidence repeated successes become candidate kernels
 - **Model-agnostic** — Works with any OpenAI/Anthropic/openai-compatible backend
 - **Runnable training bundle** — a pure-Python Kaggle-safe calibration/tracing path that keeps the kernel architecture executable without HF/CUDA wheel drama
+- **Phase C/D handoff** — mirrored under `phasecd/` in this repo for Kaggle training, benchmark, and export work
 
 ## What doesn't work yet
 
@@ -40,57 +41,14 @@ The novel part isn't the routing (that's retrieval) or the kernels (that's progr
 
 Testable claim: For repeated task families, routing + verification beats vanilla RAG on output quality and cost.
 
-## What's needed for a paper
+## What’s in `phasecd/`
 
-1. **Benchmark** — Run on ToolBench, AgentBench, or a custom benchmark with repeatable tasks
-2. **Baselines** — Compare against vanilla RAG, BM25 retrieval, no verification
-3. **Metrics** — Routing precision/recall, output quality, cost per query
-4. **Ablations** — Does verification actually improve routing decisions?
-
-Without numbers, it's a prototype. With numbers, it's a 4-page workshop paper with a clear contribution.
-
-## Usage
-
-```bash
-# Initialize kernel store
-python -m kernelweave.cli init ./store
-python -m kernelweave.cli add-sample ./store
-
-# Run with model backend
-python -m kernelweave.cli model run qwen0_5 "compare two artifacts" \
-  --kernel-store ./store \
-  --auto-compile
-
-# Verify routing
-python -m kernelweave.cli plan ./store "summarize differences between files"
-```
-
-## Architecture
-
-```
-prompt → embed → kernel match → execute kernel OR generate
-                                          ↓
-                                    verify output
-                                          ↓
-                                    record feedback
-                                          ↓
-                              auto-promote if high confidence
-```
-
-## Components
-
-- `kernelweave/runtime.py` — Routing + verification
-- `kernelweave/kernel.py` — Kernel store + feedback accumulation  
-- `kernelweave/calibration.py` — Logistic regression confidence model
-- `kernelweave/llm/model.py` — Model wrapper with kernel-aware prompts
-- `kernelweave/training/` — pure-Python synthetic training / calibration path
-
-## When kernels are worth it
-
-**High repetition** — Customer support, data pipelines, routine analysis  
-**Low repetition** — Creative writing, one-off research, exploratory chat
-
-The overhead of compilation, matching, and verification only pays off when the same task family appears many times.
+- phase plan
+- dataset spec
+- benchmark harness
+- Kaggle training entrypoint
+- generated phase data
+- benchmark output
 
 ## Status
 

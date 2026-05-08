@@ -1,0 +1,108 @@
+{
+  "description": "Generate configuration files from requirements or templates",
+  "digest": "e4dec032d3e63ad9dc52fb54ea1091a779bcd80e051a70753a31bc51e18065ba",
+  "evidence_requirements": [
+    "Schema compliance checked",
+    "Deprecated keys avoided",
+    "Environment-specific overrides applied"
+  ],
+  "input_schema": {
+    "properties": {
+      "format": {
+        "type": "string"
+      },
+      "requirements": {
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-config-gen-001",
+  "name": "Config Generation Kernel",
+  "output_schema": {
+    "properties": {
+      "config": {
+        "type": "string"
+      },
+      "validated": {
+        "type": "boolean"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "config is valid in target format",
+    "required fields are present",
+    "defaults are sensible",
+    "comments explain non-obvious settings"
+  ],
+  "preconditions": [
+    "requirements specify target environment",
+    "format is one of: yaml, json, toml, ini",
+    "no sensitive values in requirements"
+  ],
+  "rollback": [
+    "if schema unknown, use generic template",
+    "if validation fails, list errors"
+  ],
+  "source_trace_ids": [
+    "trace-config-gen-001"
+  ],
+  "status": {
+    "confidence": 0.88,
+    "failures": 0,
+    "passes": 6,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Map requirements to config schema"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "schema_resolver"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "config_generator"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "config_validator"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "schema validated"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "format correct"
+    }
+  ],
+  "task_family": "config generation",
+  "tests": [
+    {
+      "expected": {
+        "config_valid": true
+      },
+      "input": {
+        "format": "yaml",
+        "requirements": {
+          "port": 8080
+        }
+      },
+      "name": "yaml-config"
+    }
+  ],
+  "version": 2
+}

@@ -1,0 +1,99 @@
+{
+  "description": "Search for specific code patterns or anti-patterns",
+  "digest": "ffff98e17b7b6f76139a68af3db0b02884a38ee22dd89645541a4c02e9fe79fe",
+  "evidence_requirements": [
+    "Pattern compiled successfully",
+    "Match count by file",
+    "Execution time"
+  ],
+  "input_schema": {
+    "properties": {
+      "pattern": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-pattern-search-001",
+  "name": "Pattern Search Kernel",
+  "output_schema": {
+    "properties": {
+      "analysis": {
+        "type": "string"
+      },
+      "matches": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "matches include context and explanation",
+    "false positive rate is estimated",
+    "pattern variants are considered"
+  ],
+  "preconditions": [
+    "pattern is well-defined (regex, AST, semantic)",
+    "search type is specified",
+    "codebase is parseable"
+  ],
+  "rollback": [
+    "if pattern invalid, suggest alternatives",
+    "if too many matches, request narrower pattern"
+  ],
+  "source_trace_ids": [
+    "trace-pattern-search-001"
+  ],
+  "status": {
+    "confidence": 0.87,
+    "failures": 0,
+    "passes": 8,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Compile pattern to search form"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "pattern_compiler"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "pattern_matcher"
+    },
+    {
+      "action": "evidence",
+      "step": 4,
+      "text": "all matches captured"
+    },
+    {
+      "action": "verification",
+      "step": 5,
+      "text": "no false positives in sample"
+    }
+  ],
+  "task_family": "pattern search",
+  "tests": [
+    {
+      "expected": {
+        "matches_format": "list"
+      },
+      "input": {
+        "pattern": "TODO|FIXME",
+        "type": "regex"
+      },
+      "name": "todo-search"
+    }
+  ],
+  "version": 2
+}

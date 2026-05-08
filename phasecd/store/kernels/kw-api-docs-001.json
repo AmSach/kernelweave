@@ -1,0 +1,106 @@
+{
+  "description": "Generate API documentation from code or specs",
+  "digest": "58c733c8a433955f96d98bfdd1b0cd54dffa7bb63672f67955fcb3e900c27147",
+  "evidence_requirements": [
+    "Endpoint count",
+    "Example coverage",
+    "Auth method documented"
+  ],
+  "input_schema": {
+    "properties": {
+      "api_spec": {
+        "type": "string"
+      },
+      "format": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-api-docs-001",
+  "name": "API Documentation Kernel",
+  "output_schema": {
+    "properties": {
+      "docs": {
+        "type": "string"
+      },
+      "examples": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "all endpoints are documented",
+    "request/response examples are included",
+    "authentication is explained",
+    "format matches specification"
+  ],
+  "preconditions": [
+    "API spec is provided (OpenAPI, GraphQL, etc.) or extractable",
+    "target format is specified",
+    "authentication requirements are known"
+  ],
+  "rollback": [
+    "if spec incomplete, document available parts",
+    "if format unknown, use markdown"
+  ],
+  "source_trace_ids": [
+    "trace-api-docs-001"
+  ],
+  "status": {
+    "confidence": 0.87,
+    "failures": 0,
+    "passes": 7,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse API specification"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "spec_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "example_generator"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "doc_formatter"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "all endpoints covered"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "examples are valid"
+    }
+  ],
+  "task_family": "api documentation",
+  "tests": [
+    {
+      "expected": {
+        "has_endpoints": true
+      },
+      "input": {
+        "api_spec": "openapi: 3.0",
+        "format": "markdown"
+      },
+      "name": "openapi-docs"
+    }
+  ],
+  "version": 2
+}

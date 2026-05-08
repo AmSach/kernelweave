@@ -1,0 +1,117 @@
+{
+  "description": "Compare two structured artifacts and produce a grounded summary",
+  "digest": "8edb247786a96d9cd4174a69fee6a1f59c56349bfe937010298277d5641d39e2",
+  "evidence_requirements": [
+    "both artifacts loaded",
+    "diff metrics computed",
+    "examples of changes"
+  ],
+  "input_schema": {
+    "properties": {
+      "artifact_a": {
+        "type": "string"
+      },
+      "artifact_b": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-artifact-compare-001",
+  "name": "Artifact Comparison Kernel",
+  "output_schema": {
+    "properties": {
+      "differences": {
+        "type": "array"
+      },
+      "summary": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "output mentions both artifacts by name",
+    "differences are categorized by type",
+    "summary includes both structural and content changes",
+    "no rollback triggered"
+  ],
+  "preconditions": [
+    "inputs are named files, schemas, or documents",
+    "both artifacts are accessible and parseable",
+    "comparison scope is defined",
+    "artifacts are of compatible types"
+  ],
+  "rollback": [
+    "if artifacts incompatible, suggest conversion",
+    "if one missing, report error"
+  ],
+  "source_trace_ids": [
+    "trace-artifact-compare-001"
+  ],
+  "status": {
+    "confidence": 0.88,
+    "failures": 0,
+    "passes": 12,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Load and parse both artifacts"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "path": "A"
+      },
+      "step": 2,
+      "tool": "load_artifact"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "path": "B"
+      },
+      "step": 3,
+      "tool": "load_artifact"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "structure_comparator"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 5,
+      "tool": "content_comparator"
+    },
+    {
+      "action": "evidence",
+      "step": 6,
+      "text": "differences catalogued"
+    },
+    {
+      "action": "verification",
+      "step": 7,
+      "text": "summary references both"
+    }
+  ],
+  "task_family": "artifact comparison",
+  "tests": [
+    {
+      "expected": {
+        "min_differences": 0
+      },
+      "input": {
+        "artifact_a": "v1.py",
+        "artifact_b": "v2.py"
+      },
+      "name": "file-compare"
+    }
+  ],
+  "version": 2
+}

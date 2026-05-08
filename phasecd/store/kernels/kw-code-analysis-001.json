@@ -1,0 +1,111 @@
+{
+  "description": "Analyze code structure, patterns, and quality",
+  "digest": "e886d30f614d94b202e9e7c9aa82721a3b69430f6034a50da1961f582a96ea84",
+  "evidence_requirements": [
+    "AST generated",
+    "complexity metrics calculated",
+    "patterns identified"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "language": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-code-analysis-001",
+  "name": "Code Analysis Kernel",
+  "output_schema": {
+    "properties": {
+      "analysis": {
+        "type": "object"
+      },
+      "score": {
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "analysis includes complexity metrics",
+    "analysis identifies potential issues",
+    "output mentions specific code sections",
+    "score is between 0 and 100"
+  ],
+  "preconditions": [
+    "code is valid syntax in the specified language",
+    "language is one of: python, javascript, typescript, java, go, rust",
+    "code length is reasonable (< 10,000 lines)",
+    "analysis focuses on structure, not runtime behavior"
+  ],
+  "rollback": [
+    "if parsing fails, report syntax error",
+    "if language unsupported, fallback to text analysis"
+  ],
+  "source_trace_ids": [
+    "trace-code-analysis-001"
+  ],
+  "status": {
+    "confidence": 0.85,
+    "failures": 0,
+    "passes": 5,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse code into AST"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "language": "auto"
+      },
+      "step": 2,
+      "tool": "ast_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "complexity_analyzer"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "pattern_detector"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "complexity score computed"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "all sections covered"
+    }
+  ],
+  "task_family": "code analysis",
+  "tests": [
+    {
+      "expected": {
+        "score_range": [
+          0,
+          100
+        ]
+      },
+      "input": {
+        "language": "python"
+      },
+      "name": "python-analysis"
+    }
+  ],
+  "version": 2
+}

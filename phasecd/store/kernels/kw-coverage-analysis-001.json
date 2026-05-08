@@ -1,0 +1,107 @@
+{
+  "description": "Analyze test coverage and identify gaps",
+  "digest": "21d1e864d8b7342249d80d4efa30a6dcc20117edddac6226adb865d1a507a420",
+  "evidence_requirements": [
+    "Line coverage percentage",
+    "Branch coverage if available",
+    "Uncovered functions"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "coverage_report": {
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-coverage-analysis-001",
+  "name": "Coverage Analysis Kernel",
+  "output_schema": {
+    "properties": {
+      "recommendations": {
+        "type": "array"
+      },
+      "uncovered": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "uncovered lines are listed",
+    "recommendations target specific gaps",
+    "output includes coverage percentage",
+    "critical paths are prioritized"
+  ],
+  "preconditions": [
+    "coverage report is available",
+    "code is instrumented or coverage collected",
+    "minimum coverage threshold is defined"
+  ],
+  "rollback": [
+    "if no coverage report, suggest running tests with coverage",
+    "if format unknown, try common formats"
+  ],
+  "source_trace_ids": [
+    "trace-coverage-analysis-001"
+  ],
+  "status": {
+    "confidence": 0.83,
+    "failures": 0,
+    "passes": 6,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse coverage report"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "coverage_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "gap_analyzer"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "priority_ranker"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "gaps identified"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "recommendations address gaps"
+    }
+  ],
+  "task_family": "coverage analysis",
+  "tests": [
+    {
+      "expected": {
+        "has_recommendations": true
+      },
+      "input": {
+        "coverage_report": {
+          "percentage": 50
+        }
+      },
+      "name": "low-coverage"
+    }
+  ],
+  "version": 2
+}

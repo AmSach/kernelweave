@@ -1,0 +1,105 @@
+{
+  "description": "Find and analyze code dependencies",
+  "digest": "9543b45cb2cd66b9d365d9c2cccc72a5ff8453d1a134b34f02dbb7ef5641b6eb",
+  "evidence_requirements": [
+    "Import count",
+    "Unique dependencies",
+    "External vs internal split"
+  ],
+  "input_schema": {
+    "properties": {
+      "direction": {
+        "type": "string"
+      },
+      "target": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-dep-search-001",
+  "name": "Dependency Search Kernel",
+  "output_schema": {
+    "properties": {
+      "dependencies": {
+        "type": "array"
+      },
+      "graph": {
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "dependencies include version info where available",
+    "graph shows direct and transitive deps",
+    "circular dependencies are flagged"
+  ],
+  "preconditions": [
+    "target is a file, module, or package",
+    "direction is 'imports' or 'imported_by'",
+    "language is supported"
+  ],
+  "rollback": [
+    "if unresolved imports, list them",
+    "if circular deps, show cycle"
+  ],
+  "source_trace_ids": [
+    "trace-dep-search-001"
+  ],
+  "status": {
+    "confidence": 0.83,
+    "failures": 0,
+    "passes": 6,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse import statements"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "import_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "dependency_resolver"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "graph_builder"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "all imports resolved"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "no missing dependencies"
+    }
+  ],
+  "task_family": "dependency search",
+  "tests": [
+    {
+      "expected": {
+        "has_dependencies": "boolean"
+      },
+      "input": {
+        "direction": "imports",
+        "target": "main.py"
+      },
+      "name": "import-search"
+    }
+  ],
+  "version": 2
+}

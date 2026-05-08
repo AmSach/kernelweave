@@ -1,0 +1,108 @@
+{
+  "description": "Generate unit tests for existing code",
+  "digest": "c328b7af53b1ab248f9e4ef28bf695708378393bcd4f4bb109831329d3165ea4",
+  "evidence_requirements": [
+    "Function count",
+    "Edge case list",
+    "Mock requirements"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "framework": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-test-gen-001",
+  "name": "Test Generation Kernel",
+  "output_schema": {
+    "properties": {
+      "coverage_estimate": {
+        "type": "number"
+      },
+      "tests": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "tests use specified framework",
+    "tests cover edge cases",
+    "coverage estimate is reasonable (> 70%)",
+    "tests are runnable"
+  ],
+  "preconditions": [
+    "code is valid and testable",
+    "test framework is specified",
+    "function signatures are accessible"
+  ],
+  "rollback": [
+    "if code untestable, suggest refactoring",
+    "if framework unknown, use generic assertions"
+  ],
+  "source_trace_ids": [
+    "trace-test-gen-001"
+  ],
+  "status": {
+    "confidence": 0.82,
+    "failures": 1,
+    "passes": 9,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Identify testable units"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "function_extractor"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "edge_case_analyzer"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "framework": "pytest"
+      },
+      "step": 4,
+      "tool": "test_generator"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "edge cases covered"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "tests execute"
+    }
+  ],
+  "task_family": "test generation",
+  "tests": [
+    {
+      "expected": {
+        "tests_contain": "assert"
+      },
+      "input": {
+        "code": "def add(a, b): return a + b",
+        "framework": "pytest"
+      },
+      "name": "pytest-gen"
+    }
+  ],
+  "version": 2
+}

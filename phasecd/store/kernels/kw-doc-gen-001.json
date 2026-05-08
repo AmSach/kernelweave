@@ -1,0 +1,108 @@
+{
+  "description": "Generate documentation from code, comments, or specifications",
+  "digest": "9e7d34b55c7d06512767fde623b832cb18e5d6e5650f4808a35bb0690bc60a76",
+  "evidence_requirements": [
+    "API coverage percentage",
+    "Example count",
+    "Cross-references complete"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "format": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-doc-gen-001",
+  "name": "Documentation Generation Kernel",
+  "output_schema": {
+    "properties": {
+      "docs": {
+        "type": "string"
+      },
+      "sections": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "docs include function signatures",
+    "docs have usage examples",
+    "sections cover: overview, usage, api, examples",
+    "format matches specification"
+  ],
+  "preconditions": [
+    "code has meaningful names",
+    "target doc format is specified (markdown, rst, html)",
+    "audience is defined"
+  ],
+  "rollback": [
+    "if no docstrings, generate from signatures",
+    "if format unknown, use markdown"
+  ],
+  "source_trace_ids": [
+    "trace-doc-gen-001"
+  ],
+  "status": {
+    "confidence": 0.85,
+    "failures": 0,
+    "passes": 7,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Extract structure and signatures"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "docstring_extractor"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "example_generator"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "format": "markdown"
+      },
+      "step": 4,
+      "tool": "doc_formatter"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "all public APIs documented"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "examples are runnable"
+    }
+  ],
+  "task_family": "documentation generation",
+  "tests": [
+    {
+      "expected": {
+        "docs_contain": "#"
+      },
+      "input": {
+        "code": "def foo(): pass",
+        "format": "markdown"
+      },
+      "name": "markdown-docs"
+    }
+  ],
+  "version": 2
+}

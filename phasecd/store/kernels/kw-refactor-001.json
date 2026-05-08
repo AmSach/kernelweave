@@ -1,0 +1,111 @@
+{
+  "description": "Apply automated refactorings to code",
+  "digest": "8d7ee2c948a50c44fc600bc211e0af21b9e72ada749f61bf54fe716cae3de489",
+  "evidence_requirements": [
+    "Change count",
+    "Test results before/after",
+    "Complexity change"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "refactoring": {
+        "type": "string"
+      },
+      "target": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-refactor-001",
+  "name": "Refactoring Kernel",
+  "output_schema": {
+    "properties": {
+      "changes": {
+        "type": "array"
+      },
+      "refactored": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "behavior is preserved (tests pass)",
+    "code style is maintained",
+    "changes are minimal and correct",
+    "no syntax errors"
+  ],
+  "preconditions": [
+    "code is syntactically valid",
+    "refactoring type is supported",
+    "target (function, variable, etc.) is specified",
+    "tests exist or are generated"
+  ],
+  "rollback": [
+    "if tests fail, show diff and rollback",
+    "if refactoring unsupported, suggest manual approach"
+  ],
+  "source_trace_ids": [
+    "trace-refactor-001"
+  ],
+  "status": {
+    "confidence": 0.8,
+    "failures": 1,
+    "passes": 8,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Identify refactoring scope"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "ast_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "refactoring_engine"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "test_runner"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "tests pass after refactor"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "no behavioral changes"
+    }
+  ],
+  "task_family": "refactoring",
+  "tests": [
+    {
+      "expected": {
+        "refactored_contains": "y = 1"
+      },
+      "input": {
+        "code": "x = 1",
+        "refactoring": "rename",
+        "target": "x->y"
+      },
+      "name": "rename-var"
+    }
+  ],
+  "version": 2
+}

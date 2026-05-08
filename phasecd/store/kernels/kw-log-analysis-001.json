@@ -1,0 +1,105 @@
+{
+  "description": "Analyze logs to find patterns, anomalies, or root causes",
+  "digest": "6b9f7fe925d6fd12eff9a6c850962eb931379d9140f0acaeba649b715941c057",
+  "evidence_requirements": [
+    "Log lines processed",
+    "Error rate computed",
+    "Anomaly score"
+  ],
+  "input_schema": {
+    "properties": {
+      "logs": {
+        "type": "string"
+      },
+      "query": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-log-analysis-001",
+  "name": "Log Analysis Kernel",
+  "output_schema": {
+    "properties": {
+      "findings": {
+        "type": "array"
+      },
+      "timeline": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "findings are time-ordered",
+    "anomalies are highlighted",
+    "output includes log snippets",
+    "correlations are identified"
+  ],
+  "preconditions": [
+    "logs are in recognizable format",
+    "time range is specified or inferred",
+    "log source is known"
+  ],
+  "rollback": [
+    "if format unknown, try common formats",
+    "if logs corrupted, report lines skipped"
+  ],
+  "source_trace_ids": [
+    "trace-log-analysis-001"
+  ],
+  "status": {
+    "confidence": 0.85,
+    "failures": 0,
+    "passes": 7,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse and normalize log format"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "log_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "pattern_detector"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "anomaly_detector"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "patterns extracted"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "findings supported by logs"
+    }
+  ],
+  "task_family": "log analysis",
+  "tests": [
+    {
+      "expected": {
+        "has_findings": true
+      },
+      "input": {
+        "logs": "ERROR at 10:00\nERROR at 10:01\nERROR at 10:02"
+      },
+      "name": "error-spike"
+    }
+  ],
+  "version": 2
+}

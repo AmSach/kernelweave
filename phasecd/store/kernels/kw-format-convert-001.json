@@ -1,0 +1,114 @@
+{
+  "description": "Convert data between formats (JSON, YAML, CSV, XML, etc.)",
+  "digest": "90b2084cb11f8f7f570f718e3a8321dba0b1d3ff54cccaef0ffb599c362cb804",
+  "evidence_requirements": [
+    "Source format confidence",
+    "Target format validation",
+    "Data loss warnings"
+  ],
+  "input_schema": {
+    "properties": {
+      "data": {
+        "type": "string"
+      },
+      "from_format": {
+        "type": "string"
+      },
+      "to_format": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-format-convert-001",
+  "name": "Format Conversion Kernel",
+  "output_schema": {
+    "properties": {
+      "converted": {
+        "type": "string"
+      },
+      "lossy": {
+        "type": "boolean"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "converted data is valid in target format",
+    "lossy conversion is flagged",
+    "structure is preserved where possible",
+    "no data corruption"
+  ],
+  "preconditions": [
+    "source format is detected or specified",
+    "target format supports data structure",
+    "data is valid in source format"
+  ],
+  "rollback": [
+    "if format unsupported, suggest alternatives",
+    "if data malformed, report errors"
+  ],
+  "source_trace_ids": [
+    "trace-format-convert-001"
+  ],
+  "status": {
+    "confidence": 0.92,
+    "failures": 0,
+    "passes": 14,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse source format into intermediate representation"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "format_detector"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "format": "auto"
+      },
+      "step": 3,
+      "tool": "parser"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "format": "target"
+      },
+      "step": 4,
+      "tool": "serializer"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "roundtrip successful"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "output valid"
+    }
+  ],
+  "task_family": "format conversion",
+  "tests": [
+    {
+      "expected": {
+        "valid_yaml": true
+      },
+      "input": {
+        "data": "{\"a\": 1}",
+        "from_format": "json",
+        "to_format": "yaml"
+      },
+      "name": "json-to-yaml"
+    }
+  ],
+  "version": 2
+}

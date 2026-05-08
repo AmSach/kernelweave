@@ -1,0 +1,111 @@
+{
+  "description": "Migrate code between versions, frameworks, or platforms",
+  "digest": "3b8ea103865f146808736eb415af334c31d01ecca6a1da61afaf04439c7b7a28",
+  "evidence_requirements": [
+    "Changes categorized by type",
+    "Manual steps identified",
+    "Risk assessment"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "from": {
+        "type": "string"
+      },
+      "to": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-migrate-001",
+  "name": "Migration Kernel",
+  "output_schema": {
+    "properties": {
+      "breaking_changes": {
+        "type": "array"
+      },
+      "migrated": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "migrated code is valid in target",
+    "breaking changes are documented",
+    "migration guide is provided",
+    "tests pass after migration"
+  ],
+  "preconditions": [
+    "source version/framework is identified",
+    "target version/framework is specified",
+    "migration path is known",
+    "backup or version control exists"
+  ],
+  "rollback": [
+    "if migration fails, show partial results",
+    "if target unsupported, suggest alternatives"
+  ],
+  "source_trace_ids": [
+    "trace-migrate-001"
+  ],
+  "status": {
+    "confidence": 0.75,
+    "failures": 2,
+    "passes": 5,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Analyze migration requirements"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "version_detector"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "migration_mapper"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "code_transformer"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "all known patterns migrated"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "syntax valid in target"
+    }
+  ],
+  "task_family": "migration",
+  "tests": [
+    {
+      "expected": {
+        "migrated_contains": "print("
+      },
+      "input": {
+        "code": "print 'hello'",
+        "from": "python2",
+        "to": "python3"
+      },
+      "name": "python2-to-3"
+    }
+  ],
+  "version": 2
+}

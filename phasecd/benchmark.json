@@ -1,0 +1,331 @@
+{
+  "cases": [
+    {
+      "confidence": 0.84,
+      "evidence_requirements": [
+        "Semver distance computed",
+        "Breaking changes listed",
+        "Migration notes included"
+      ],
+      "kernel_id": "kw-version-compare-001",
+      "kernel_name": "Version Comparison Kernel",
+      "mode": "kernel",
+      "plan": [
+        {
+          "action": "plan",
+          "step": 1,
+          "text": "Fetch release notes for both versions"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 2,
+          "tool": "changelog_parser"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 3,
+          "tool": "semver_comparator"
+        },
+        {
+          "action": "evidence",
+          "step": 4,
+          "text": "breaking changes identified"
+        },
+        {
+          "action": "verification",
+          "step": 5,
+          "text": "all sections compared"
+        }
+      ],
+      "postconditions": [
+        "breaking changes are clearly marked",
+        "output includes version numbers",
+        "changes are grouped by category"
+      ],
+      "preconditions": [
+        "versions follow semantic versioning or date format",
+        "changelog or release notes available",
+        "comparison is forward in time (A < B)"
+      ],
+      "reason": "matched version comparison",
+      "rollback": [
+        "if versions unreleased, compare from source",
+        "if changelog missing, generate from commits"
+      ],
+      "score": 0.6430054341010532
+    },
+    {
+      "confidence": 0.92,
+      "evidence_requirements": [
+        "Source format confidence",
+        "Target format validation",
+        "Data loss warnings"
+      ],
+      "kernel_id": "kw-format-convert-001",
+      "kernel_name": "Format Conversion Kernel",
+      "mode": "kernel",
+      "plan": [
+        {
+          "action": "plan",
+          "step": 1,
+          "text": "Parse source format into intermediate representation"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 2,
+          "tool": "format_detector"
+        },
+        {
+          "action": "tool",
+          "args": {
+            "format": "auto"
+          },
+          "step": 3,
+          "tool": "parser"
+        },
+        {
+          "action": "tool",
+          "args": {
+            "format": "target"
+          },
+          "step": 4,
+          "tool": "serializer"
+        },
+        {
+          "action": "evidence",
+          "step": 5,
+          "text": "roundtrip successful"
+        },
+        {
+          "action": "verification",
+          "step": 6,
+          "text": "output valid"
+        }
+      ],
+      "postconditions": [
+        "converted data is valid in target format",
+        "lossy conversion is flagged",
+        "structure is preserved where possible",
+        "no data corruption"
+      ],
+      "preconditions": [
+        "source format is detected or specified",
+        "target format supports data structure",
+        "data is valid in source format"
+      ],
+      "reason": "matched format conversion",
+      "rollback": [
+        "if format unsupported, suggest alternatives",
+        "if data malformed, report errors"
+      ],
+      "score": 0.5365422295841495
+    },
+    {
+      "confidence": 0.92,
+      "evidence_requirements": [
+        "Source format confidence",
+        "Target format validation",
+        "Data loss warnings"
+      ],
+      "kernel_id": "kw-format-convert-001",
+      "kernel_name": "Format Conversion Kernel",
+      "mode": "kernel",
+      "plan": [
+        {
+          "action": "plan",
+          "step": 1,
+          "text": "Parse source format into intermediate representation"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 2,
+          "tool": "format_detector"
+        },
+        {
+          "action": "tool",
+          "args": {
+            "format": "auto"
+          },
+          "step": 3,
+          "tool": "parser"
+        },
+        {
+          "action": "tool",
+          "args": {
+            "format": "target"
+          },
+          "step": 4,
+          "tool": "serializer"
+        },
+        {
+          "action": "evidence",
+          "step": 5,
+          "text": "roundtrip successful"
+        },
+        {
+          "action": "verification",
+          "step": 6,
+          "text": "output valid"
+        }
+      ],
+      "postconditions": [
+        "converted data is valid in target format",
+        "lossy conversion is flagged",
+        "structure is preserved where possible",
+        "no data corruption"
+      ],
+      "preconditions": [
+        "source format is detected or specified",
+        "target format supports data structure",
+        "data is valid in source format"
+      ],
+      "reason": "matched format conversion",
+      "rollback": [
+        "if format unsupported, suggest alternatives",
+        "if data malformed, report errors"
+      ],
+      "score": 0.5058714882600008
+    },
+    {
+      "confidence": 0.9,
+      "evidence_requirements": [
+        "OWASP Top 10 coverage",
+        "line numbers for all findings",
+        "CWE references where applicable"
+      ],
+      "kernel_id": "kw-security-audit-001",
+      "kernel_name": "Security Audit Kernel",
+      "mode": "kernel",
+      "plan": [
+        {
+          "action": "plan",
+          "step": 1,
+          "text": "Scan for known vulnerability patterns"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 2,
+          "tool": "sql_injection_scanner"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 3,
+          "tool": "xss_scanner"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 4,
+          "tool": "auth_checker"
+        },
+        {
+          "action": "evidence",
+          "step": 5,
+          "text": "each finding has line numbers"
+        },
+        {
+          "action": "verification",
+          "step": 6,
+          "text": "severity classification correct"
+        }
+      ],
+      "postconditions": [
+        "vulnerabilities are categorized by severity",
+        "each vulnerability has remediation suggestion",
+        "risk level is one of: low, medium, high, critical",
+        "no false positives in critical findings"
+      ],
+      "preconditions": [
+        "code is accessible for analysis",
+        "audit scope is clearly defined",
+        "context includes deployment environment",
+        "security checklist is available"
+      ],
+      "reason": "matched security audit",
+      "rollback": [
+        "if code is minified, request source",
+        "if dependencies unknown, skip transitive analysis"
+      ],
+      "score": 0.6512138714977399
+    },
+    {
+      "confidence": 0.92,
+      "evidence_requirements": [
+        "Source format confidence",
+        "Target format validation",
+        "Data loss warnings"
+      ],
+      "kernel_id": "kw-format-convert-001",
+      "kernel_name": "Format Conversion Kernel",
+      "mode": "kernel",
+      "plan": [
+        {
+          "action": "plan",
+          "step": 1,
+          "text": "Parse source format into intermediate representation"
+        },
+        {
+          "action": "tool",
+          "args": {},
+          "step": 2,
+          "tool": "format_detector"
+        },
+        {
+          "action": "tool",
+          "args": {
+            "format": "auto"
+          },
+          "step": 3,
+          "tool": "parser"
+        },
+        {
+          "action": "tool",
+          "args": {
+            "format": "target"
+          },
+          "step": 4,
+          "tool": "serializer"
+        },
+        {
+          "action": "evidence",
+          "step": 5,
+          "text": "roundtrip successful"
+        },
+        {
+          "action": "verification",
+          "step": 6,
+          "text": "output valid"
+        }
+      ],
+      "postconditions": [
+        "converted data is valid in target format",
+        "lossy conversion is flagged",
+        "structure is preserved where possible",
+        "no data corruption"
+      ],
+      "preconditions": [
+        "source format is detected or specified",
+        "target format supports data structure",
+        "data is valid in source format"
+      ],
+      "reason": "matched format conversion",
+      "rollback": [
+        "if format unsupported, suggest alternatives",
+        "if data malformed, report errors"
+      ],
+      "score": 0.7931125686071698
+    }
+  ],
+  "summary": {
+    "feedback": 0,
+    "kernels": 22,
+    "root": "/home/workspace/KernelWeave_PhaseCD/store",
+    "traces": 0
+  }
+}

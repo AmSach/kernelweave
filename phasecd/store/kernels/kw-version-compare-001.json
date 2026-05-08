@@ -1,0 +1,99 @@
+{
+  "description": "Compare versions, releases, or snapshots across time",
+  "digest": "9dbfefd97e344d13602037342f77b8edb8e3b107359658e2e55d841edf1f0983",
+  "evidence_requirements": [
+    "Semver distance computed",
+    "Breaking changes listed",
+    "Migration notes included"
+  ],
+  "input_schema": {
+    "properties": {
+      "version_a": {
+        "type": "string"
+      },
+      "version_b": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-version-compare-001",
+  "name": "Version Comparison Kernel",
+  "output_schema": {
+    "properties": {
+      "breaking": {
+        "type": "boolean"
+      },
+      "changes": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "breaking changes are clearly marked",
+    "output includes version numbers",
+    "changes are grouped by category"
+  ],
+  "preconditions": [
+    "versions follow semantic versioning or date format",
+    "changelog or release notes available",
+    "comparison is forward in time (A < B)"
+  ],
+  "rollback": [
+    "if versions unreleased, compare from source",
+    "if changelog missing, generate from commits"
+  ],
+  "source_trace_ids": [
+    "trace-version-compare-001"
+  ],
+  "status": {
+    "confidence": 0.84,
+    "failures": 0,
+    "passes": 5,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Fetch release notes for both versions"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "changelog_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "semver_comparator"
+    },
+    {
+      "action": "evidence",
+      "step": 4,
+      "text": "breaking changes identified"
+    },
+    {
+      "action": "verification",
+      "step": 5,
+      "text": "all sections compared"
+    }
+  ],
+  "task_family": "version comparison",
+  "tests": [
+    {
+      "expected": {
+        "breaking": true
+      },
+      "input": {
+        "version_a": "1.0.0",
+        "version_b": "2.0.0"
+      },
+      "name": "semver-compare"
+    }
+  ],
+  "version": 2
+}

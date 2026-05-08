@@ -1,0 +1,98 @@
+{
+  "description": "Analyze git diffs and explain code changes",
+  "digest": "67044ccdeae3568c535a189323f899b4654ee30a7d58139d73b1dce4104f1ca9",
+  "evidence_requirements": [
+    "Line counts per file",
+    "Change types identified",
+    "Risk assessment for large changes"
+  ],
+  "input_schema": {
+    "properties": {
+      "context": {
+        "type": "string"
+      },
+      "diff": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-diff-analysis-001",
+  "name": "Diff Analysis Kernel",
+  "output_schema": {
+    "properties": {
+      "changes": {
+        "type": "array"
+      },
+      "intent": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "each change has before/after snippets",
+    "intent is inferred from diff patterns",
+    "output identifies refactoring vs feature vs fix"
+  ],
+  "preconditions": [
+    "diff is in unified diff format",
+    "context includes commit message or PR description",
+    "files are recognizable source code"
+  ],
+  "rollback": [
+    "if diff malformed, request clean diff",
+    "if binary files, skip analysis"
+  ],
+  "source_trace_ids": [
+    "trace-diff-analysis-001"
+  ],
+  "status": {
+    "confidence": 0.86,
+    "failures": 0,
+    "passes": 6,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse unified diff format"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "diff_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "change_classifier"
+    },
+    {
+      "action": "evidence",
+      "step": 4,
+      "text": "hunks counted"
+    },
+    {
+      "action": "verification",
+      "step": 5,
+      "text": "classification matches context"
+    }
+  ],
+  "task_family": "diff analysis",
+  "tests": [
+    {
+      "expected": {
+        "changes_count": 1
+      },
+      "input": {
+        "diff": "--- a/file.py\n+++ b/file.py\n@@ -1,1 +1,1 @@"
+      },
+      "name": "simple-diff"
+    }
+  ],
+  "version": 2
+}

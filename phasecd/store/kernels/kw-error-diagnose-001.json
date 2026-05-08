@@ -1,0 +1,105 @@
+{
+  "description": "Diagnose errors from stack traces, logs, or behavior",
+  "digest": "a99804840d9da4dc4991d097c5536eb3a91d91e11a902e37d92770d5c12cf31f",
+  "evidence_requirements": [
+    "Error type classified",
+    "Similar issues found",
+    "Fix success rate from history"
+  ],
+  "input_schema": {
+    "properties": {
+      "context": {
+        "type": "object"
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-error-diagnose-001",
+  "name": "Error Diagnosis Kernel",
+  "output_schema": {
+    "properties": {
+      "diagnosis": {
+        "type": "string"
+      },
+      "fix_suggestions": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "root cause is identified or hypotheses given",
+    "fix suggestions are actionable",
+    "output mentions specific lines/files",
+    "severity is assessed"
+  ],
+  "preconditions": [
+    "error message or stack trace is provided",
+    "context includes relevant code",
+    "language/runtime is identifiable"
+  ],
+  "rollback": [
+    "if error unknown, search documentation",
+    "if context insufficient, request more info"
+  ],
+  "source_trace_ids": [
+    "trace-error-diagnose-001"
+  ],
+  "status": {
+    "confidence": 0.88,
+    "failures": 0,
+    "passes": 9,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse error and extract key information"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "trace_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "error_matcher"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "code_inspector"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "error pattern matched"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "diagnosis consistent with trace"
+    }
+  ],
+  "task_family": "error diagnosis",
+  "tests": [
+    {
+      "expected": {
+        "diagnosis_type": "null_access"
+      },
+      "input": {
+        "error": "NullPointerException at line 42"
+      },
+      "name": "null-pointer"
+    }
+  ],
+  "version": 2
+}

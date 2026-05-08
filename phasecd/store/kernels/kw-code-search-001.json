@@ -1,0 +1,106 @@
+{
+  "description": "Search codebase for patterns, functions, or concepts",
+  "digest": "41b1807eb2b4e097d9ccbf1697d514b26a564d94e1378e955d4440a9a4a34cd2",
+  "evidence_requirements": [
+    "Search time logged",
+    "Index coverage percentage",
+    "Result deduplication verified"
+  ],
+  "input_schema": {
+    "properties": {
+      "query": {
+        "type": "string"
+      },
+      "scope": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-code-search-001",
+  "name": "Code Search Kernel",
+  "output_schema": {
+    "properties": {
+      "rankings": {
+        "type": "array"
+      },
+      "results": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "results include file paths and line numbers",
+    "results are ranked by relevance",
+    "each result has context snippet",
+    "total count is accurate"
+  ],
+  "preconditions": [
+    "codebase is indexed or accessible",
+    "query is non-empty and specific",
+    "scope defines file types or directories"
+  ],
+  "rollback": [
+    "if no index, use grep fallback",
+    "if scope empty, search entire codebase"
+  ],
+  "source_trace_ids": [
+    "trace-code-search-001"
+  ],
+  "status": {
+    "confidence": 0.9,
+    "failures": 0,
+    "passes": 11,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse query into search terms"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "query_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "index_searcher"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "result_ranker"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "results found in scope"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "relevance scores valid"
+    }
+  ],
+  "task_family": "code search",
+  "tests": [
+    {
+      "expected": {
+        "min_results": 0
+      },
+      "input": {
+        "query": "def authenticate",
+        "scope": "*.py"
+      },
+      "name": "function-search"
+    }
+  ],
+  "version": 2
+}

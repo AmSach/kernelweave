@@ -1,0 +1,106 @@
+{
+  "description": "Identify security vulnerabilities and risks in code",
+  "digest": "7abc97bd48ecc3fc0df29b23725d3b93ebcbed4c312de76b66eabd2f0138f9dd",
+  "evidence_requirements": [
+    "OWASP Top 10 coverage",
+    "line numbers for all findings",
+    "CWE references where applicable"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "context": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-security-audit-001",
+  "name": "Security Audit Kernel",
+  "output_schema": {
+    "properties": {
+      "risk_level": {
+        "type": "string"
+      },
+      "vulnerabilities": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "vulnerabilities are categorized by severity",
+    "each vulnerability has remediation suggestion",
+    "risk level is one of: low, medium, high, critical",
+    "no false positives in critical findings"
+  ],
+  "preconditions": [
+    "code is accessible for analysis",
+    "audit scope is clearly defined",
+    "context includes deployment environment",
+    "security checklist is available"
+  ],
+  "rollback": [
+    "if code is minified, request source",
+    "if dependencies unknown, skip transitive analysis"
+  ],
+  "source_trace_ids": [
+    "trace-security-audit-001"
+  ],
+  "status": {
+    "confidence": 0.9,
+    "failures": 0,
+    "passes": 8,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Scan for known vulnerability patterns"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "sql_injection_scanner"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "xss_scanner"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "auth_checker"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "each finding has line numbers"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "severity classification correct"
+    }
+  ],
+  "task_family": "security audit",
+  "tests": [
+    {
+      "expected": {
+        "vulnerabilities_count": ">= 1"
+      },
+      "input": {
+        "code": "SELECT * FROM users WHERE id="
+      },
+      "name": "sql-injection"
+    }
+  ],
+  "version": 2
+}

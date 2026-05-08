@@ -21,6 +21,7 @@ That is deliberate. The earlier Hugging Face notebook path kept failing on API d
 - `KaggleTrainer` — pure-Python training loop and artifact writer
 - `hardware.py` — safe hardware detection and conservative fallback selection
 - `complete.py` — data generation, calibration training, and save/load flow
+- `phasecd/` — Phase C/D handoff mirror: dataset scripts, benchmark, and Kaggle trainer
 
 ## What it produces
 

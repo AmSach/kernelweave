@@ -1,0 +1,105 @@
+{
+  "description": "Debug failing tests and identify root causes",
+  "digest": "07e0491bea34ac4d7e6650d88d0d762cd3c384639d412d605dfc19f6910ca21d",
+  "evidence_requirements": [
+    "Test name",
+    "Assertion type",
+    "Expected vs actual values"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "test_output": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-test-debug-001",
+  "name": "Test Debugging Kernel",
+  "output_schema": {
+    "properties": {
+      "failure_reason": {
+        "type": "string"
+      },
+      "fix": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "failure reason is specific",
+    "fix suggestion targets actual cause",
+    "output mentions test name and assertion",
+    "expected vs actual is shown"
+  ],
+  "preconditions": [
+    "test failure output is provided",
+    "test code is accessible",
+    "code under test is accessible"
+  ],
+  "rollback": [
+    "if test flaky, report flakiness",
+    "if assertion unclear, show context"
+  ],
+  "source_trace_ids": [
+    "trace-test-debug-001"
+  ],
+  "status": {
+    "confidence": 0.86,
+    "failures": 0,
+    "passes": 8,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Parse test failure output"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 2,
+      "tool": "test_parser"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "assertion_analyzer"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 4,
+      "tool": "code_diff"
+    },
+    {
+      "action": "evidence",
+      "step": 5,
+      "text": "assertion details captured"
+    },
+    {
+      "action": "verification",
+      "step": 6,
+      "text": "fix resolves failure"
+    }
+  ],
+  "task_family": "test debugging",
+  "tests": [
+    {
+      "expected": {
+        "has_failure_reason": true
+      },
+      "input": {
+        "test_output": "AssertionError: 1 != 2"
+      },
+      "name": "assertion-failure"
+    }
+  ],
+  "version": 2
+}

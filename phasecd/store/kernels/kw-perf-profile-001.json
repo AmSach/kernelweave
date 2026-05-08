@@ -1,0 +1,100 @@
+{
+  "description": "Identify performance bottlenecks and optimization opportunities",
+  "digest": "5122e734d97d292804272ade99100b1824d23311739e5a08de5876f5d114f505",
+  "evidence_requirements": [
+    "Time complexity for hot paths",
+    "Memory allocation patterns",
+    "IO operation counts"
+  ],
+  "input_schema": {
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "runtime_data": {
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "kernel_id": "kw-perf-profile-001",
+  "name": "Performance Profiling Kernel",
+  "output_schema": {
+    "properties": {
+      "bottlenecks": {
+        "type": "array"
+      },
+      "recommendations": {
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "postconditions": [
+    "bottlenecks have time complexity analysis",
+    "recommendations are prioritized by impact",
+    "output includes estimated speedup"
+  ],
+  "preconditions": [
+    "code is executable or has runtime traces",
+    "performance requirements are specified",
+    "measurement context is available"
+  ],
+  "rollback": [
+    "if no runtime data, use static analysis only",
+    "if profiling unavailable, estimate from complexity"
+  ],
+  "source_trace_ids": [
+    "trace-perf-profile-001"
+  ],
+  "status": {
+    "confidence": 0.82,
+    "failures": 0,
+    "passes": 4,
+    "state": "verified"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "Identify hot paths"
+    },
+    {
+      "action": "tool",
+      "args": {
+        "mode": "time"
+      },
+      "step": 2,
+      "tool": "complexity_analyzer"
+    },
+    {
+      "action": "tool",
+      "args": {},
+      "step": 3,
+      "tool": "memory_profiler"
+    },
+    {
+      "action": "evidence",
+      "step": 4,
+      "text": "profile data captured"
+    },
+    {
+      "action": "verification",
+      "step": 5,
+      "text": "recommendations tested"
+    }
+  ],
+  "task_family": "performance profiling",
+  "tests": [
+    {
+      "expected": {
+        "complexity": "O(n^2)"
+      },
+      "input": {
+        "code": "for i in range(n): for j in range(n):"
+      },
+      "name": "loop-analysis"
+    }
+  ],
+  "version": 2
+}
