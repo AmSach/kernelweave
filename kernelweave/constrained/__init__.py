@@ -15,6 +15,13 @@ from .grammar import (
     ConstrainedTokenSampler,
     validate_against_grammar,
 )
+from .token_level import (
+    FiniteStateConstraint,
+    ConstrainedGenerator,
+    LogitsProcessorConstraint,
+    create_constrained_pipeline,
+    OUTLINES_AVAILABLE,
+)
 
 __all__ = [
     # Schema
@@ -31,4 +38,10 @@ __all__ = [
     "postconditions_to_grammar",
     "ConstrainedTokenSampler",
     "validate_against_grammar",
+    # Token-level constrained generation
+    "FiniteStateConstraint",
+    "ConstrainedGenerator",
+    "LogitsProcessorConstraint",
+    "create_constrained_pipeline",
+    "OUTLINES_AVAILABLE",
 ]

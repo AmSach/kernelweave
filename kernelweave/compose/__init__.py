@@ -564,3 +564,40 @@ class CompositionBuilder:
             evidence_accumulation=[],
             rollback_chain=[],
         )
+
+from . import (
+    compose_sequence,
+    compose_parallel,
+    compose_conditional,
+    compose_loop,
+    detect_conflicts,
+    CompositionBuilder,
+)
+from .failure import (
+    FailureStrategy,
+    BranchResult,
+    ParallelExecutionResult,
+    ParallelFailureHandler,
+    compose_parallel_with_failure,
+    compose_parallel_strict,
+    compose_parallel_best_effort,
+    compose_parallel_circuit_breaker,
+)
+
+__all__ = [
+    "compose_sequence",
+    "compose_parallel",
+    "compose_conditional",
+    "compose_loop",
+    "detect_conflicts",
+    "CompositionBuilder",
+    # Failure semantics
+    "FailureStrategy",
+    "BranchResult",
+    "ParallelExecutionResult",
+    "ParallelFailureHandler",
+    "compose_parallel_with_failure",
+    "compose_parallel_strict",
+    "compose_parallel_best_effort",
+    "compose_parallel_circuit_breaker",
+]
