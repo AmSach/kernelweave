@@ -428,7 +428,8 @@ class KernelTrainer:
             quantization_config=quantization_config,
             device_map="auto",
             trust_remote_code=True,
-            max_length=self.hardware.max_seq_length,
+            torch_dtype=torch.bfloat16,
+            # max_length is NOT a valid param here - removed
         )
         
         # Gradient checkpointing
@@ -460,99 +461,4 @@ class KernelTrainer:
         # Format for Qwen chat
         formatted_data = []
         for sample in samples:
-            text = f"<|im_start|>user\n{sample['prompt']}<|im_end|>\n<|im_start|>assistant\n{sample['response']}<|im_end|>"
-            formatted_data.append({"text": text})
-        
-        self._train_data = formatted_data
-        print(f"✓ Generated {len(formatted_data)} samples")
-    
-    def train(self, epochs: int = 3):
-        """Train the model."""
-        from transformers import TrainingArguments
-        from trl import SFTTrainer
-        from datasets import Dataset
-        
-        if self._model is None:
-            self.setup_model()
-        
-        if self._train_data is None:
-            raise RuntimeError("No training data. Run generate_data() first.")
-        
-        print(f"\nTraining for {epochs} epochs...")
-        
-        # Create dataset
-        dataset = Dataset.from_list(self._train_data)
-        
-        # Training args
-        training_args = TrainingArguments(
-            output_dir=str(self.output_dir),
-            num_train_epochs=epochs,
-            per_device_train_batch_size=self.hardware.batch_size,
-            gradient_accumulation_steps=self.hardware.gradient_accumulation,
-            learning_rate=2e-4,
-            logging_steps=10,
-            save_strategy="epoch",
-            bf16=True,
-            fp16=False,
-            max_grad_norm=0.3,
-            warmup_ratio=0.03,
-        )
-        
-        # Trainer
-        self._trainer = SFTTrainer(
-            model=self._model,
-            args=training_args,
-            train_dataset=dataset,
-            tokenizer=self._tokenizer,
-            max_seq_length=self.hardware.max_seq_length,
-        )
-        
-        # Train
-        self._trainer.train()
-        
-        print("✓ Training complete")
-    
-    def save_model(self):
-        """Save the trained model."""
-        if self._model is None:
-            raise RuntimeError("No model to save. Run train() first.")
-        
-        save_path = self.output_dir / "final_model"
-        save_path.mkdir(parents=True, exist_ok=True)
-        
-        self._model.save_pretrained(str(save_path))
-        self._tokenizer.save_pretrained(str(save_path))
-        
-        print(f"\n✓ Model saved to {save_path}")
-        print(f"\nTo load:")
-        print(f'  model = AutoModelForCausalLM.from_pretrained("{save_path}")')
-        print(f'  tokenizer = AutoTokenizer.from_pretrained("{save_path}")')
-
-# ============================================================================
-# MAIN ENTRY POINT
-# ============================================================================
-
-def train_kernel_native(
-    base_model: str = "Qwen/Qwen2.5-7B-Instruct",
-    output_dir: str = "./kernel-native-model",
-    n_samples: int = 5000,
-    epochs: int = 3,
-):
-    """Complete training pipeline - one function call."""
-    trainer = KernelTrainer(
-        base_model=base_model,
-        output_dir=output_dir,
-    )
-    
-    trainer.generate_data(n_samples=n_samples)
-    trainer.train(epochs=epochs)
-    trainer.save_model()
-    
-    return trainer
-
-# ============================================================================
-# RUN IF EXECUTED DIRECTLY
-# ============================================================================
-
-if __name__ == "__main__":
-    train_kernel_native()
+            text = f"
