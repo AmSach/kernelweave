@@ -1,0 +1,104 @@
+Metadata-Version: 2.4
+Name: kernelweave
+Version: 0.1.0
+Summary: Proof-carrying skill kernels for self-compiling language models
+Author-email: AmSach <amansachan92905@gmail.com>
+License: MIT
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+
+# KernelWeave
+
+A kernel routing and verification system for language models.
+
+## What this actually is
+
+**A caching layer for verified reasoning patterns.**
+
+When a language model solves a task successfully, KernelWeave:
+- Stores the reasoning pattern as a typed kernel
+- Verifies future outputs against postconditions before caching
+- Routes similar prompts to cached kernels
+- Accumulates verified competence over time
+
+## What works now
+
+- **Semantic routing** — Embedding-based similarity + calibration scoring
+- **Postcondition verification** — Checks outputs against kernel constraints
+- **Feedback accumulation** — Records success/failure for each kernel
+- **Auto-promotion** — High-confidence repeated successes become candidate kernels
+- **Model-agnostic** — Works with any OpenAI/Anthropic/openai-compatible backend
+
+## What doesn't work yet
+
+### Real self-compilation
+Kernels are extracted from prompts + response text, not from observed reasoning traces. The model's actual chain-of-thought, tool calls, and intermediate states aren't captured. That requires structured generation or a separate observation layer.
+
+### Kernel composition
+If you have a "structured comparison" kernel and an "evidence extraction" kernel, there's no mechanism to combine them. Composition over a kernel algebra is an open research problem.
+
+### Constrained generation
+The kernel informs the model via system prompt, but doesn't constrain the output space during generation. The model can still output anything — verification happens after the fact. A frontier system would use kernels as structured decoding constraints during token generation.
+
+## Real contribution
+
+**"Postcondition verification as a routing signal."**
+
+The novel part isn't the routing (that's retrieval) or the kernels (that's program synthesis). It's using verification against formal postconditions to decide whether to trust cached reasoning for future prompts.
+
+Testable claim: For repeated task families, routing + verification beats vanilla RAG on output quality and cost.
+
+## What's needed for a paper
+
+1. **Benchmark** — Run on ToolBench, AgentBench, or a custom benchmark with repeatable tasks
+2. **Baselines** — Compare against vanilla RAG, BM25 retrieval, no verification
+3. **Metrics** — Routing precision/recall, output quality, cost per query
+4. **Ablations** — Does verification actually improve routing decisions?
+
+Without numbers, it's a prototype. With numbers, it's a 4-page workshop paper with a clear contribution.
+
+## Usage
+
+```bash
+# Initialize kernel store
+python -m kernelweave.cli init ./store
+python -m kernelweave.cli add-sample ./store
+
+# Run with model backend
+python -m kernelweave.cli model run qwen0_5 "compare two artifacts" \
+  --kernel-store ./store \
+  --auto-compile
+
+# Verify routing
+python -m kernelweave.cli plan ./store "summarize differences between files"
+```
+
+## Architecture
+
+```
+prompt → embed → kernel match → execute kernel OR generate
+                                          ↓
+                                    verify output
+                                          ↓
+                                    record feedback
+                                          ↓
+                              auto-promote if high confidence
+```
+
+## Components
+
+- `kernelweave/runtime.py` — Routing + verification
+- `kernelweave/kernel.py` — Kernel store + feedback accumulation  
+- `kernelweave/calibration.py` — Logistic regression confidence model
+- `kernelweave/llm/model.py` — Model wrapper with kernel-aware prompts
+
+## When kernels are worth it
+
+**High repetition** — Customer support, data pipelines, routine analysis  
+**Low repetition** — Creative writing, one-off research, exploratory chat
+
+The overhead of compilation, matching, and verification only pays off when the same task family appears many times.
+
+## Status
+
+Working prototype. Not frontier. Not a trained model. A useful piece of infrastructure for LLM-based systems with repeated tasks.
