@@ -28,4 +28,4 @@ Upload the entire `KernelWeave_PhaseCD/` folder as a zip or add it as a Kaggle d
 - failure / rollback examples
 
 ## Important
-This is not frontier by itself. It is the Phase C/D training and benchmarking handoff for building toward that goal.
+This is a prototype handoff designed to test whether a small kernel-native architectural shift can outperform same-size baselines on repeated tool-use, agentic work, and reasoning.

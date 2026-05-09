@@ -10,18 +10,27 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 def find_repo() -> Path:
-    env = os.environ.get('KERNELWEAVE_REPO')
+    env_vars = ['KERNELWEAVE_CORE_REPO', 'KERNELWEAVE_REPO']
     candidates = []
-    if env:
-        candidates.append(Path(env))
-    candidates.append(Path('/home/.z/workspaces/con_d7kcq1mzmfXZeHOQ/kernelweave'))
-    candidates.append(Path('/home/workspace/kernelweave'))
+    for env_var in env_vars:
+        value = os.environ.get(env_var)
+        if value:
+            candidates.append(Path(value))
+    candidates.extend([
+        ROOT.parent,
+        ROOT.parent.parent,
+        Path.cwd(),
+        Path.cwd().parent,
+        Path('/home/.z/workspaces/con_d7kcq1mzmfXZeHOQ/kernelweave'),
+        Path('/home/workspace/kernelweave'),
+    ])
     for candidate in Path('/home/.z/workspaces').glob('*/kernelweave'):
         candidates.append(candidate)
     for candidate in candidates:
+        candidate = candidate.resolve()
         if (candidate / 'kernelweave').is_dir():
             return candidate
-    raise SystemExit('KernelWeave repo not found. Set KERNELWEAVE_REPO.')
+    raise SystemExit('KernelWeave repo not found. Set KERNELWEAVE_CORE_REPO to the repo root.')
 
 REPO = find_repo()
 sys.path.insert(0, str(REPO))
