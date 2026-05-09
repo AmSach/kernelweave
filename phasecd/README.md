@@ -19,6 +19,8 @@ Upload the entire `KernelWeave_PhaseCD/` folder as a zip or add it as a Kaggle d
 - `scripts/train_phasec.py`
 - `scripts/generate_dataset.py`
 - `scripts/benchmark.py`
+- `scripts/kaggle_launch.sh`
+- `scripts/kaggle_train_fixed.py`
 
 ## What the model trains on
 - kernel-aware prompting examples
