@@ -292,10 +292,14 @@ def make_kernel_rows(store: KernelStore, per_kernel: int, rng: random.Random) ->
 
 def make_general_rows(store: KernelStore, general_count: int, rng: random.Random) -> list[dict[str, Any]]:
     runtime = KernelRuntime(store)
+    runtime.preload_embeddings(GENERAL_PROMPTS)
     rows: list[dict[str, Any]] = []
+    prompts = [rng.choice(GENERAL_PROMPTS) for _ in range(general_count)]
+    runtime.preload_embeddings(prompts)
 
-    for i in range(general_count):
-        prompt = rng.choice(GENERAL_PROMPTS)
+    for i, prompt in enumerate(prompts):
+        if i % 50 == 0:
+            print(f"[general_rows] {i}/{general_count}", flush=True)
         decision = runtime.evaluate_prompt(prompt)
         result = runtime.run(prompt)
         rows.append(

@@ -89,17 +89,40 @@ class KernelRuntime:
         self.store = store
         self.use_embeddings = use_embeddings
         self._embedder = None
+        self._embed_cache: dict[str, list[float] | None] = {}
+
+    def preload_embeddings(self, texts: list[str]) -> None:
+        if not self.use_embeddings or not texts:
+            return
+        try:
+            if self._embedder is None:
+                from sentence_transformers import SentenceTransformer
+                self._embedder = SentenceTransformer("all-MiniLM-L6-v2")
+            unseen = [text for text in texts if text not in self._embed_cache]
+            if not unseen:
+                return
+            emb = self._embedder.encode(unseen, convert_to_numpy=True)
+            for text, vector in zip(unseen, emb):
+                self._embed_cache[text] = vector.tolist()
+        except Exception:
+            for text in texts:
+                self._embed_cache.setdefault(text, None)
 
     def _embed_text(self, text: str) -> list[float] | None:
         if not self.use_embeddings:
             return None
+        if text in self._embed_cache:
+            return self._embed_cache[text]
         try:
             if self._embedder is None:
                 from sentence_transformers import SentenceTransformer
                 self._embedder = SentenceTransformer("all-MiniLM-L6-v2")
             emb = self._embedder.encode([text], convert_to_numpy=True)
-            return emb[0].tolist()
+            vector = emb[0].tolist()
+            self._embed_cache[text] = vector
+            return vector
         except Exception:
+            self._embed_cache[text] = None
             return None
 
     def _embedding_similarity(self, prompt: str, kernel_text: str) -> float | None:

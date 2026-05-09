@@ -60,6 +60,11 @@ from transformers import (
 def _env(kw_key, kw_fallback, old_key, cast=str):
     return cast(os.environ.get(kw_key) or os.environ.get(old_key) or kw_fallback)
 
+
+def _local_rank() -> int:
+    return int(os.environ.get("LOCAL_RANK", os.environ.get("RANK", "0")))
+
+
 DEFAULT_BASE_MODEL = _env("KW_BASE_MODEL",  "Qwen/Qwen2.5-1.5B-Instruct", "KERNELWEAVE_BASE_MODEL")
 DEFAULT_LR         = _env("KW_LR",          "4e-4",  "KERNELWEAVE_LR",         float)
 DEFAULT_EPOCHS     = _env("KW_EPOCHS",      "3",     "KERNELWEAVE_EPOCHS",      int)
@@ -117,6 +122,9 @@ def load_phase_dataset(data_dir: Path, tokenizer, max_len: int):
 
 def prepare_model(base_model: str):
     use_cuda = torch.cuda.is_available()
+    local_rank = _local_rank()
+    if use_cuda:
+        torch.cuda.set_device(local_rank)
     n_gpu = torch.cuda.device_count() if use_cuda else 0
     dtype = torch.float16 if use_cuda else torch.float32
     tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
@@ -132,6 +140,8 @@ def prepare_model(base_model: str):
         dtype=dtype,
         low_cpu_mem_usage=True,
     )
+    if use_cuda:
+        model = model.to(torch.device(f"cuda:{local_rank}"))
     model.config.use_cache = False
     if hasattr(model, "gradient_checkpointing_enable"):
         # use_reentrant=False avoids deprecation warning and works with newer PEFT
@@ -143,8 +153,9 @@ def prepare_model(base_model: str):
 
     if use_cuda:
         print(f"CUDA GPUs available: {n_gpu}")
-        print(f"GPU 0: {torch.cuda.get_device_name(0)}")
-        if n_gpu > 1:
+        print(f"LOCAL_RANK: {local_rank}")
+        print(f"GPU 0: {torch.cuda.get_device_name(local_rank)}")
+        if n_gpu > 1 and local_rank == 0:
             print(f"GPU 1: {torch.cuda.get_device_name(1)}")
 
     lora_cfg = LoraConfig(
@@ -260,7 +271,7 @@ def main() -> None:
         optim="adamw_torch",
         # FIX: was 0 — 2 workers per GPU improves data throughput significantly on Kaggle
         dataloader_num_workers=2,
-        ddp_find_unused_parameters=False,
+        ddp_find_unused_parameters=True,
         run_name="kernelweave-phasec",
     )
 
