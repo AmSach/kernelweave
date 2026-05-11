@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import gc
+import inspect
 import json
 import math
 import os
@@ -554,11 +556,47 @@ def setup_model(base_model: str, device: str):
     return model, tokenizer
 
 
+def build_training_arguments(output_dir: Path, epochs: int, batch_size: int, grad_accum: int, lr: float) -> Any:
+    from transformers import TrainingArguments
+
+    kwargs: dict[str, Any] = {
+        "output_dir": str(output_dir / "checkpoints"),
+        "num_train_epochs": epochs,
+        "per_device_train_batch_size": batch_size,
+        "per_device_eval_batch_size": batch_size,
+        "gradient_accumulation_steps": grad_accum,
+        "learning_rate": lr,
+        "warmup_ratio": 0.03,
+        "lr_scheduler_type": "cosine",
+        "weight_decay": 0.01,
+        "logging_steps": 10,
+        "logging_first_step": True,
+        "save_strategy": "epoch",
+        "save_total_limit": 2,
+        "load_best_model_at_end": True,
+        "metric_for_best_model": "eval_loss",
+        "greater_is_better": False,
+        "report_to": [],
+        "fp16": True,
+        "bf16": False,
+        "max_grad_norm": 1.0,
+        "remove_unused_columns": False,
+        "optim": "adamw_torch",
+        "dataloader_num_workers": 0,
+    }
+    sig = inspect.signature(TrainingArguments.__init__)
+    if "evaluation_strategy" in sig.parameters:
+        kwargs["evaluation_strategy"] = "epoch"
+    elif "eval_strategy" in sig.parameters:
+        kwargs["eval_strategy"] = "epoch"
+    return TrainingArguments(**kwargs)
+
+
 def train_lora(base_model: str, output_dir: Path, train_rows: list[dict[str, Any]], eval_rows: list[dict[str, Any]], epochs: int, batch_size: int, grad_accum: int, lr: float, max_len: int, seed: int):
     import torch
     from datasets import Dataset
     from peft import LoraConfig, TaskType, get_peft_model
-    from transformers import DataCollatorForLanguageModeling, Trainer, TrainerCallback, TrainingArguments, set_seed
+    from transformers import DataCollatorForLanguageModeling, Trainer, TrainerCallback, set_seed
 
     set_seed(seed)
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -593,32 +631,7 @@ def train_lora(base_model: str, output_dir: Path, train_rows: list[dict[str, Any
             if logs:
                 print(f"[train] step={state.global_step} logs={json.dumps(logs, sort_keys=True)}", flush=True)
 
-    args = TrainingArguments(
-        output_dir=str(output_dir / "checkpoints"),
-        num_train_epochs=epochs,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        gradient_accumulation_steps=grad_accum,
-        learning_rate=lr,
-        warmup_ratio=0.03,
-        lr_scheduler_type="cosine",
-        weight_decay=0.01,
-        logging_steps=10,
-        logging_first_step=True,
-        save_strategy="epoch",
-        eval_strategy="epoch",
-        save_total_limit=2,
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        greater_is_better=False,
-        report_to=[],
-        fp16=torch.cuda.is_available(),
-        bf16=False,
-        max_grad_norm=1.0,
-        remove_unused_columns=False,
-        optim="adamw_torch",
-        dataloader_num_workers=2,
-    )
+    args = build_training_arguments(output_dir, epochs, batch_size, grad_accum, lr)
 
     trainer = Trainer(
         model=model,
@@ -646,48 +659,96 @@ def train_lora(base_model: str, output_dir: Path, train_rows: list[dict[str, Any
     return tokenizer, model, trainer.model, adapter_dir, merged_dir
 
 
-def evaluate_models(base_model: str, merged_dir: Path, benchmark_dir: Path, device: str, max_new_tokens: int):
+def _release_torch() -> None:
+    try:
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
+    gc.collect()
+
+
+def _load_model(base_model: str, device: str, path: str | None = None):
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+    dtype = torch.float16 if device.startswith("cuda") else torch.float32
+    model_path = path or base_model
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        trust_remote_code=True,
+        low_cpu_mem_usage=True,
+        torch_dtype=dtype,
+    )
+    model.to(device)
+    model.eval()
+    return tokenizer, model
 
-    base = AutoModelForCausalLM.from_pretrained(base_model, trust_remote_code=True, low_cpu_mem_usage=True, torch_dtype=torch.float16 if device.startswith("cuda") else torch.float32).to(device)
-    tuned = AutoModelForCausalLM.from_pretrained(str(merged_dir), trust_remote_code=True, low_cpu_mem_usage=True, torch_dtype=torch.float16 if device.startswith("cuda") else torch.float32).to(device)
-    base.eval()
-    tuned.eval()
 
-    all_rows: list[dict[str, Any]] = []
+def evaluate_models(base_model: str, merged_dir: Path, benchmark_dir: Path, device: str, max_new_tokens: int):
+    tokenizer, base = _load_model(base_model, device)
+    base_rows: list[dict[str, Any]] = []
     detail: dict[str, Any] = {"cases": []}
     for case in BENCHMARK_CASES:
-        row = {"case": case["name"], "prompt": case["prompt"], "family": case["family"]}
-        case_entry = {"case": case["name"], "prompt": case["prompt"], "results": {}}
-        for model_name, model in [("base", base), ("tuned", tuned)]:
-            text, prompt_tokens, out_tokens, elapsed = gen(model, tokenizer, case["prompt"], device, max_new_tokens=max_new_tokens)
-            score = score_case(case, text)
-            cost_proxy = float(prompt_tokens + out_tokens)
-            all_rows.append({
-                "case": case["name"],
-                "model": model_name,
-                "score": score,
-                "tokens": prompt_tokens + out_tokens,
-                "seconds": elapsed,
-                "cost_proxy": cost_proxy,
-            })
-            case_entry["results"][model_name] = {
-                "text": text,
-                "score": score,
-                "tokens": prompt_tokens + out_tokens,
-                "seconds": elapsed,
-                "cost_proxy": cost_proxy,
+        text, prompt_tokens, out_tokens, elapsed = gen(base, tokenizer, case["prompt"], device, max_new_tokens=max_new_tokens)
+        score = score_case(case, text)
+        cost_proxy = float(prompt_tokens + out_tokens)
+        base_rows.append({
+            "case": case["name"],
+            "model": "base",
+            "score": score,
+            "tokens": prompt_tokens + out_tokens,
+            "seconds": elapsed,
+            "cost_proxy": cost_proxy,
+        })
+        detail["cases"].append({
+            "case": case["name"],
+            "prompt": case["prompt"],
+            "results": {
+                "base": {
+                    "text": text,
+                    "score": score,
+                    "tokens": prompt_tokens + out_tokens,
+                    "seconds": elapsed,
+                    "cost_proxy": cost_proxy,
+                }
             }
-        detail["cases"].append(case_entry)
+        })
+    del base
+    del tokenizer
+    _release_torch()
 
-    base_rows = [r for r in all_rows if r["model"] == "base"]
-    tuned_rows = [r for r in all_rows if r["model"] == "tuned"]
+    tokenizer, tuned = _load_model(base_model, device, str(merged_dir))
+    tuned_rows: list[dict[str, Any]] = []
+    for idx, case in enumerate(BENCHMARK_CASES):
+        text, prompt_tokens, out_tokens, elapsed = gen(tuned, tokenizer, case["prompt"], device, max_new_tokens=max_new_tokens)
+        score = score_case(case, text)
+        cost_proxy = float(prompt_tokens + out_tokens)
+        tuned_rows.append({
+            "case": case["name"],
+            "model": "tuned",
+            "score": score,
+            "tokens": prompt_tokens + out_tokens,
+            "seconds": elapsed,
+            "cost_proxy": cost_proxy,
+        })
+        detail["cases"][idx]["results"]["tuned"] = {
+            "text": text,
+            "score": score,
+            "tokens": prompt_tokens + out_tokens,
+            "seconds": elapsed,
+            "cost_proxy": cost_proxy,
+        }
+    del tuned
+    del tokenizer
+    _release_torch()
+
+    all_rows = base_rows + tuned_rows
     base_quality = sum(r["score"] for r in base_rows) / len(base_rows)
     tuned_quality = sum(r["score"] for r in tuned_rows) / len(tuned_rows)
     base_cost = sum(r["cost_proxy"] for r in base_rows) / len(base_rows)
@@ -737,24 +798,11 @@ def local_smoke_test(merged_dir: Path, base_model: str, device: str, max_new_tok
 
 
 def realtime_demo(base_model: str, merged_dir: Path, prompts: list[str], output_dir: Path, device: str, max_new_tokens: int) -> list[dict[str, Any]]:
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
-
-    base = AutoModelForCausalLM.from_pretrained(base_model, trust_remote_code=True, low_cpu_mem_usage=True, torch_dtype=torch.float16 if device.startswith("cuda") else torch.float32).to(device)
-    tuned = AutoModelForCausalLM.from_pretrained(str(merged_dir), trust_remote_code=True, low_cpu_mem_usage=True, torch_dtype=torch.float16 if device.startswith("cuda") else torch.float32).to(device)
-    base.eval()
-    tuned.eval()
-
+    base_tokenizer, base = _load_model(base_model, device)
     rows: list[dict[str, Any]] = []
     md_lines = ["# KernelWeave realtime demo", ""]
     for i, prompt in enumerate(prompts, 1):
-        base_text, base_prompt_tokens, base_out_tokens, base_seconds = gen(base, tokenizer, prompt, device, max_new_tokens=max_new_tokens)
-        tuned_text, tuned_prompt_tokens, tuned_out_tokens, tuned_seconds = gen(tuned, tokenizer, prompt, device, max_new_tokens=max_new_tokens)
+        base_text, base_prompt_tokens, base_out_tokens, base_seconds = gen(base, base_tokenizer, prompt, device, max_new_tokens=max_new_tokens)
         row = {
             "index": i,
             "prompt": prompt,
@@ -764,12 +812,7 @@ def realtime_demo(base_model: str, merged_dir: Path, prompts: list[str], output_
                 "seconds": base_seconds,
                 "score": _score_realtime(prompt, base_text),
             },
-            "tuned": {
-                "text": tuned_text,
-                "tokens": tuned_prompt_tokens + tuned_out_tokens,
-                "seconds": tuned_seconds,
-                "score": _score_realtime(prompt, tuned_text),
-            },
+            "tuned": {},
         }
         rows.append(row)
         md_lines.extend([
@@ -781,13 +824,32 @@ def realtime_demo(base_model: str, merged_dir: Path, prompts: list[str], output_
             "",
             row["base"]["text"] or "_empty_",
             "",
-            f"**Tuned** ({row['tuned']['tokens']} tok, {row['tuned']['seconds']:.1f}s, score {row['tuned']['score']:.2f})",
+        ])
+    del base
+    del base_tokenizer
+    _release_torch()
+
+    tuned_tokenizer, tuned = _load_model(base_model, device, str(merged_dir))
+    for i, prompt in enumerate(prompts, 1):
+        tuned_text, tuned_prompt_tokens, tuned_out_tokens, tuned_seconds = gen(tuned, tuned_tokenizer, prompt, device, max_new_tokens=max_new_tokens)
+        rows[i - 1]["tuned"] = {
+            "text": tuned_text,
+            "tokens": tuned_prompt_tokens + tuned_out_tokens,
+            "seconds": tuned_seconds,
+            "score": _score_realtime(prompt, tuned_text),
+        }
+        md_lines.extend([
+            f"**Tuned** ({rows[i - 1]['tuned']['tokens']} tok, {rows[i - 1]['tuned']['seconds']:.1f}s, score {rows[i - 1]['tuned']['score']:.2f})",
             "",
-            row["tuned"]["text"] or "_empty_",
+            rows[i - 1]["tuned"]["text"] or "_empty_",
             "",
             "---",
             "",
         ])
+    del tuned
+    del tuned_tokenizer
+    _release_torch()
+
     (output_dir / "realtime_demo.json").write_text(json.dumps(rows, indent=2, sort_keys=True))
     (output_dir / "realtime_demo.md").write_text("\n".join(md_lines))
     print("\n======== REALTIME DEMO ========")
