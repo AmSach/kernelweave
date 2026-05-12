@@ -624,16 +624,23 @@ def train_lora(base_model: str, output_dir: Path, train_rows: list[dict[str, Any
     print(f"[lora] targets={lora_targets}")
     print(f"[lora] base_model={loaded_model_name}")
 
-    train_ds = Dataset.from_list([{k: v for k, v in row.items() if k in {"text", "task_family", "target", "kernel_id", "kernel_name"}} for row in train_rows])
-    eval_ds = Dataset.from_list([{k: v for k, v in row.items() if k in {"text", "task_family", "target", "kernel_id", "kernel_name"}} for row in eval_rows])
+    train_ds = Dataset.from_list(train_rows)
+    eval_ds = Dataset.from_list(eval_rows)
+
+    def attach_text(example):
+        return {
+            "text": build_text(tokenizer, example["prompt"], example["response"])
+        }
 
     def tokenize(batch):
         out = tokenizer(batch["text"], truncation=True, max_length=max_len)
         out["labels"] = out["input_ids"].copy()
         return out
 
-    train_tok = train_ds.map(tokenize, remove_columns=train_ds.column_names)
-    eval_tok = eval_ds.map(tokenize, remove_columns=eval_ds.column_names)
+    train_text_ds = train_ds.map(attach_text)
+    eval_text_ds = eval_ds.map(attach_text)
+    train_tok = train_text_ds.map(tokenize, remove_columns=train_text_ds.column_names)
+    eval_tok = eval_text_ds.map(tokenize, remove_columns=eval_text_ds.column_names)
 
     lora_cfg = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
