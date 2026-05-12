@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,7 @@ DEFAULT_REPO_DIR = Path("/kaggle/working/kernelweave")
 DEFAULT_OUTPUT_DIR = Path(os.environ.get("KW_OUTPUT_DIR", "/kaggle/working/kernelweave_llm_bundle"))
 DEFAULT_EXPORT_DIR = Path(os.environ.get("KW_EXPORT_DIR", "/kaggle/working/kernelweave_llm_export"))
 DEFAULT_BASE_MODEL = os.environ.get("KW_BASE_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
+DEFAULT_FALLBACK_MODELS = [m.strip() for m in os.environ.get("KW_FALLBACK_MODELS", "TinyLlama/TinyLlama-1.1B-Chat-v1.0,sshleifer/tiny-gpt2").split(",") if m.strip()]
 DEFAULT_SAMPLES = int(os.environ.get("KW_SAMPLES", "6000"))
 DEFAULT_EPOCHS = int(os.environ.get("KW_EPOCHS", "3"))
 DEFAULT_BATCH = int(os.environ.get("KW_BATCH", "1"))
@@ -532,28 +534,45 @@ def export_bundle(bundle_dir: Path, export_dir: Path) -> Path:
     raise SystemExit(f"Bundle directory missing: {bundle_dir}")
 
 
-def setup_model(base_model: str, device: str):
+def setup_model(base_model: str, device: str, fallback_models: list[str] | None = None):
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     dtype = torch.float16 if device.startswith("cuda") else torch.float32
-    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model,
-        trust_remote_code=True,
-        low_cpu_mem_usage=True,
-        torch_dtype=dtype,
-    )
-    model.to(device)
-    model.config.use_cache = False
-    if hasattr(model, "gradient_checkpointing_enable"):
-        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-    if hasattr(model, "enable_input_require_grads"):
-        model.enable_input_require_grads()
-    return model, tokenizer
+    candidates = [base_model]
+    for model_name in fallback_models or DEFAULT_FALLBACK_MODELS:
+        if model_name and model_name not in candidates:
+            candidates.append(model_name)
+
+    last_error: Exception | None = None
+    for model_name in candidates:
+        try:
+            print(f"[model] loading {model_name}")
+            tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+            if tokenizer.pad_token is None:
+                tokenizer.pad_token = tokenizer.eos_token
+            tokenizer.padding_side = "right"
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+                torch_dtype=dtype,
+            )
+            model.to(device)
+            model.config.use_cache = False
+            if hasattr(model, "gradient_checkpointing_enable"):
+                model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+            if hasattr(model, "enable_input_require_grads"):
+                model.enable_input_require_grads()
+            print(f"[model] ready: {model_name}")
+            return model, tokenizer, model_name
+        except Exception as exc:
+            last_error = exc
+            print(f"[model] failed: {model_name}: {exc}")
+            _release_torch()
+            continue
+
+    raise SystemExit(f"Unable to load any model candidate. Last error: {last_error}")
 
 
 def build_training_arguments(output_dir: Path, epochs: int, batch_size: int, grad_accum: int, lr: float) -> Any:
@@ -600,9 +619,10 @@ def train_lora(base_model: str, output_dir: Path, train_rows: list[dict[str, Any
 
     set_seed(seed)
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    model, tokenizer = setup_model(base_model, device)
+    model, tokenizer, loaded_model_name = setup_model(base_model, device)
     lora_targets = choose_lora_targets(model)
     print(f"[lora] targets={lora_targets}")
+    print(f"[lora] base_model={loaded_model_name}")
 
     train_ds = Dataset.from_list([{k: v for k, v in row.items() if k in {"text", "task_family", "target", "kernel_id", "kernel_name"}} for row in train_rows])
     eval_ds = Dataset.from_list([{k: v for k, v in row.items() if k in {"text", "task_family", "target", "kernel_id", "kernel_name"}} for row in eval_rows])
@@ -974,75 +994,82 @@ def main() -> None:
         print(json.dumps(summary, indent=2, sort_keys=True))
         return
 
-    # Train the actual LLM adapter.
-    tokenizer, base_model_obj, tuned_model_obj, adapter_dir, merged_dir = train_lora(
-        base_model=args.base_model,
-        output_dir=output_dir,
-        train_rows=[e.__dict__ for e in train_examples],
-        eval_rows=[e.__dict__ for e in eval_examples],
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        grad_accum=args.grad_accum,
-        lr=args.lr,
-        max_len=args.max_len,
-        seed=args.seed,
-    )
+    try:
+        # Train the actual LLM adapter.
+        tokenizer, base_model_obj, tuned_model_obj, adapter_dir, merged_dir = train_lora(
+            base_model=args.base_model,
+            output_dir=output_dir,
+            train_rows=[e.__dict__ for e in train_examples],
+            eval_rows=[e.__dict__ for e in eval_examples],
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            grad_accum=args.grad_accum,
+            lr=args.lr,
+            max_len=args.max_len,
+            seed=args.seed,
+        )
 
-    # Benchmark baseline vs tuned on the same cases.
-    import torch
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    summary, rows = evaluate_models(args.base_model, merged_dir, output_dir / "benchmark", device, args.max_new_tokens)
+        # Benchmark baseline vs tuned on the same cases.
+        import torch
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        summary, rows = evaluate_models(args.base_model, merged_dir, output_dir / "benchmark", device, args.max_new_tokens)
 
-    # Optional smoke test on the merged model.
-    smoke_rows: list[dict[str, Any]] = []
-    if args.smoke_only:
-        smoke_rows = local_smoke_test(merged_dir, args.base_model, device, args.max_new_tokens)
-        (output_dir / "smoke.json").write_text(json.dumps(smoke_rows, indent=2, sort_keys=True))
+        # Optional smoke test on the merged model.
+        smoke_rows: list[dict[str, Any]] = []
+        if args.smoke_only:
+            smoke_rows = local_smoke_test(merged_dir, args.base_model, device, args.max_new_tokens)
+            (output_dir / "smoke.json").write_text(json.dumps(smoke_rows, indent=2, sort_keys=True))
 
-    realtime_rows: list[dict[str, Any]] = []
-    if args.realtime_demo:
-        realtime_prompts = [case["prompt"] for case in BENCHMARK_CASES[: max(1, args.realtime_prompts)]]
-        realtime_rows = realtime_demo(args.base_model, merged_dir, realtime_prompts, output_dir, device, args.max_new_tokens)
+        realtime_rows: list[dict[str, Any]] = []
+        if args.realtime_demo:
+            realtime_prompts = [case["prompt"] for case in BENCHMARK_CASES[: max(1, args.realtime_prompts)]]
+            realtime_rows = realtime_demo(args.base_model, merged_dir, realtime_prompts, output_dir, device, args.max_new_tokens)
 
-    # Bundle exports.
-    bundle_dir = output_dir / "bundle"
-    if bundle_dir.exists():
-        shutil.rmtree(bundle_dir)
-    bundle_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(dataset_dir, bundle_dir / "data")
-    shutil.copytree(adapter_dir, bundle_dir / "adapter")
-    shutil.copytree(merged_dir, bundle_dir / "merged_model")
-    shutil.copytree(output_dir / "benchmark", bundle_dir / "benchmark")
-    if (output_dir / "realtime_demo.json").exists():
-        shutil.copy2(output_dir / "realtime_demo.json", bundle_dir / "realtime_demo.json")
-    if (output_dir / "realtime_demo.md").exists():
-        shutil.copy2(output_dir / "realtime_demo.md", bundle_dir / "realtime_demo.md")
-    bundle_meta = {
-        "repo_root": str(repo_root),
-        "base_model": args.base_model,
-        "samples": args.samples,
-        "epochs": args.epochs,
-        "batch_size": args.batch_size,
-        "grad_accum": args.grad_accum,
-        "lr": args.lr,
-        "max_len": args.max_len,
-        "summary": summary,
-        "realtime_demo": args.realtime_demo,
-    }
-    (bundle_dir / "manifest.json").write_text(json.dumps(bundle_meta, indent=2, sort_keys=True))
-    export_zip = Path(shutil.make_archive(str(export_dir / "kernelweave_llm_bundle"), "zip", root_dir=bundle_dir))
+        # Bundle exports.
+        bundle_dir = output_dir / "bundle"
+        if bundle_dir.exists():
+            shutil.rmtree(bundle_dir)
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(dataset_dir, bundle_dir / "data")
+        shutil.copytree(adapter_dir, bundle_dir / "adapter")
+        shutil.copytree(merged_dir, bundle_dir / "merged_model")
+        shutil.copytree(output_dir / "benchmark", bundle_dir / "benchmark")
+        if (output_dir / "realtime_demo.json").exists():
+            shutil.copy2(output_dir / "realtime_demo.json", bundle_dir / "realtime_demo.json")
+        if (output_dir / "realtime_demo.md").exists():
+            shutil.copy2(output_dir / "realtime_demo.md", bundle_dir / "realtime_demo.md")
+        bundle_meta = {
+            "repo_root": str(repo_root),
+            "base_model": args.base_model,
+            "loaded_model": args.base_model,
+            "samples": args.samples,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "grad_accum": args.grad_accum,
+            "lr": args.lr,
+            "max_len": args.max_len,
+            "summary": summary,
+            "realtime_demo": args.realtime_demo,
+        }
+        (bundle_dir / "manifest.json").write_text(json.dumps(bundle_meta, indent=2, sort_keys=True))
+        export_zip = Path(shutil.make_archive(str(export_dir / "kernelweave_llm_bundle"), "zip", root_dir=bundle_dir))
 
-    report_path = build_demo_report(repo_root, output_dir, export_zip, summary, rows, args.samples, args.epochs, args.base_model)
+        report_path = build_demo_report(repo_root, output_dir, export_zip, summary, rows, args.samples, args.epochs, args.base_model)
 
-    print("\n======== EXPORT ========")
-    print(f"Data dir     : {dataset_dir}")
-    print(f"Adapter dir   : {adapter_dir}")
-    print(f"Merged model  : {merged_dir}")
-    print(f"Benchmark dir : {output_dir / 'benchmark'}")
-    print(f"Bundle zip    : {export_zip}")
-    print(f"Report        : {report_path}")
-    print("========================")
-    print(json.dumps(summary, indent=2, sort_keys=True))
+        print("\n======== EXPORT ========")
+        print(f"Data dir     : {dataset_dir}")
+        print(f"Adapter dir   : {adapter_dir}")
+        print(f"Merged model  : {merged_dir}")
+        print(f"Benchmark dir : {output_dir / 'benchmark'}")
+        print(f"Bundle zip    : {export_zip}")
+        print(f"Report        : {report_path}")
+        print("========================")
+        print(json.dumps(summary, indent=2, sort_keys=True))
+    except Exception:
+        error_log = output_dir / "error.log"
+        error_log.write_text(traceback.format_exc())
+        print(traceback.format_exc(), file=sys.stderr)
+        raise
 
 
 if __name__ == "__main__":
