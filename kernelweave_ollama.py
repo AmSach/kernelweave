@@ -37,6 +37,19 @@ def ensure_dependency(package_name, import_name):
         print(f"\033[93m[Setup] Installing missing dependency: {package_name}...\033[0m")
         print(f"\033[93m[Setup] This may take 1-2 minutes for large packages. Please do not close the window...\033[0m")
         try:
+            # Check if pip is available
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "--version"], check=True, capture_output=True)
+            except Exception:
+                print(f"\033[93m[Setup] pip not found in venv. Attempting to install pip...\033[0m")
+                try:
+                    import urllib.request
+                    urllib.request.urlretrieve("https://bootstrap.pypa.io/get-pip.py", "get-pip.py")
+                    subprocess.run([sys.executable, "get-pip.py"], check=True)
+                    print(f"\033[92m[Setup] pip installed successfully in venv!\033[0m")
+                except Exception as e:
+                    print(f"\033[91m[Setup] Failed to install pip: {e}\033[0m")
+                
             # Try running via the current python executable
             subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
             print(f"\033[92m[Setup] Successfully installed {package_name}!\033[0m")
