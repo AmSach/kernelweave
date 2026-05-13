@@ -46,8 +46,13 @@ def ensure_dependency(package_name, import_name):
             subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
             return True
         except Exception as e:
-            print(f"[Setup] Failed to install {package_name}: {e}")
-            return False
+            print(f"[Setup] Failed to install via venv pip, trying system pip...")
+            try:
+                subprocess.run(["pip", "install", package_name], check=True)
+                return True
+            except Exception as e2:
+                print(f"[Setup] Failed to install {package_name}: {e2}")
+                return False
 
 # Auto-install playwright
 ensure_dependency("playwright", "playwright")
