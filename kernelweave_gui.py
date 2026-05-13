@@ -260,12 +260,12 @@ class RupertGUI:
             for i in range(max_iterations):
                 if self.stop_requested: break
                 
+                import urllib.request
                 body = {"model": selected, "prompt": current_prompt, "stream": True}
                 req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
                 
                 full_response = ""
                 try:
-                    import urllib.request
                     with urllib.request.urlopen(req, timeout=30) as response:
                         for line in response:
                             if self.stop_requested: break
