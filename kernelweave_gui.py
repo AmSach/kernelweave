@@ -14,6 +14,7 @@ Features:
 - Concise system prompt to stop wasting tokens.
 - **Agentic ReAct Loop**: Automatically executes tools and feeds results back!
 - **Model Dropdown**: Lists available local models!
+- **Preinstalled Skills**: Auto-installs Playwright and adds browser capability!
 """
 import os
 import sys
@@ -22,6 +23,7 @@ import json
 import threading
 import queue
 import re
+import subprocess
 from pathlib import Path
 import tkinter as tk
 from tkinter import scrolledtext, messagebox, ttk
@@ -33,13 +35,55 @@ from kernelweave.kernel import KernelStore
 from kernelweave.runtime import ExecutionEngine, KernelRuntime
 from kernelweave_ollama import get_ollama_models, tool_web_search, tool_run_command, tool_read_file, tool_write_file, tool_list_dir
 
+def ensure_dependency(package_name, import_name):
+    import importlib
+    try:
+        importlib.import_module(import_name)
+        return True
+    except ImportError:
+        print(f"[Setup] Installing missing dependency: {package_name}...")
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
+            return True
+        except Exception as e:
+            print(f"[Setup] Failed to install {package_name}: {e}")
+            return False
+
+# Auto-install playwright
+ensure_dependency("playwright", "playwright")
+
+def tool_browser_browse(url):
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            # Use headed mode so the user can see it!
+            try:
+                browser = p.chromium.launch(headless=False)
+            except Exception:
+                # If browsers are not installed, try to install them
+                print("[Setup] Installing Chromium binaries...")
+                subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+                browser = p.chromium.launch(headless=False)
+                
+            page = browser.new_page()
+            page.goto(url)
+            time.sleep(2) # Give it a second to be seen
+            title = page.title()
+            # Get a snippet of content
+            content = page.evaluate("() => document.body.innerText")[:500]
+            browser.close()
+            return f"Successfully browsed {url}.\nTitle: {title}\nContent Snippet: {content}..."
+    except Exception as e:
+        return f"Browser error: {e}"
+
 # Map of tools
 TOOLS = {
     "web_search": tool_web_search,
     "run_command": tool_run_command,
     "read_file": tool_read_file,
     "write_file": tool_write_file,
-    "list_dir": tool_list_dir
+    "list_dir": tool_list_dir,
+    "browser_browse": tool_browser_browse
 }
 
 # ── Theme Colors (Electric Obsidian) ───────────────────────────
@@ -61,11 +105,11 @@ Wait for the tool execution result before continuing.
 You must use tools by outputting a JSON object. For example:
 ```json
 {
-  "tool": "web_search",
-  "args": {"query": "latest news"}
+  "tool": "browser_browse",
+  "args": {"url": "https://www.google.com"}
 }
 ```
-Available tools: `web_search`, `run_command`, `read_file`, `write_file`, `list_dir`.
+Available tools: `browser_browse`, `web_search`, `run_command`, `read_file`, `write_file`, `list_dir`.
 """
 
 class RupertGUI:
@@ -196,10 +240,6 @@ class RupertGUI:
         )
         self.cmd_area.pack(fill='both', expand=True, pady=(2, 0))
         
-    def set_endpoint(self, url):
-        self.url_entry.delete(0, tk.END)
-        self.url_entry.insert(0, url)
-        
     def initialize_engine(self):
         self.append_log("Rupert: Initializing Core Systems...", "system")
         try:
@@ -280,7 +320,6 @@ class RupertGUI:
                     # Check for tool calls
                     blocks = re.findall(r'```json\s*(.*?)\s*```', full_response, re.DOTALL)
                     if not blocks:
-                        # Try parsing raw JSON if no backticks
                         if full_response.strip().startswith("{") and full_response.strip().endswith("}"):
                             blocks = [full_response.strip()]
                             
@@ -305,7 +344,6 @@ class RupertGUI:
                         except Exception as e:
                             self.msg_queue.put(('cmd', f"Failed to parse or execute tool: {e}"))
                             
-                    # If no tool called or failed, we are done
                     break
                     
                 except Exception as e:
