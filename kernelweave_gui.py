@@ -15,11 +15,6 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 
-# Force UTF-8 on Windows
-import io
-if sys.platform == "win32":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
 # Ensure kernelweave is importable
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
