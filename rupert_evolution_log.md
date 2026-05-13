@@ -31,7 +31,7 @@ I will simulate tasks for different personas and log the results here.
 #### 2. The Coder
 - **Task**: Create a Python script to calculate Fibonacci numbers with a CLI, write tests, and run them.
 - **Expected Outcome**: Rupert writes code, runs it, fixes errors, and verifies success.
-- **Status**: Pending.
+- **Status**: Failed (Gaps identified: Model used 'filename' instead of 'path').
 
 #### 3. The Trader/Data Analyst
 - **Task**: Fetch mock stock data, calculate a moving average, and output a recommendation.
@@ -53,3 +53,12 @@ I will simulate tasks for different personas and log the results here.
   - Need robust JSON parsing (fix malformed JSON).
   - Need automatic fallback to `browser_browse` if `web_search` fails.
   - Need to feed errors back to the model in the loop!
+
+### Test 2: Coder Task Simulation (Initial Attempt)
+- **Task**: Write fibonacci.py and test it.
+- **Result**: **FAILED**.
+- **Details**:
+  1. The model used `write_file` with argument `filename` instead of `path`.
+  2. The tool threw an error. The model failed to correct itself across 3 iterations.
+- **Fix Applied**:
+  - Upgraded `tool_write_file` in `kernelweave_ollama.py` to accept both `path` and `filename` as aliases!
