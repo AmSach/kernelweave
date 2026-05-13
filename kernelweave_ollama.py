@@ -104,11 +104,14 @@ def tool_read_file(path):
     except Exception as e:
         return str(e)
 
-def tool_write_file(path, content):
+def tool_write_file(path=None, content="", filename=None):
+    actual_path = path or filename
+    if not actual_path:
+        return "Error: path or filename required."
     try:
-        with open(path, "w", encoding="utf-8") as f:
+        with open(actual_path, "w", encoding="utf-8") as f:
             f.write(content)
-        return "File written successfully."
+        return f"File '{actual_path}' written successfully."
     except Exception as e:
         return str(e)
 
