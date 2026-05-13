@@ -65,6 +65,30 @@ if HAS_DDG:
 # Ensure sentence-transformers is installed for vector matching in router
 ensure_dependency("sentence-transformers", "sentence_transformers")
 
+HAS_PLAYWRIGHT = ensure_dependency("playwright", "playwright")
+
+def tool_browser_browse(url):
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            try:
+                browser = p.chromium.launch(headless=False)
+            except Exception:
+                print("[Setup] Installing Chromium binaries...")
+                import subprocess
+                subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+                browser = p.chromium.launch(headless=False)
+            page = browser.new_page()
+            page.goto(url)
+            import time
+            time.sleep(2)
+            title = page.title()
+            content = page.evaluate("() => document.body.innerText")[:500]
+            browser.close()
+            return f"Successfully browsed {url}.\nTitle: {title}\nContent Snippet: {content}..."
+    except Exception as e:
+        return f"Browser error: {e}"
+
 # ── Tools for ReAct Loop ───────────────────────────────────────────
 def tool_list_dir(path="."):
     import os
@@ -300,7 +324,8 @@ TOOLS = {
     "write_file": tool_write_file,
     "run_command": tool_run_command,
     "register_tool": tool_register_tool,
-    "web_search": tool_web_search
+    "web_search": tool_web_search,
+    "browser_browse": tool_browser_browse
 }
 
 
@@ -661,11 +686,29 @@ def main():
             
             try:
                 for _ in range(max_iterations):
-                    resp = backend.generate(conversation, system_prompt=system_prompt)
-                    text = resp.text.strip()
+                    print(f"{DIM}Thinking...{RESET}", end="\r")
+                    
+                    import urllib.request
+                    url = "http://127.0.0.1:11434/api/generate"
+                    body = {"model": args.model, "prompt": f"{system_prompt}\n\n{conversation}", "stream": True}
+                    req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
+                    
+                    text = ""
+                    first_token = True
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        for line in response:
+                            if line:
+                                chunk = json.loads(line.decode('utf-8'))
+                                token = chunk.get("response", "")
+                                if first_token and token.strip():
+                                    print(" " * 20, end="\r") # Clear "Thinking..."
+                                    first_token = False
+                                print(token, end="", flush=True)
+                                text += token
+                    print() # Newline after stream
                     
                     # Check if model wants to use a tool
-                    if "```json" in text or (text.startswith("{") and "tool" in text):
+                    if "```json" in text or (text.strip().startswith("{") and "tool" in text):
                         # Extract JSON
                         try:
                             if "```json" in text:
@@ -678,16 +721,17 @@ def main():
                             tool_args = tool_call.get("args", {})
                             
                             if tool_name in TOOLS:
-                                print(f"{DIM}Invoking tool {tool_name} with {tool_args}...{RESET}")
+                                print_box("Tool Execution", f"Invoking {tool_name} with {tool_args}", color=CYAN)
                                 tool_result = TOOLS[tool_name](**tool_args)
+                                print_box("Tool Result", str(tool_result), color=GREEN)
+                                
                                 conversation += f"\n\nObservation (Result of {tool_name}):\n{tool_result}\n\nContinue with your task."
-                                print(f"{DIM}Tool executed. Continuing...{RESET}", end="\r")
                                 continue
                             else:
+                                print_box("Error", f"Tool '{tool_name}' not found.", color=RED)
                                 conversation += f"\n\nObservation: Tool '{tool_name}' not found."
                                 continue
                         except Exception as e:
-                            # Not valid JSON or failed to parse, assume it's just a text response
                             response_text = text
                             break
                     else:
