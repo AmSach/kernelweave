@@ -119,44 +119,82 @@ def print_banner(model_name: str):
     print()
 
 
-def make_backend(model: str) -> OllamaBackend:
+def make_backend(provider: str, model: str, base_url: str) -> Any:
     preset = ModelPreset(
-        id="interactive-ollama",
-        provider="ollama",
+        id="interactive-session",
+        provider=provider,
         model=model,
-        base_url="http://127.0.0.1:11434",
+        base_url=base_url,
         temperature=0.4,
         max_tokens=2048,
-        timeout_seconds=120,
+        timeout_seconds=30,
     )
-    return OllamaBackend(preset, json_mode=False)
+    if provider == "ollama":
+        return OllamaBackend(preset, json_mode=False)
+    else:
+        return OpenAICompatibleBackend(preset)
 
-
-def check_ollama(backend: OllamaBackend) -> bool:
-    print(f"{DIM}Checking Ollama connectivity...{RESET}", end="", flush=True)
+def check_connectivity(backend: Any) -> bool:
     try:
         backend.generate("test", max_tokens=1)
-        print(f"\r{GREEN}[OK]{RESET} Ollama is responding!    ")
         return True
-    except Exception as e:
-        print(f"\r{RED}[FAIL]{RESET} Cannot reach Ollama: {e}")
-        print(f"\n{YELLOW}Please ensure Ollama is running (`ollama serve`) and the model exists.{RESET}\n")
+    except Exception:
         return False
-
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="KernelWeave Interactive Shell")
-    parser.add_argument("--model", type=str, default="gemma4:e2b", help="Ollama model to use")
+    parser.add_argument("--model", type=str, default="gemma4:e2b", help="Model name to use")
     parser.add_argument("--store", type=str, default="store", help="Path to KernelStore")
     args = parser.parse_args()
 
-    backend = make_backend(args.model)
-    
     print_banner(args.model)
     
-    if not check_ollama(backend):
-        sys.exit(1)
+    # List of endpoints to try
+    endpoints = [
+        ("ollama", "http://127.0.0.1:11434", args.model),
+        ("openai-compatible", "http://127.0.0.1:11434/v1", args.model), # Ollama OpenAI API
+        ("openai-compatible", "http://127.0.0.1:1234/v1", args.model),  # LM Studio
+    ]
+    
+    backend = None
+    connected = False
+    
+    for provider, url, model in endpoints:
+        print(f"{DIM}Trying {provider} at {url}...{RESET}", end="", flush=True)
+        test_backend = make_backend(provider, model, url)
+        if check_connectivity(test_backend):
+            print(f"\r{GREEN}[OK]{RESET} Connected to {provider} at {url}    ")
+            backend = test_backend
+            connected = True
+            break
+        else:
+            print(f"\r{YELLOW}[FAIL]{RESET} {provider} at {url} not responding.    ")
+            
+    if not connected:
+        print(f"\n{RED}[ERROR]{RESET} No running LLM server detected on default ports.")
+        print(f"{YELLOW}Please ensure Ollama or LM Studio is running.{RESET}")
+        
+        # Interactive fallback
+        try:
+            choice = input(f"\n{BOLD}Would you like to enter a custom endpoint URL? (y/n): {RESET}").strip().lower()
+            if choice == 'y':
+                custom_url = input(f"{BOLD}Enter API Base URL (e.g., http://localhost:11434): {RESET}").strip()
+                custom_provider = "ollama" if "11434" in custom_url and "v1" not in custom_url else "openai-compatible"
+                print(f"{DIM}Trying custom endpoint...{RESET}", end="", flush=True)
+                test_backend = make_backend(custom_provider, args.model, custom_url)
+                if check_connectivity(test_backend):
+                    print(f"\r{GREEN}[OK]{RESET} Connected successfully!    ")
+                    backend = test_backend
+                else:
+                    print(f"\r{RED}[FAIL]{RESET} Custom endpoint also failed. Exiting.")
+                    sys.exit(1)
+            else:
+                print(f"{YELLOW}Exiting. Please start your LLM server and try again.{RESET}")
+                sys.exit(1)
+        except (KeyboardInterrupt, EOFError):
+            print()
+            sys.exit(1)
         
     store_path = Path(args.store)
     store = KernelStore(store_path)
