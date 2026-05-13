@@ -141,6 +141,28 @@ def check_connectivity(backend: Any) -> bool:
     except Exception:
         return False
 
+def get_ollama_models(url="http://127.0.0.1:11434"):
+    import urllib.request
+    import json
+    try:
+        req = urllib.request.Request(f"{url}/api/tags")
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            return [m['name'] for m in data.get('models', [])]
+    except Exception:
+        return []
+
+def get_openai_models(url="http://127.0.0.1:1234/v1"):
+    import urllib.request
+    import json
+    try:
+        req = urllib.request.Request(f"{url}/models")
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            return [m['id'] for m in data.get('data', [])]
+    except Exception:
+        return []
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="KernelWeave Interactive Shell")
@@ -152,7 +174,7 @@ def main():
     
     # Interactive Selector
     print(f"{BOLD}Select your LLM provider setup:{RESET}")
-    print(f"1. Ollama (Default - uses '{args.model}')")
+    print("1. Ollama (Default port 11434)")
     print("2. LM Studio (Default port 1234)")
     print("3. Custom Endpoint & Model")
     print("Press Enter to auto-scan all defaults.")
@@ -164,15 +186,45 @@ def main():
         choice = input(f"\n{BOLD}Enter choice (1-3): {RESET}").strip()
         
         if choice == "1":
+            print(f"{DIM}Fetching models from Ollama...{RESET}")
+            models = get_ollama_models()
+            if models:
+                print(f"\n{YELLOW}Available Ollama Models:{RESET}")
+                for i, m in enumerate(models):
+                    print(f"  {i+1}. {m}")
+                m_choice = input(f"{BOLD}Select model number (default 1): {RESET}").strip()
+                if m_choice.isdigit() and 1 <= int(m_choice) <= len(models):
+                    selected_model = models[int(m_choice)-1]
+                else:
+                    selected_model = models[0] if models else args.model
+            else:
+                print(f"{YELLOW}No models found or cannot reach Ollama. Using default.{RESET}")
+                selected_model = args.model
             endpoints = [("ollama", "http://127.0.0.1:11434", selected_model)]
+            
         elif choice == "2":
-            selected_model = input(f"{BOLD}Enter model name in LM Studio (default: {args.model}): {RESET}").strip() or args.model
+            print(f"{DIM}Fetching models from LM Studio...{RESET}")
+            models = get_openai_models()
+            if models:
+                print(f"\n{YELLOW}Available LM Studio Models:{RESET}")
+                for i, m in enumerate(models):
+                    print(f"  {i+1}. {m}")
+                m_choice = input(f"{BOLD}Select model number (default 1): {RESET}").strip()
+                if m_choice.isdigit() and 1 <= int(m_choice) <= len(models):
+                    selected_model = models[int(m_choice)-1]
+                else:
+                    selected_model = models[0] if models else args.model
+            else:
+                print(f"{YELLOW}No models found or cannot reach LM Studio. Using default.{RESET}")
+                selected_model = args.model
             endpoints = [("openai-compatible", "http://127.0.0.1:1234/v1", selected_model)]
+            
         elif choice == "3":
             selected_model = input(f"{BOLD}Enter model name: {RESET}").strip()
             custom_url = input(f"{BOLD}Enter API Base URL (e.g., http://localhost:11434): {RESET}").strip()
             custom_provider = "ollama" if "11434" in custom_url and "v1" not in custom_url else "openai-compatible"
             endpoints = [(custom_provider, custom_url, selected_model)]
+            
         else:
             print(f"{DIM}Auto-scanning default local endpoints...{RESET}")
             endpoints = [
