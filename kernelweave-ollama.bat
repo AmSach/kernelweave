@@ -22,4 +22,7 @@ if "%CHOICE%"=="2" (
     python "%~dp0kernelweave_ollama.py" --model %MODEL%
 )
 
+echo.
+echo Press any key to exit...
+pause > nul
 endlocal

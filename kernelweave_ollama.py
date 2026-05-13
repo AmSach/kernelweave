@@ -35,6 +35,7 @@ def ensure_dependency(package_name, import_name):
         return True
     except ImportError:
         print(f"\033[93m[Setup] Installing missing dependency: {package_name}...\033[0m")
+        print(f"\033[93m[Setup] This may take 1-2 minutes for large packages. Please do not close the window...\033[0m")
         try:
             # Try running via the current python executable
             subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
