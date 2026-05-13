@@ -311,12 +311,25 @@ class RupertGUI:
                 
                 full_response = ""
                 try:
+                    self.msg_queue.put(('update_tool', "Thinking..."))
+                    first_token = True
                     with urllib.request.urlopen(req, timeout=30) as response:
                         for line in response:
                             if self.stop_requested: break
                             if line:
                                 chunk = json.loads(line.decode('utf-8'))
+                                # Support standard response or reasoning/thinking fields
                                 token = chunk.get("response", "")
+                                reasoning = chunk.get("reasoning_content", "") or chunk.get("thinking", "")
+                                
+                                # If there is reasoning content, prioritize it or prepend it
+                                if reasoning:
+                                    token = reasoning
+                                    
+                                if first_token and token.strip():
+                                    self.msg_queue.put(('update_tool', "None"))
+                                    first_token = False
+                                    
                                 full_response += token
                                 self.msg_queue.put(('stream', token))
                                 
