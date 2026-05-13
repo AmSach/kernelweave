@@ -26,6 +26,45 @@ from kernelweave.compiler import compile_trace_to_kernel
 from kernelweave.verifier import VerifierHierarchy
 from kernelweave.llm.providers import ModelPreset, OllamaBackend
 
+# ── Tools for ReAct Loop ───────────────────────────────────────────
+def tool_list_dir(path="."):
+    import os
+    try:
+        return json.dumps(os.listdir(path))
+    except Exception as e:
+        return str(e)
+
+def tool_read_file(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        return str(e)
+
+def tool_write_file(path, content):
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        return "File written successfully."
+    except Exception as e:
+        return str(e)
+
+def tool_run_command(command):
+    import subprocess
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        return f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    except Exception as e:
+        return str(e)
+
+TOOLS = {
+    "list_dir": tool_list_dir,
+    "read_file": tool_read_file,
+    "write_file": tool_write_file,
+    "run_command": tool_run_command
+}
+
+
 # ── Colors ─────────────────────────────────────────────────────────
 CYAN    = "\033[96m"
 GREEN   = "\033[92m"
@@ -155,10 +194,66 @@ def main():
         # The runtime engine defers raw generation when no kernel matches
         # We must perform the generation manually for the interactive shell fallback
         if not response_text and plan.get("mode") == "generate":
-            print(f"{DIM}Falling back to raw generation...{RESET}", end="\r")
+            print(f"{DIM}Falling back to ReAct tool loop...{RESET}", end="\r")
+            
+            system_prompt = (
+                "You are a helpful assistant with access to tools. You can use tools by outputting a JSON object with 'tool' and 'args' fields. For example:\n"
+                "```json\n"
+                "{\n"
+                "  \"tool\": \"read_file\",\n"
+                "  \"args\": {\"path\": \"file.txt\"}\n"
+                "}\n"
+                "```\n"
+                "Available tools:\n"
+                "- `list_dir(path=\".\")`: List directory contents.\n"
+                "- `read_file(path)`: Read file content.\n"
+                "- `write_file(path, content)`: Write file content.\n"
+                "- `run_command(command)`: Run a terminal command.\n\n"
+                "If you have enough information to answer, just answer normally. Do not use tools if you don't need to. "
+                "Always output valid JSON when using a tool. After receiving tool output, continue answering or use another tool."
+            )
+            
+            conversation = prompt
+            max_iterations = 5
+            
             try:
-                resp = backend.generate(prompt)
-                response_text = resp.text
+                for _ in range(max_iterations):
+                    resp = backend.generate(conversation, system_prompt=system_prompt)
+                    text = resp.text.strip()
+                    
+                    # Check if model wants to use a tool
+                    if "```json" in text or (text.startswith("{") and "tool" in text):
+                        # Extract JSON
+                        try:
+                            if "```json" in text:
+                                json_str = text.split("```json")[1].split("```")[0].strip()
+                            else:
+                                json_str = text.strip()
+                                
+                            tool_call = json.loads(json_str)
+                            tool_name = tool_call.get("tool")
+                            tool_args = tool_call.get("args", {})
+                            
+                            if tool_name in TOOLS:
+                                print(f"{DIM}Invoking tool {tool_name} with {tool_args}...{RESET}")
+                                tool_result = TOOLS[tool_name](**tool_args)
+                                conversation += f"\n\nObservation (Result of {tool_name}):\n{tool_result}\n\nContinue with your task."
+                                print(f"{DIM}Tool executed. Continuing...{RESET}", end="\r")
+                                continue
+                            else:
+                                conversation += f"\n\nObservation: Tool '{tool_name}' not found."
+                                continue
+                        except Exception as e:
+                            # Not valid JSON or failed to parse, assume it's just a text response
+                            response_text = text
+                            break
+                    else:
+                        response_text = text
+                        break
+                        
+                if not response_text:
+                    response_text = "No final answer produced within iteration limit."
+                    
             except Exception as e:
                 response_text = f"Error during generation: {e}"
         
