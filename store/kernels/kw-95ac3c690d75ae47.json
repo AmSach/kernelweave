@@ -1,0 +1,103 @@
+{
+  "description": "i meant news bro",
+  "digest": "e35ed40608f029bf32480097c9f6a2619c8e778274b1b72de584754a91e2fcb8",
+  "evidence_requirements": [
+    "completed generation with score 0.00",
+    "source trace logged",
+    "final response conforms to expected output"
+  ],
+  "input_schema": {
+    "properties": {
+      "task": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "task"
+    ],
+    "type": "object"
+  },
+  "kernel_id": "kw-95ac3c690d75ae47",
+  "name": "general query kernel",
+  "output_schema": {
+    "properties": {
+      "result": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "type": "object"
+  },
+  "postconditions": [
+    "output schema satisfied",
+    "all required evidence recorded",
+    "rollback not triggered",
+    "tests passed on admission",
+    "extracted: If relevant news results are found, they will be returned to the user.",
+    "extracted: If no relevant results are found due to rate limiting or lack of matches, an appropriate message will inform the user.",
+    "extracted: The generation process will report a completion score (in this case, 0.00)."
+  ],
+  "preconditions": [
+    "task belongs to family: general query",
+    "inputs match schema",
+    "evidence channel available",
+    "trace corresponds to a solved task",
+    "extracted: A query related to news must be specified.",
+    "extracted: The system must have access to a web search capability or news database.",
+    "extracted: Rate limits for the web search service must not be exceeded."
+  ],
+  "rollback": [
+    "if evidence is insufficient, return to planning",
+    "if a tool returns contradictory data, invalidate kernel",
+    "if schema inference is unstable, demote kernel confidence"
+  ],
+  "source_trace_ids": [
+    "trace-1778704287"
+  ],
+  "status": {
+    "confidence": 0.4803,
+    "failures": 0,
+    "passes": 1,
+    "state": "candidate"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "i meant news bro"
+    }
+  ],
+  "task_family": "general query",
+  "tests": [
+    {
+      "expected": {
+        "result": "generated text response"
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "output-shape"
+    },
+    {
+      "expected": {
+        "min_evidence": 2
+      },
+      "input": {
+        "trace_id": "trace-1778704287"
+      },
+      "name": "evidence-completeness"
+    },
+    {
+      "expected": {
+        "min_confidence": 0.4803
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "confidence-floor"
+    }
+  ],
+  "version": 2
+}

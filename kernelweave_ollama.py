@@ -24,7 +24,13 @@ from kernelweave.kernel import KernelStore, TraceEvent
 from kernelweave.runtime import ExecutionEngine, KernelRuntime
 from kernelweave.compiler import compile_trace_to_kernel
 from kernelweave.verifier import VerifierHierarchy
-from kernelweave.llm.providers import ModelPreset, OllamaBackend
+from kernelweave.llm.providers import ModelPreset, OllamaBackend, OpenAICompatibleBackend
+
+try:
+    from duckduckgo_search import DDGS
+    HAS_DDG = True
+except ImportError:
+    HAS_DDG = False
 
 # ── Tools for ReAct Loop ───────────────────────────────────────────
 def tool_list_dir(path="."):
@@ -120,32 +126,53 @@ def tool_web_search(query):
     import json
     
     print(f"{DIM}Searching the web for: {query}...{RESET}")
+    results = []
     
-    # 1. Fetch from DuckDuckGo HTML
-    url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({'q': query})
-    req = urllib.request.Request(
-        url, 
-        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-    )
-    
-    try:
-        with urllib.request.urlopen(req, timeout=10) as response:
-            html = response.read().decode('utf-8')
+    # Priority 1: Use official duckduckgo_search package if available
+    if HAS_DDG:
+        try:
+            with DDGS() as ddgs:
+                ddg_results = ddgs.text(query, max_results=10)
+                for r in ddg_results:
+                    if 'body' in r:
+                        results.append(r['body'])
+                print(f"{DIM}Fetched {len(results)} results via duckduckgo_search.{RESET}")
+        except Exception as e:
+            print(f"{DIM}duckduckgo_search failed ({e}), falling back to scraper...{RESET}")
             
-        # Extract snippets using regex
-        snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
+    # Priority 2: Fallback to scraping
+    if not results:
+        url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({'q': query})
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        )
         
-        results = []
-        for snippet in snippets:
-            clean_snippet = re.sub(r'<[^>]+>', '', snippet).strip()
-            if clean_snippet:
-                results.append(clean_snippet)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                html = response.read().decode('utf-8')
                 
-        if not results:
-            return "No results found or rate limited."
+            # Extract snippets using more generic regexes
+            snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
+            if not snippets:
+                # Try finding text inside result__snippet divs or similar
+                snippets = re.findall(r'<[^>]+class="[^"]*snippet[^"]*"[^>]*>(.*?)</[^>]+>', html, re.DOTALL)
             
-        # 2. Vector Embedding Search (RAG)
-        # Embed the query
+            for snippet in snippets:
+                clean_snippet = re.sub(r'<[^>]+>', '', snippet).strip()
+                if clean_snippet and len(clean_snippet) > 10:
+                    results.append(clean_snippet)
+                    
+            print(f"{DIM}Fetched {len(results)} results via scraper.{RESET}")
+        except Exception as e:
+            return f"Search failed: {e}"
+            
+    if not results:
+        return ("No results found. DuckDuckGo may be rate-limiting the scraper.\n"
+                "Tip: Run 'pip install duckduckgo-search' to enable the robust official API.")
+        
+    # 2. Vector Embedding Search (RAG)
+    # Embed the query
         query_vec = get_ollama_embedding(query)
         
         if not query_vec:

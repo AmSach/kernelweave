@@ -10,6 +10,15 @@
       "version": 2
     },
     {
+      "digest": "3acefd1d839067e193a8f31431279ab45bc579f0b968a27c1f39a3c0ce259a4e",
+      "kernel_id": "kw-702962516b572dcb",
+      "name": "general query kernel",
+      "path": "kernels\\kw-702962516b572dcb.json",
+      "status": "candidate",
+      "task_family": "general query",
+      "version": 2
+    },
+    {
       "digest": "b66d893fa5781c77bdcba4e7c3ceb17e2032927f625a69469f59aa3cab3e3c69",
       "kernel_id": "kw-73a20f259c554094",
       "name": "general query kernel",
@@ -26,6 +35,15 @@
       "status": "candidate",
       "task_family": "artifact comparison",
       "version": 1
+    },
+    {
+      "digest": "e35ed40608f029bf32480097c9f6a2619c8e778274b1b72de584754a91e2fcb8",
+      "kernel_id": "kw-95ac3c690d75ae47",
+      "name": "general query kernel",
+      "path": "kernels\\kw-95ac3c690d75ae47.json",
+      "status": "candidate",
+      "task_family": "general query",
+      "version": 2
     },
     {
       "digest": "268d7e0853724e6d76caa286eaeee5dec27fa25b5a61e11c56a51dfaf0dff4b4",
