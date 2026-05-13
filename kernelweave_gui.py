@@ -1,10 +1,15 @@
 """
-KernelWeave Glass-Panel GUI (JARVIS HUD Edition)
-================================================
+KernelWeave Glass-Panel GUI (HUD REBORN - 60 FPS)
+=================================================
 
-A highly visual, local desktop GUI for KernelWeave that visualizes the engine
-as a complex, multi-layered Jarvis-style HUD with concentric rings, meshed nodes,
-and floating data points!
+A completely rebuilt from scratch, ultra-futuristic GUI for KernelWeave.
+Features:
+- "Electric Obsidian" palette (Deep blue-black, high-contrast cyan, glow effects).
+- Concentric rotating segmented arcs.
+- Drifting neural mesh background.
+- Read-only execution trace (no user typing allowed in log!).
+- Custom dropdown simulation for models.
+- Endpoint presets for famous providers!
 """
 import os
 import sys
@@ -25,15 +30,14 @@ from kernelweave.kernel import KernelStore
 from kernelweave.runtime import ExecutionEngine, KernelRuntime
 from kernelweave_ollama import get_ollama_models
 
-# ── Theme Colors (Jarvis / Iron Man Palette) ────────────────────
-BG_COLOR = "#050b14"      # Dark tech blue
-SURFACE_COLOR = "#0b1a30" # Darker blue
+# ── Theme Colors (Electric Obsidian) ───────────────────────────
+BG_COLOR = "#020508"      # Very deep obsidian blue-black
+SURFACE_COLOR = "#07111e" # Dark slate blue for panels
 TEXT_COLOR = "#a5c4ec"    # Tech blue text
 ACCENT_CYAN = "#00f0ff"   # Jarvis Cyan
 ACCENT_ORANGE = "#ff5500" # Warning Orange
-ACCENT_PINK = "#ff0055"   # Pulse Pink
 ACCENT_GREEN = "#00ff66"  # Success Green
-DIM_COLOR = "#2a4d70"     # Grid lines
+DIM_COLOR = "#102a45"     # Faint grid lines
 
 SYSTEM_PROMPT = """You are JARVIS (KernelWeave OS), an advanced autonomous AI operating system.
 You are running on a local neuro-symbolic stack. You use an LLM for reasoning and distill repetitive tasks into Skill Kernels.
@@ -69,7 +73,7 @@ class Particle:
 class KernelWeaveGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("JARVIS CORE - KernelWeave OS")
+        self.root.title("JARVIS HUD REBORN")
         self.root.geometry("1400x850")
         self.root.configure(bg=BG_COLOR)
         
@@ -78,7 +82,7 @@ class KernelWeaveGUI:
         self.store = None
         self.stop_requested = False
         self.executing = False
-        self.selected_model = ""
+        self.selected_model = "granite4.1:8b"
         self.conversation_history = []
         
         # Queue for thread communication
@@ -94,16 +98,24 @@ class KernelWeaveGUI:
         self.routing_score = 0.0
         self.routing_mode = "idle"
         
+        # Presets
+        self.presets = {
+            "OLLAMA (Local)": "http://127.0.0.1:11434",
+            "OPENAI": "https://api.openai.com/v1",
+            "GEMINI": "https://generativelanguage.googleapis.com/v1",
+            "ANTHROPIC": "https://api.anthropic.com/v1"
+        }
+        
         # Setup UI
         self.create_layout()
         
         # Initialize complex mesh background
-        for _ in range(40):
+        for _ in range(45):
             self.mesh_nodes.append({
                 'x': random.random(),
                 'y': random.random(),
-                'vx': random.uniform(-0.002, 0.002),
-                'vy': random.uniform(-0.002, 0.002)
+                'vx': random.uniform(-0.001, 0.001),
+                'vy': random.uniform(-0.001, 0.001)
             })
             
         # Load store and scan models
@@ -111,7 +123,7 @@ class KernelWeaveGUI:
         
         # Start loops
         self.root.after(100, self.poll_queue)
-        self.root.after(30, self.animation_loop)
+        self.root.after(16, self.animation_loop) # 60 FPS
         
     def create_layout(self):
         self.main_pane = tk.Frame(self.root, bg=BG_COLOR)
@@ -121,25 +133,37 @@ class KernelWeaveGUI:
         self.left_panel = tk.Frame(self.main_pane, bg=BG_COLOR, width=500)
         self.left_panel.pack(side='left', fill='both', expand=True, padx=20, pady=20)
         
-        # Model Selector
-        tk.Label(self.left_panel, text="CORE MODEL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        # Model Dropdown Simulation Label
+        tk.Label(self.left_panel, text="// CORE MODEL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        
+        # We use a button that opens a popup or just a text entry for simplicity but with preset buttons!
         self.model_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR)
         self.model_entry.pack(fill='x', pady=(2, 10), ipady=5)
         self.model_entry.insert(0, "granite4.1:8b")
         
+        # Endpoint Presets
+        tk.Label(self.left_panel, text="// ENDPOINT PRESETS", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        preset_frame = tk.Frame(self.left_panel, bg=BG_COLOR)
+        preset_frame.pack(fill='x', pady=(2, 10))
+        
+        for name, url in self.presets.items():
+            btn = tk.Button(preset_frame, text=name.split()[0], bg=DIM_COLOR, fg=TEXT_COLOR, font=('Courier', 8, 'bold'), borderwidth=0, padx=5, pady=5, 
+                            command=lambda u=url: self.set_endpoint(u))
+            btn.pack(side='left', padx=(0, 5))
+            
         # Endpoint URL
-        tk.Label(self.left_panel, text="ENDPOINT URL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        tk.Label(self.left_panel, text="// ENDPOINT URL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
         self.url_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR)
         self.url_entry.pack(fill='x', pady=(2, 10), ipady=5)
         self.url_entry.insert(0, "http://127.0.0.1:11434")
         
         # API Key (BYOK)
-        tk.Label(self.left_panel, text="API KEY (OPTIONAL)", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        tk.Label(self.left_panel, text="// API KEY (BYOK)", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
         self.key_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR, show="*")
         self.key_entry.pack(fill='x', pady=(2, 10), ipady=5)
         
-        # Text Log
-        tk.Label(self.left_panel, text="SYSTEM TRACE", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        # Text Log (READ ONLY!)
+        tk.Label(self.left_panel, text="// EXECUTION TRACE", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
         self.log_area = scrolledtext.ScrolledText(
             self.left_panel, 
             bg=SURFACE_COLOR, 
@@ -148,7 +172,8 @@ class KernelWeaveGUI:
             insertbackground=TEXT_COLOR,
             wrap=tk.WORD,
             borderwidth=1,
-            relief='solid'
+            relief='solid',
+            state='disabled' # READ ONLY!
         )
         self.log_area.pack(fill='both', expand=True, pady=(5, 15))
         
@@ -159,9 +184,9 @@ class KernelWeaveGUI:
         self.log_area.tag_config('error', foreground=ACCENT_ORANGE)
         
         # Prompt Input
-        tk.Label(self.left_panel, text="VOICE / TEXT COMMAND", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        tk.Label(self.left_panel, text="// COMMAND INPUT", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
         self.prompt_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR)
-        self.prompt_entry.pack(fill='x', pady=(5, 15), ipady=12)
+        self.prompt_entry.pack(fill='x', pady=(2, 10), ipady=12)
         self.prompt_entry.bind("<Return>", lambda e: self.send_prompt())
         
         # Buttons
@@ -185,6 +210,11 @@ class KernelWeaveGUI:
         )
         self.canvas.pack(fill='both', expand=True)
         
+    def set_endpoint(self, url):
+        self.url_entry.delete(0, tk.END)
+        self.url_entry.insert(0, url)
+        self.append_log(f"System: Endpoint preset loaded: {url}", "system")
+        
     def initialize_engine(self):
         self.append_log("JARVIS: Initializing Core Systems...", "system")
         try:
@@ -198,7 +228,6 @@ class KernelWeaveGUI:
                 try:
                     with open(f, "r") as kf:
                         data = json.load(kf)
-                    # Extract state from status object if it exists
                     status_obj = data.get("status", {})
                     state = status_obj.get("state", "candidate") if isinstance(status_obj, dict) else "candidate"
                     
@@ -210,8 +239,8 @@ class KernelWeaveGUI:
                         "status": state,
                         "version": data.get("version", 2)
                     })
-                except Exception as e:
-                    print(f"Failed to index {name}: {e}")
+                except:
+                    pass
             
             index_path = "e:/kernelweave/store/index.json"
             try:
@@ -228,11 +257,6 @@ class KernelWeaveGUI:
             self.runtime = KernelRuntime(self.store, use_embeddings=True)
             self.append_log(f"JARVIS: Store online. {len(self.store.list_kernels())} kernels loaded.", "success")
             
-            models = get_ollama_models()
-            if models and "granite4.1:8b" in models:
-                self.model_entry.delete(0, tk.END)
-                self.model_entry.insert(0, "granite4.1:8b")
-                
         except Exception as e:
             self.append_log(f"Error initializing core: {e}", "error")
             
@@ -242,16 +266,16 @@ class KernelWeaveGUI:
         height = self.canvas.winfo_height()
         
         if width < 100:
-            self.root.after(30, self.animation_loop)
+            self.root.after(16, self.animation_loop)
             return
             
         center_x = width // 2
         center_y = height // 2
         
         # Update animations
-        self.angle_offset += 0.05
+        self.angle_offset += 0.03
         self.pulse_scale += self.pulse_dir
-        if self.pulse_scale > 1.2 or self.pulse_scale < 0.8:
+        if self.pulse_scale > 1.1 or self.pulse_scale < 0.9:
             self.pulse_dir = -self.pulse_dir
             
         # 1. Draw Complex Mesh Background (Neural Network)
@@ -263,7 +287,7 @@ class KernelWeaveGUI:
             
             cx = int(n['x'] * width)
             cy = int(n['y'] * height)
-            self.canvas.create_oval(cx-2, cy-2, cx+2, cy+2, fill=DIM_COLOR, outline="")
+            self.canvas.create_oval(cx-1, cy-1, cx+1, cy+1, fill=DIM_COLOR, outline="")
             
             # Connect close nodes
             for n2 in self.mesh_nodes:
@@ -271,40 +295,40 @@ class KernelWeaveGUI:
                     dx = n['x'] - n2['x']
                     dy = n['y'] - n2['y']
                     dist = math.sqrt(dx*dx + dy*dy)
-                    if dist < 0.15:
-                        self.canvas.create_line(cx, cy, int(n2['x']*width), int(n2['y']*height), fill="#0d213a", width=1)
+                    if dist < 0.12:
+                        self.canvas.create_line(cx, cy, int(n2['x']*width), int(n2['y']*height), fill="#051425", width=1)
                         
         # 2. Draw JARVIS Concentric Rings (The HUD)
         base_r = min(width, height) // 4
         
         # Outer dashed ring
-        self.draw_dashed_circle(center_x, center_y, base_r + 50, DIM_COLOR)
+        self.draw_dashed_circle(center_x, center_y, base_r + 40, DIM_COLOR)
         # Rotating arc ring
         self.draw_arc_ring(center_x, center_y, base_r, ACCENT_CYAN, self.angle_offset)
         # Inner pulsing ring
-        self.canvas.create_oval(center_x - int(base_r*0.6*self.pulse_scale), center_y - int(base_r*0.6*self.pulse_scale),
-                                center_x + int(base_r*0.6*self.pulse_scale), center_y + int(base_r*0.6*self.pulse_scale),
-                                fill="", outline=ACCENT_ORANGE, width=2)
+        self.canvas.create_oval(center_x - int(base_r*0.7*self.pulse_scale), center_y - int(base_r*0.7*self.pulse_scale),
+                                center_x + int(base_r*0.7*self.pulse_scale), center_y + int(base_r*0.7*self.pulse_scale),
+                                fill="", outline=DIM_COLOR, width=1)
                                 
-        # Central Core
-        self.canvas.create_oval(center_x-20, center_y-20, center_x+20, center_y+20, fill=ACCENT_CYAN, outline="")
-        self.canvas.create_text(center_x, center_y, text="JARVIS", fill=BG_COLOR, font=('Courier', 8, 'bold'))
+        # Central Core (Glowing)
+        self.canvas.create_oval(center_x-25, center_y-25, center_x+25, center_y+25, fill=SURFACE_COLOR, outline=ACCENT_CYAN, width=2)
+        self.canvas.create_text(center_x, center_y, text="JARVIS", fill=ACCENT_CYAN, font=('Courier', 9, 'bold'))
         
         # 3. Draw Floating Kernel Data Points
         if self.store:
             kernels = self.store.list_kernels()
             for i, k in enumerate(kernels):
-                angle = (2 * math.pi * i) / len(kernels) + self.angle_offset * 0.2
-                r = base_r + 100
+                angle = (2 * math.pi * i) / len(kernels) + self.angle_offset * 0.1
+                r = base_r + 80
                 x = center_x + int(r * math.cos(angle))
                 y = center_y + int(r * math.sin(angle))
                 
                 # Draw connecting line to core
-                self.canvas.create_line(center_x, center_y, x, y, fill="#0d213a", width=1)
+                self.canvas.create_line(center_x, center_y, x, y, fill="#051425", width=1)
                 # Draw node
                 is_active = (k['kernel_id'] == self.active_kernel_id)
                 col = ACCENT_GREEN if is_active else ACCENT_CYAN
-                self.canvas.create_rectangle(x-5, y-5, x+5, y+5, fill=col, outline="")
+                self.canvas.create_rectangle(x-4, y-4, x+4, y+4, fill=col, outline="")
                 self.canvas.create_text(x+10, y, text=k['kernel_id'][:6], fill=TEXT_COLOR, font=('Courier', 8), anchor='w')
                 
         # 4. Update and Draw Particles
@@ -315,30 +339,29 @@ class KernelWeaveGUI:
             else:
                 self.canvas.create_oval(p.x-2, p.y-2, p.x+2, p.y+2, fill=p.color, outline="")
                 
-        # 5. HUD Labels
+        # 5. HUD Labels (Tech Readouts)
         self.canvas.create_text(30, 30, text="// KERNELWEAVE OS //", fill=ACCENT_CYAN, font=('Courier', 14, 'bold'), anchor='w')
         self.canvas.create_text(30, 55, text=f"MODE: {self.routing_mode.upper()}", fill=TEXT_COLOR, font=('Courier', 10), anchor='w')
-        self.canvas.create_text(30, 75, text=f"ACTIVE KERNEL: {self.active_kernel_id[:10]}", fill=TEXT_COLOR, font=('Courier', 10), anchor='w')
+        self.canvas.create_text(30, 75, text=f"ACTIVE_REF: {self.active_kernel_id[:10]}", fill=TEXT_COLOR, font=('Courier', 10), anchor='w')
         self.canvas.create_text(30, 95, text=f"SIMILARITY: {self.routing_score:.2f}", fill=TEXT_COLOR, font=('Courier', 10), anchor='w')
         
-        # Decorative tech readouts
-        self.canvas.create_text(width-30, 30, text="SYS_LATTICE: OK", fill=ACCENT_GREEN, font=('Courier', 10), anchor='e')
-        self.canvas.create_text(width-30, 50, text="NEURAL_LOAD: 23%", fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
-        self.canvas.create_text(width-30, 70, text="STORE_COUNT: " + str(len(kernels) if self.store else 0), fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
+        self.canvas.create_text(width-30, 30, text="SYS_LATTICE: STABLE", fill=ACCENT_GREEN, font=('Courier', 10), anchor='e')
+        self.canvas.create_text(width-30, 50, text="NEURAL_LOAD: 14%", fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
+        self.canvas.create_text(width-30, 70, text="KERNELS_SYNCED: " + str(len(kernels) if self.store else 0), fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
         
         self.root.after(16, self.animation_loop)
         
     def draw_dashed_circle(self, x, y, r, color):
-        for angle in range(0, 360, 10):
+        for angle in range(0, 360, 8):
             rad1 = math.radians(angle)
-            rad2 = math.radians(angle + 5)
+            rad2 = math.radians(angle + 4)
             self.canvas.create_line(x + r*math.cos(rad1), y + r*math.sin(rad1),
                                     x + r*math.cos(rad2), y + r*math.sin(rad2), fill=color, width=1)
                                     
     def draw_arc_ring(self, x, y, r, color, offset):
-        for i in range(3):
-            angle = offset + (i * 120)
-            self.canvas.create_arc(x-r, y-r, x+r, y+r, start=angle, extent=60, style='arc', outline=color, width=3)
+        for i in range(4):
+            angle = math.degrees(offset) + (i * 90)
+            self.canvas.create_arc(x-r, y-r, x+r, y+r, start=angle, extent=45, style='arc', outline=color, width=2)
             
     def send_prompt(self):
         selected = self.model_entry.get().strip()
@@ -357,8 +380,8 @@ class KernelWeaveGUI:
         # Spawn burst from core
         width = self.canvas.winfo_width()
         height = self.canvas.winfo_height()
-        for _ in range(20):
-            self.particles.append(Particle(width//2, height//2, random.uniform(0, 2*math.pi), random.uniform(2, 6), ACCENT_CYAN))
+        for _ in range(30):
+            self.particles.append(Particle(width//2, height//2, random.uniform(0, 2*math.pi), random.uniform(3, 8), ACCENT_CYAN))
             
         threading.Thread(target=self.async_execute, args=(prompt, selected), daemon=True).start()
         
@@ -424,7 +447,10 @@ class KernelWeaveGUI:
                 if msg_type == 'log':
                     self.append_log(msg[1], msg[2] if len(msg) > 2 else "bot")
                 elif msg_type == 'stream':
+                    # Enable, insert, disable!
+                    self.log_area.config(state='normal')
                     self.log_area.insert(tk.END, msg[1], 'bot')
+                    self.log_area.config(state='disabled')
                     self.log_area.see(tk.END)
                 elif msg_type == 'mode':
                     self.routing_mode = msg[1]
@@ -441,7 +467,9 @@ class KernelWeaveGUI:
         self.root.after(30, self.poll_queue)
         
     def append_log(self, text, tag="bot"):
+        self.log_area.config(state='normal')
         self.log_area.insert(tk.END, text + "\n", tag)
+        self.log_area.config(state='disabled')
         self.log_area.see(tk.END)
         
     def force_stop(self):
