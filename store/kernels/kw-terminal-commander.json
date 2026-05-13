@@ -1,0 +1,51 @@
+{
+  "name": "Cross-Platform Terminal Commander",
+  "description": "Executes system commands and installs dependencies across Windows, Mac, and Linux using the run_command tool.",
+  "task_family": "system administration",
+  "kernel_id": "kw-terminal-commander",
+  "version": 1,
+  "preconditions": [
+    "task requires running a terminal command",
+    "task requires installing a package or dependency",
+    "task requires checking system status"
+  ],
+  "postconditions": [
+    "output contains the result of the command execution",
+    "errors are reported clearly"
+  ],
+  "evidence_requirements": [
+    "uses the run_command tool via JSON output"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "action": "plan",
+      "text": "Identify the OS and determine the correct command syntax (PowerShell/cmd for Windows, bash for Linux/Mac)"
+    },
+    {
+      "step": 2,
+      "action": "execution",
+      "text": "Output the JSON tool call for run_command"
+    }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "prompt": { "type": "string" }
+    },
+    "required": ["prompt"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "result": { "type": "string" }
+    },
+    "required": ["result"]
+  },
+  "status": {
+    "confidence": 0.90,
+    "state": "verified",
+    "passes": 10,
+    "failures": 0
+  }
+}
