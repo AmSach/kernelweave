@@ -89,12 +89,100 @@ def tool_register_tool(name, code):
     except Exception as e:
         return f"Failed to register tool: {e}"
 
+def get_ollama_embedding(text, model="gemma4:e2b"):
+    import urllib.request
+    import json
+    url = "http://127.0.0.1:11434/api/embeddings"
+    body = {"model": model, "prompt": text}
+    req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            return data.get("embedding", [])
+    except Exception:
+        return []
+
+def cosine_similarity(v1, v2):
+    import math
+    if not v1 or not v2:
+        return 0
+    dot_product = sum(a*b for a,b in zip(v1, v2))
+    magnitude1 = math.sqrt(sum(a*a for a in v1))
+    magnitude2 = math.sqrt(sum(b*b for b in v2))
+    if not magnitude1 or not magnitude2:
+        return 0
+    return dot_product / (magnitude1 * magnitude2)
+
+def tool_web_search(query):
+    import urllib.request
+    import urllib.parse
+    import re
+    import json
+    
+    print(f"{DIM}Searching the web for: {query}...{RESET}")
+    
+    # 1. Fetch from DuckDuckGo HTML
+    url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({'q': query})
+    req = urllib.request.Request(
+        url, 
+        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    )
+    
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            html = response.read().decode('utf-8')
+            
+        # Extract snippets using regex
+        snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
+        
+        results = []
+        for snippet in snippets:
+            clean_snippet = re.sub(r'<[^>]+>', '', snippet).strip()
+            if clean_snippet:
+                results.append(clean_snippet)
+                
+        if not results:
+            return "No results found or rate limited."
+            
+        # 2. Vector Embedding Search (RAG)
+        # Embed the query
+        query_vec = get_ollama_embedding(query)
+        
+        if not query_vec:
+            # Fallback to simple return if embeddings fail
+            return "\n\n".join(results[:5])
+            
+        # Embed results and score them
+        scored_results = []
+        print(f"{DIM}Ranking results with vector embeddings...{RESET}")
+        for res in results[:10]: # Score top 10 from scraper
+            res_vec = get_ollama_embedding(res)
+            if res_vec:
+                score = cosine_similarity(query_vec, res_vec)
+                scored_results.append((score, res))
+            else:
+                scored_results.append((0, res))
+                
+        # Sort by score descending
+        scored_results.sort(key=lambda x: x[0], reverse=True)
+        
+        # Format output
+        output = []
+        for score, res in scored_results[:5]: # Return top 5 ranked
+            output.append(f"[Relevance: {score:.2f}] {res}")
+            
+        return "\n\n".join(output)
+        
+    except Exception as e:
+        return f"Search failed: {e}"
+
 TOOLS = {
     "list_dir": tool_list_dir,
     "read_file": tool_read_file,
     "write_file": tool_write_file,
     "run_command": tool_run_command,
-    "register_tool": tool_register_tool
+    "register_tool": tool_register_tool,
+    "web_search": tool_web_search
 }
 
 
@@ -437,7 +525,8 @@ def main():
                 "- `read_file(path)`: Read file content.\n"
                 "- `write_file(path, content)`: Write file content.\n"
                 "- `run_command(command)`: Run a terminal command.\n"
-                "- `register_tool(name, code)`: Create a new tool. 'code' must be a Python string containing a function named 'name' or 'execute'.\n\n"
+                "- `register_tool(name, code)`: Create a new tool. 'code' must be a Python string containing a function named 'name' or 'execute'.\n"
+                "- `web_search(query)`: Search the web for information. Uses vector embeddings to rank relevance.\n\n"
                 "If you have enough information to answer, just answer normally. Do not use tools if you don't need to. "
                 "Always output valid JSON when using a tool. After receiving tool output, continue answering or use another tool."
             )
