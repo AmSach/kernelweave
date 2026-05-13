@@ -115,6 +115,7 @@ class KernelWeaveGUI:
         self.active_stage = None # 'prompt', 'router', 'memory', 'engine', 'output'
         self.routing_score = 0.0
         self.routing_mode = "idle"
+        self.conversation_history = []
         
         # Setup UI
         self.create_layout()
@@ -357,7 +358,14 @@ class KernelWeaveGUI:
             
             # Stage 3: Memory
             self.msg_queue.put(('stage', 'memory'))
-            self.msg_queue.put(('log', "System: Retrieving RAG context...", "system"))
+            self.msg_queue.put(('log', "System: Retrieving context from memory...", "system"))
+            
+            history_text = ""
+            if self.conversation_history:
+                # Take last 6 items (3 turns)
+                history_text = "\n".join(self.conversation_history[-6:])
+                self.msg_queue.put(('log', f"System: Loaded {len(self.conversation_history)//2} past turns from memory.", "success"))
+                
             self.spawn_particles(node_x, start_y + 2*spacing_y, node_x, start_y + 3*spacing_y, ACCENT_GREEN)
             time.sleep(0.5)
             
@@ -365,18 +373,19 @@ class KernelWeaveGUI:
             self.msg_queue.put(('stage', 'engine'))
             self.msg_queue.put(('log', f"System: Executing via {mode.upper()} mode...", "success"))
             
-            # Direct Ollama call with SYSTEM PROMPT
+            # Direct Ollama call with SYSTEM PROMPT and Memory!
             self.msg_queue.put(('log', "KernelWeave OS > ", "bot"))
             
             import urllib.request
             
             url = "http://127.0.0.1:11434/api/generate"
-            # Inject KernelWeave documentation into the prompt!
-            full_prompt = f"{SYSTEM_PROMPT}\n\nUser: {prompt}"
+            # Inject KernelWeave documentation and Memory!
+            full_prompt = f"{SYSTEM_PROMPT}\n\nRecent Conversation History:\n{history_text}\n\nUser: {prompt}"
             body = {"model": selected, "prompt": full_prompt, "stream": True}
             req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
             
             try:
+                full_response = ""
                 with urllib.request.urlopen(req, timeout=30) as response:
                     for line in response:
                         if self.stop_requested:
@@ -384,11 +393,16 @@ class KernelWeaveGUI:
                         if line:
                             chunk = json.loads(line.decode('utf-8'))
                             token = chunk.get("response", "")
+                            full_response += token
                             # Pulse random neurons on token
                             self.msg_queue.put(('pulse_random',))
                             self.msg_queue.put(('stream', token))
                             
                 self.msg_queue.put(('stream', "\n"))
+                
+                # Append to history
+                self.conversation_history.append(f"User: {prompt}")
+                self.conversation_history.append(f"Assistant: {full_response}")
                 
                 # Particles to Output
                 self.spawn_particles(node_x, start_y + 3*spacing_y, node_x, start_y + 4*spacing_y, ACCENT_CYAN)
