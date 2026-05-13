@@ -115,6 +115,29 @@ def main():
                 print(f"  - {k['kernel_id']} [{k['task_family']}] (confidence: {k['confidence']:.2f})")
             continue
             
+        # ── Simple File Reader Tool ────────────────────────────────
+        # Detect files mentioned in the prompt and inject their content
+        words = prompt.split()
+        injected_content = ""
+        for word in words:
+            # Clean up word from common punctuation
+            clean_word = word.strip(".,;:\"'?!()[]{}")
+            if "." in clean_word and not clean_word.startswith("."):
+                possible_path = Path(clean_word)
+                if possible_path.exists() and possible_path.is_file():
+                    try:
+                        print(f"{DIM}Reading file: {clean_word}...{RESET}")
+                        with open(possible_path, "r", encoding="utf-8", errors="replace") as f:
+                            content = f.read()
+                        injected_content += f"\n\n=== Content of {clean_word} ===\n{content}\n"
+                    except Exception as e:
+                        print(f"{DIM}Failed to read {clean_word}: {e}{RESET}")
+                        
+        if injected_content:
+            original_prompt = prompt
+            prompt = f"The user is asking a question about these files. Answer the user prompt based on the file contents provided below.\n\nUser Prompt: {prompt}{injected_content}"
+            print(f"{DIM}Injected file context into prompt.{RESET}")
+            
         # 1. Routing
         print(f"{DIM}Routing...{RESET}", end="\r")
         t0 = time.time()
