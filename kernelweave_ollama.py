@@ -26,11 +26,26 @@ from kernelweave.compiler import compile_trace_to_kernel
 from kernelweave.verifier import VerifierHierarchy
 from kernelweave.llm.providers import ModelPreset, OllamaBackend, OpenAICompatibleBackend
 
-try:
+def ensure_dependency(package_name, import_name):
+    import importlib
+    import subprocess
+    import sys
+    try:
+        importlib.import_module(import_name)
+        return True
+    except ImportError:
+        print(f"\033[93m[Setup] Installing missing dependency: {package_name}...\033[0m")
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
+            print(f"\033[92m[Setup] Successfully installed {package_name}!\033[0m")
+            return True
+        except Exception as e:
+            print(f"\033[91m[Setup] Failed to install {package_name}: {e}\033[0m")
+            return False
+
+HAS_DDG = ensure_dependency("duckduckgo-search", "duckduckgo_search")
+if HAS_DDG:
     from duckduckgo_search import DDGS
-    HAS_DDG = True
-except ImportError:
-    HAS_DDG = False
 
 # ── Tools for ReAct Loop ───────────────────────────────────────────
 def tool_list_dir(path="."):
