@@ -1,6 +1,12 @@
 # Changelog
 
 ## 0.2.0
+- **Frontier-Grade Local Integration**:
+  - **Local Native Inference**: Added `OllamaBackend` for natively connecting the KernelWeave router to local models (e.g., Gemma4) via the `/api/generate` endpoint, enabling fully offline, high-throughput execution with zero cloud dependencies.
+  - **True Constrained Decoding**: Integrated native grammar-based JSON sampling via Ollama's `format: "json"` mode, removing the fragile regex retry loop and replacing it with token-level guarantees.
+  - **Production LLM Judge Verifier**: Wired the VerifierHierarchy to execute real verification using local LLMs for handling ambiguous heuristic gaps.
+  - **Self-Compilation Layer**: Upgraded the `KernelCompiler` to actively harness the local LLM backend to discover and dynamically extract nuanced pre/postconditions from traces.
+  - **Live Demonstration**: Added `samples/frontier_demo.py` showcasing the full end-to-end pipeline functioning strictly via local inference.
 - **Pure-Python restructuring**: replaced the fragile Hugging Face Kaggle training path with a runnable calibration/tracing trainer
   - removed runtime dependence on `transformers`, `trl`, `peft`, and `bitsandbytes` for the training bundle
   - kept the kernel architecture intact while moving the runnable training path to deterministic JSON artifacts

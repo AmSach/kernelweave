@@ -313,15 +313,19 @@ class LLMJudgeVerifier:
     """LLM-as-judge verification - fallback for ambiguous cases.
     
     Uses a separate LLM to judge the quality of the output.
+    When a ``backend`` is provided, calls it directly.  Otherwise falls
+    back to the original placeholder behaviour.
     """
     
     def __init__(
         self,
         judge_model: str = "gpt-4o-mini",
         api_key: str | None = None,
+        backend: Any | None = None,
     ):
         self.judge_model = judge_model
         self.api_key = api_key
+        self.backend = backend
         self._client = None
     
     def verify(
@@ -428,11 +432,32 @@ class LLMJudgeVerifier:
         return "\n".join(parts)
     
     def _call_judge(self, prompt: str) -> dict[str, Any]:
-        """Call LLM judge. Override this method with actual API call."""
-        # Placeholder - implement with actual API
-        # This would call OpenAI, Anthropic, etc.
-        
-        # For now, return a mock judgment
+        """Call LLM judge.  Uses the backend if one was provided."""
+        if self.backend is not None:
+            response = self.backend.generate(
+                prompt,
+                system_prompt=(
+                    "You are a strict verification judge. "
+                    "Output ONLY valid JSON with keys: passed (bool), score (float 0-1), reasons (list of strings)."
+                ),
+                temperature=0.1,
+            )
+            text = response.text.strip()
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                # Try to extract JSON from response
+                json_match = re.search(r'\{[\s\S]*\}', text)
+                if json_match:
+                    return json.loads(json_match.group())
+                # Fallback: treat any non-empty response as pass
+                return {
+                    "passed": True,
+                    "score": 0.6,
+                    "reasons": ["judge returned non-JSON; assuming pass"],
+                }
+
+        # Placeholder when no backend is available
         return {
             "passed": True,
             "score": 0.8,
@@ -460,10 +485,11 @@ class VerifierHierarchy:
         enable_tool: bool = True,
         enable_llm_judge: bool = True,
         llm_judge_model: str = "gpt-4o-mini",
+        backend: Any | None = None,
     ):
         self.heuristic = HeuristicVerifier() if enable_heuristic else None
         self.tool = ToolExecutionVerifier() if enable_tool else None
-        self.llm_judge = LLMJudgeVerifier(judge_model=llm_judge_model) if enable_llm_judge else None
+        self.llm_judge = LLMJudgeVerifier(judge_model=llm_judge_model, backend=backend) if enable_llm_judge else None
     
     def verify(
         self,

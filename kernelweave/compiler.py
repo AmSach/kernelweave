@@ -47,6 +47,7 @@ def compile_trace_to_kernel(
     description: str,
     events: list[TraceEvent],
     expected_output: dict[str, Any],
+    backend: Any | None = None,
 ) -> Kernel:
     stats = score_kernel(events, task_family=task_family, description=description)
     summary = description.strip() or task_family
@@ -98,6 +99,43 @@ def compile_trace_to_kernel(
             "tests passed on admission",
         ]
     )
+
+    if backend is not None:
+        try:
+            import json
+            import re
+            
+            events_summary = "\n".join([f"- {e.kind}: {e.payload.get('text', e.payload.get('tool', ''))}" for e in events])
+            prompt = f"""Analyze this execution trace for task family '{task_family}' and description '{description}'.
+Extract:
+1. Preconditions: What must be true BEFORE this kernel can run?
+2. Postconditions: What is guaranteed to be true AFTER this kernel runs?
+
+Trace Events:
+{events_summary}
+
+Return JSON with fields 'preconditions' (list of strings) and 'postconditions' (list of strings). Output ONLY valid JSON.
+"""
+            response = backend.generate(prompt, system_prompt="You are an AI that extracts kernel contracts from execution traces. Output ONLY valid JSON.")
+            text = response.text.strip()
+            
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError:
+                json_match = re.search(r'\{[\s\S]*\}', text)
+                if json_match:
+                    parsed = json.loads(json_match.group())
+                else:
+                    raise ValueError("No JSON found")
+            
+            extracted_pre = parsed.get("preconditions", [])
+            extracted_post = parsed.get("postconditions", [])
+            
+            preconditions.extend([f"extracted: {p}" for p in extracted_pre])
+            postconditions.extend([f"extracted: {p}" for p in extracted_post])
+            
+        except Exception:
+            pass
     rollback.extend(
         [
             "if evidence is insufficient, return to planning",

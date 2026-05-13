@@ -1,0 +1,63 @@
+{
+  "name": "Gemini 3 High-Fidelity Document Comparer",
+  "description": "Performs deep semantic and structural comparison between documents or files, producing structured diff reports.",
+  "task_family": "artifact comparison",
+  "kernel_id": "kw-gemini3-file-comparer",
+  "version": 1,
+  "preconditions": [
+    "prompt requests comparison of two or more entities",
+    "inputs contain or reference the content to be compared"
+  ],
+  "postconditions": [
+    "output explicitly lists additions, deletions, and modifications",
+    "the summary distinguishes between style, structure, and content",
+    "no hallucinations or content not present in the sources"
+  ],
+  "evidence_requirements": [
+    "direct citations from both documents are referenced",
+    "categorical breakdown of differences provided"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "action": "plan",
+      "text": "Identify comparison axes (semantic, structural, lexical)"
+    },
+    {
+      "step": 2,
+      "action": "execution",
+      "text": "Align document segments and extract point-by-point differences"
+    },
+    {
+      "step": 3,
+      "action": "verification",
+      "text": "Cross-check that all reported differences are grounded in the source text"
+    }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "doc1": { "type": "string" },
+      "doc2": { "type": "string" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "differences": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "conclusion": { "type": "string" }
+    }
+  },
+  "status": {
+    "confidence": 0.92,
+    "state": "verified",
+    "passes": 32,
+    "failures": 1
+  },
+  "rollback": [
+    "if documents are too large, summarize chunks rather than line-by-line"
+  ]
+}

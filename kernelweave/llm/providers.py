@@ -30,7 +30,7 @@ class ModelPreset:
             raise ValueError("model preset id must not be empty")
         if not self.provider.strip():
             raise ValueError("model preset provider must not be empty")
-        if self.provider not in {"openai", "openai-compatible", "anthropic"}:
+        if self.provider not in {"openai", "openai-compatible", "anthropic", "ollama"}:
             raise ValueError("unsupported model preset provider")
         if not self.model.strip():
             raise ValueError("model name must not be empty")
@@ -76,6 +76,8 @@ class ModelPreset:
             return "https://api.anthropic.com"
         if self.provider == "openai-compatible":
             return os.environ.get("OPENAI_COMPATIBLE_BASE_URL", "http://127.0.0.1:11434/v1").rstrip("/")
+        if self.provider == "ollama":
+            return os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
         raise ValueError(f"base_url is required for provider {self.provider}")
 
     def resolve_api_key(self) -> str | None:
@@ -243,6 +245,89 @@ class MockBackend:
         )
 
 
+class OllamaBackend:
+    """Backend for Ollama's native API with true constrained JSON generation.
+
+    Uses Ollama's /api/chat endpoint with the ``format: "json"`` parameter
+    for grammar-based constrained decoding.  When ``json_mode`` is True,
+    Ollama constrains token sampling so that the output is guaranteed to be
+    valid JSON — this is NOT retry-and-validate; it is real constrained
+    decoding at the token level.
+    """
+
+    def __init__(self, preset: ModelPreset, json_mode: bool = False):
+        self.preset = preset
+        self.json_mode = json_mode
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        json_mode: bool | None = None,
+        json_schema: dict[str, Any] | None = None,
+    ) -> ModelResponse:
+        """Generate using Ollama's native /api/generate endpoint.
+
+        When *json_mode* (or *json_schema*) is active, Ollama uses internal
+        grammar sampling to guarantee structurally valid JSON.
+        """
+        url = self.preset.resolve_base_url().rstrip("/") + "/api/generate"
+        
+        # Combine system prompt and user prompt
+        effective_system = system_prompt or self.preset.system_prompt
+        combined_prompt = prompt
+        if effective_system:
+            combined_prompt = f"{effective_system}\n\n{prompt}"
+            
+        body: dict[str, Any] = {
+            "model": self.preset.model,
+            "prompt": combined_prompt,
+            "stream": False,
+            "options": {
+                "temperature": self.preset.temperature if temperature is None else temperature,
+            },
+        }
+        if max_tokens or self.preset.max_tokens:
+            body["options"]["num_predict"] = max_tokens or self.preset.max_tokens
+
+        # Determine whether to enable constrained JSON mode
+        use_json = json_mode if json_mode is not None else self.json_mode
+        if json_schema is not None:
+            body["format"] = json_schema  # Ollama supports schema-object format
+        elif use_json:
+            body["format"] = "json"
+
+        headers = {
+            "content-type": "application/json",
+            **self.preset.headers,
+        }
+        request = urllib.request.Request(
+            url, data=json.dumps(body).encode("utf-8"), headers=headers, method="POST"
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.preset.timeout_seconds) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"Ollama request failed: {exc.code} {detail}") from exc
+
+        text = str(payload.get("response", ""))
+        usage = {}
+        if "prompt_eval_count" in payload:
+            usage["prompt_tokens"] = payload["prompt_eval_count"]
+        if "eval_count" in payload:
+            usage["completion_tokens"] = payload["eval_count"]
+        return ModelResponse(
+            text=text,
+            provider="ollama",
+            model=self.preset.model,
+            raw=payload,
+            usage=usage,
+        )
+
+
 class ModelCatalog:
     def __init__(self, presets: Iterable[ModelPreset] | None = None):
         self._presets: dict[str, ModelPreset] = {}
@@ -308,6 +393,8 @@ def backend_from_preset(preset: ModelPreset) -> ModelBackend:
         return OpenAICompatibleBackend(preset)
     if preset.provider == "anthropic":
         return AnthropicBackend(preset)
+    if preset.provider == "ollama":
+        return OllamaBackend(preset)
     raise ValueError(f"unsupported provider: {preset.provider}")
 
 

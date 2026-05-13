@@ -23,17 +23,41 @@ class ConstrainedOutput:
     schema_used: dict[str, Any]
 
 
-def postconditions_to_schema(postconditions: list[str], output_schema: dict[str, Any] | None = None) -> dict[str, Any]:
+def postconditions_to_schema(postconditions: list[str], output_schema: dict[str, Any] | None = None, backend: Any | None = None) -> dict[str, Any]:
     """
     Convert postcondition strings into a JSON schema.
     
-    This is a best-effort translation. Postconditions are natural language,
-    so we extract:
-    - Required fields mentioned
-    - Type hints (number, string, boolean, array)
-    - Enum values from "must be X or Y"
-    - Patterns from "must match X"
+    If backend is provided, uses LLM to generate a precise schema.
+    Otherwise, falls back to best-effort regex translation.
     """
+    if backend is not None:
+        try:
+            import json
+            import re
+            
+            prompt = f"""Convert these natural language postconditions into a JSON schema.
+Postconditions:
+{json.dumps(postconditions, indent=2)}
+
+Return ONLY valid JSON representing the JSON schema (type: "object"). Include properties, types, and required fields based on the postconditions.
+"""
+            response = backend.generate(prompt, system_prompt="You are an expert at converting natural language constraints into JSON schemas. Output ONLY valid JSON.")
+            text = response.text.strip()
+            
+            try:
+                schema = json.loads(text)
+                if "type" not in schema:
+                    schema["type"] = "object"
+                return schema
+            except json.JSONDecodeError:
+                json_match = re.search(r'\{[\s\S]*\}', text)
+                if json_match:
+                    return json.loads(json_match.group())
+                # Fallback to regex if LLM output is unparsable
+        except Exception:
+            pass # Fallback to regex
+
+    # Original regex fallback
     properties = {}
     required = []
     
@@ -44,7 +68,6 @@ def postconditions_to_schema(postconditions: list[str], output_schema: dict[str,
         cond_lower = condition.lower()
         
         # Extract field names from conditions
-        # Pattern: "field_name must be..." or "field_name is..."
         field_match = re.search(r"(\w+)\s+(?:must\s+be|is|should\s+be)", cond_lower)
         if field_match:
             field_name = field_match.group(1)
@@ -70,10 +93,8 @@ def postconditions_to_schema(postconditions: list[str], output_schema: dict[str,
         enum_match = re.search(r"(?:must\s+be|is|should\s+be)\s+(.+?)(?:\s+and|\s*$|\s*\.)", cond_lower)
         if enum_match:
             values_str = enum_match.group(1)
-            # Split on "or" or comma
             values = [v.strip().strip('"\'') for v in re.split(r'\s+or\s+|\s*,\s*', values_str)]
             if len(values) > 1 and all(len(v) < 50 for v in values):
-                # Looks like an enum
                 if field_match:
                     properties[field_match.group(1)] = {"type": "string", "enum": values}
     
@@ -253,7 +274,8 @@ class ConstrainedGenerator:
         """
         schema = postconditions_to_schema(
             kernel.postconditions,
-            kernel.output_schema
+            kernel.output_schema,
+            backend=self.backend
         )
         
         steps_text = "\n".join(

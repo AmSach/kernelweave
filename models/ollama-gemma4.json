@@ -1,0 +1,17 @@
+{
+  "id": "ollama-gemma4",
+  "provider": "ollama",
+  "model": "gemma4:e2b",
+  "base_url": "http://127.0.0.1:11434",
+  "system_prompt": "You are a precise, helpful AI assistant. Follow instructions exactly.",
+  "temperature": 0.2,
+  "max_tokens": 2048,
+  "timeout_seconds": 120,
+  "context_window": 128000,
+  "default": true,
+  "notes": [
+    "Google Gemma 4 running locally via Ollama",
+    "Supports native JSON mode via format parameter",
+    "No API key required - fully local inference"
+  ]
+}

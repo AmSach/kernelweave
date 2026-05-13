@@ -1,0 +1,100 @@
+{
+  "description": "u dont have tools to read files?",
+  "digest": "b66d893fa5781c77bdcba4e7c3ceb17e2032927f625a69469f59aa3cab3e3c69",
+  "evidence_requirements": [
+    "completed generation with score 0.00",
+    "source trace logged",
+    "final response conforms to expected output"
+  ],
+  "input_schema": {
+    "properties": {
+      "task": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "task"
+    ],
+    "type": "object"
+  },
+  "kernel_id": "kw-73a20f259c554094",
+  "name": "general query kernel",
+  "output_schema": {
+    "properties": {
+      "result": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "type": "object"
+  },
+  "postconditions": [
+    "output schema satisfied",
+    "all required evidence recorded",
+    "rollback not triggered",
+    "tests passed on admission",
+    "extracted: The model confirms it does not have the ability to directly access or read files from the computer or external file systems.",
+    "extracted: The model confirms it does not have built-in tools to browse local directories."
+  ],
+  "preconditions": [
+    "task belongs to family: general query",
+    "inputs match schema",
+    "evidence channel available",
+    "trace corresponds to a solved task",
+    "extracted: The system is operating as a Large Language Model (LLM)."
+  ],
+  "rollback": [
+    "if evidence is insufficient, return to planning",
+    "if a tool returns contradictory data, invalidate kernel",
+    "if schema inference is unstable, demote kernel confidence"
+  ],
+  "source_trace_ids": [
+    "trace-1778615998"
+  ],
+  "status": {
+    "confidence": 0.4803,
+    "failures": 0,
+    "passes": 1,
+    "state": "candidate"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "u dont have tools to read files?"
+    }
+  ],
+  "task_family": "general query",
+  "tests": [
+    {
+      "expected": {
+        "result": "generated text response"
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "output-shape"
+    },
+    {
+      "expected": {
+        "min_evidence": 2
+      },
+      "input": {
+        "trace_id": "trace-1778615998"
+      },
+      "name": "evidence-completeness"
+    },
+    {
+      "expected": {
+        "min_confidence": 0.4803
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "confidence-floor"
+    }
+  ],
+  "version": 2
+}

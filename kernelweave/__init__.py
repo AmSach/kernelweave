@@ -19,6 +19,7 @@ from .llm import (
     ModelPreset,
     ModelResponse,
     MockBackend,
+    OllamaBackend,
     OpenAICompatibleBackend,
     ParameterSummary,
     SimpleTokenizer,
@@ -173,6 +174,7 @@ __all__ = [
     "MockBackend",
     "OpenAICompatibleBackend",
     "AnthropicBackend",
+    "OllamaBackend",
     "backend_from_preset",
     "run_preset",
     

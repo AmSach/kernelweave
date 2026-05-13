@@ -1,6 +1,15 @@
 {
   "kernels": [
     {
+      "digest": "b66d893fa5781c77bdcba4e7c3ceb17e2032927f625a69469f59aa3cab3e3c69",
+      "kernel_id": "kw-73a20f259c554094",
+      "name": "general query kernel",
+      "path": "kernels\\kw-73a20f259c554094.json",
+      "status": "candidate",
+      "task_family": "general query",
+      "version": 2
+    },
+    {
       "digest": "33f905d79be61e9a568f82d96a55501cb900a36949b58e2fa97f5839cd23a9e4",
       "kernel_id": "kw-8fdcf8c7144b883b",
       "name": "artifact comparison kernel",
@@ -8,6 +17,24 @@
       "status": "candidate",
       "task_family": "artifact comparison",
       "version": 1
+    },
+    {
+      "digest": "268d7e0853724e6d76caa286eaeee5dec27fa25b5a61e11c56a51dfaf0dff4b4",
+      "kernel_id": "kw-9c74472a678dbcc9",
+      "name": "artifact comparison kernel",
+      "path": "kernels\\kw-9c74472a678dbcc9.json",
+      "status": "candidate",
+      "task_family": "artifact comparison",
+      "version": 2
+    },
+    {
+      "digest": "d081f5d67cc39edd38590bcb89d36811496c293d3f5ae3c96302cff7ad4bada8",
+      "kernel_id": "kw-f03bce4644ef75de",
+      "name": "config comparison kernel",
+      "path": "kernels\\kw-f03bce4644ef75de.json",
+      "status": "candidate",
+      "task_family": "config comparison",
+      "version": 2
     },
     {
       "digest": "b715e7fbed4b3168cdd865c45348b5f731f0f393327642124a48001b30a3b94a",

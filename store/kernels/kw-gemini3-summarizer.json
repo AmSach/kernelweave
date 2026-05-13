@@ -1,0 +1,61 @@
+{
+  "name": "Gemini 3 Executive Summarizer",
+  "description": "Distills complex multi-document inputs into concise, actionable executive summaries with high information density.",
+  "task_family": "summarization",
+  "kernel_id": "kw-gemini3-summarizer",
+  "version": 1,
+  "preconditions": [
+    "prompt requests summarization, TL;DR, or key takeaways",
+    "source text has non-trivial length"
+  ],
+  "postconditions": [
+    "summary length is less than 20% of the original text",
+    "no critical factual errors or contradictions introduced",
+    "output uses a professional, objective tone"
+  ],
+  "evidence_requirements": [
+    "major themes are identified and bulleted",
+    "action items or conclusions are highlighted"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "action": "plan",
+      "text": "Map core entities and main arguments in the text"
+    },
+    {
+      "step": 2,
+      "action": "execution",
+      "text": "Synthesize points into information-dense bullet points and paragraphs"
+    },
+    {
+      "step": 3,
+      "action": "verification",
+      "text": "Verify that no external facts have leaked into the summary"
+    }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "text": { "type": "string" }
+    },
+    "required": ["text"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "summary": { "type": "string" },
+      "takeaways": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["summary"]
+  },
+  "status": {
+    "confidence": 0.98,
+    "state": "verified",
+    "passes": 50,
+    "failures": 0
+  },
+  "rollback": [
+    "if text is highly technical, maintain specific jargon over simplification"
+  ]
+}

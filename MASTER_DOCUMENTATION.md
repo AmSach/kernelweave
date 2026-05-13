@@ -1,21 +1,3 @@
-# KernelWeave
-
-> [!TIP]
-> **EASY GUIDE BRO!** 🧠
-> 
-> Here is the super simple way to understand KernelWeave:
-> 
-> *   **What is it?** It's a smart layer that sits on top of your AI. Instead of letting the AI guess and figure things out every time (which is slow and expensive), KernelWeave saves successful "recipes" (called **Kernels**) for tasks it did well.
-> *   **Why use it?** 
->     1. **Saves Money**: It uses tiny, cheap models to do the routine work.
->     2. **Guarantees Quality**: It checks the AI's answer against rules to make sure it didn't hallucinate or lie.
-> *   **How to test it right now?**
->     Run this in your terminal: `python samples/product_test.py`
-> *   **How to train it?**
->     Run this to teach it new skills: `python KernelWeave_LLM_Product_Train.py`
-
----
-
 # KernelWeave Master Documentation
 
 Welcome to the comprehensive guide for KernelWeave. This document combines all spread-out documentation into a single, cohesive reference.

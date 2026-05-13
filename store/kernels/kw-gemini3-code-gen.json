@@ -1,0 +1,65 @@
+{
+  "name": "Gemini 3 Advanced Code Generator",
+  "description": "High-quality code generation and refactoring with strict structural and syntax guarantees, derived from Gemini 3 traces.",
+  "task_family": "code generation",
+  "kernel_id": "kw-gemini3-code-gen",
+  "version": 1,
+  "preconditions": [
+    "task requires writing or modifying code",
+    "target language is specified or implied",
+    "inputs contain sufficient functional specifications"
+  ],
+  "postconditions": [
+    "output is valid, syntactically correct code",
+    "all requested edge cases are handled",
+    "no conversational filler or markdown wrapping outside requested format"
+  ],
+  "evidence_requirements": [
+    "contains code blocks with correct language tags",
+    "explains algorithmic complexity if requested",
+    "passes static analysis verification"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "action": "plan",
+      "text": "Parse requirements and identify edge cases for code generation"
+    },
+    {
+      "step": 2,
+      "action": "execution",
+      "text": "Draft code implementation focusing on readability and performance"
+    },
+    {
+      "step": 3,
+      "action": "verification",
+      "text": "Self-correct syntax and verify against constraints before output"
+    }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "prompt": { "type": "string" },
+      "language": { "type": "string" }
+    },
+    "required": ["prompt"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "code": { "type": "string" },
+      "explanation": { "type": "string" }
+    },
+    "required": ["code"]
+  },
+  "status": {
+    "confidence": 0.95,
+    "state": "verified",
+    "passes": 45,
+    "failures": 0
+  },
+  "rollback": [
+    "if syntax is invalid, fallback to basic prompt",
+    "if specifications are contradictory, ask for clarification"
+  ]
+}
