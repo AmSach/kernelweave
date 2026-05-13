@@ -28,6 +28,15 @@
       "version": 2
     },
     {
+      "digest": "32c7ad857c42503c2564ce17afaaa6b21a7871e8127ce6ad3fdf3a97f27a2eec",
+      "kernel_id": "kw-caae04864268822c",
+      "name": "general query kernel",
+      "path": "kernels\\kw-caae04864268822c.json",
+      "status": "candidate",
+      "task_family": "general query",
+      "version": 2
+    },
+    {
       "digest": "d081f5d67cc39edd38590bcb89d36811496c293d3f5ae3c96302cff7ad4bada8",
       "kernel_id": "kw-f03bce4644ef75de",
       "name": "config comparison kernel",

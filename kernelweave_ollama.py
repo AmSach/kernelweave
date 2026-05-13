@@ -150,23 +150,51 @@ def main():
 
     print_banner(args.model)
     
-    # List of endpoints to try
-    endpoints = [
-        ("ollama", "http://127.0.0.1:11434", args.model),
-        ("openai-compatible", "http://127.0.0.1:11434/v1", args.model), # Ollama OpenAI API
-        ("openai-compatible", "http://127.0.0.1:1234/v1", args.model),  # LM Studio
-    ]
+    # Interactive Selector
+    print(f"{BOLD}Select your LLM provider setup:{RESET}")
+    print(f"1. Ollama (Default - uses '{args.model}')")
+    print("2. LM Studio (Default port 1234)")
+    print("3. Custom Endpoint & Model")
+    print("Press Enter to auto-scan all defaults.")
     
+    selected_model = args.model
+    endpoints = []
+    
+    try:
+        choice = input(f"\n{BOLD}Enter choice (1-3): {RESET}").strip()
+        
+        if choice == "1":
+            endpoints = [("ollama", "http://127.0.0.1:11434", selected_model)]
+        elif choice == "2":
+            selected_model = input(f"{BOLD}Enter model name in LM Studio (default: {args.model}): {RESET}").strip() or args.model
+            endpoints = [("openai-compatible", "http://127.0.0.1:1234/v1", selected_model)]
+        elif choice == "3":
+            selected_model = input(f"{BOLD}Enter model name: {RESET}").strip()
+            custom_url = input(f"{BOLD}Enter API Base URL (e.g., http://localhost:11434): {RESET}").strip()
+            custom_provider = "ollama" if "11434" in custom_url and "v1" not in custom_url else "openai-compatible"
+            endpoints = [(custom_provider, custom_url, selected_model)]
+        else:
+            print(f"{DIM}Auto-scanning default local endpoints...{RESET}")
+            endpoints = [
+                ("ollama", "http://127.0.0.1:11434", args.model),
+                ("openai-compatible", "http://127.0.0.1:11434/v1", args.model),
+                ("openai-compatible", "http://127.0.0.1:1234/v1", args.model),
+            ]
+    except (KeyboardInterrupt, EOFError):
+        print()
+        sys.exit(1)
+        
     backend = None
     connected = False
     
     for provider, url, model in endpoints:
-        print(f"{DIM}Trying {provider} at {url}...{RESET}", end="", flush=True)
+        print(f"{DIM}Trying {provider} at {url} with model '{model}'...{RESET}", end="", flush=True)
         test_backend = make_backend(provider, model, url)
         if check_connectivity(test_backend):
             print(f"\r{GREEN}[OK]{RESET} Connected to {provider} at {url}    ")
             backend = test_backend
             connected = True
+            args.model = model # Update args.model for display purposes
             break
         else:
             print(f"\r{YELLOW}[FAIL]{RESET} {provider} at {url} not responding.    ")

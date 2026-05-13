@@ -1,0 +1,101 @@
+{
+  "description": "hi",
+  "digest": "32c7ad857c42503c2564ce17afaaa6b21a7871e8127ce6ad3fdf3a97f27a2eec",
+  "evidence_requirements": [
+    "completed generation with score 0.00",
+    "source trace logged",
+    "final response conforms to expected output"
+  ],
+  "input_schema": {
+    "properties": {
+      "task": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "task"
+    ],
+    "type": "object"
+  },
+  "kernel_id": "kw-caae04864268822c",
+  "name": "general query kernel",
+  "output_schema": {
+    "properties": {
+      "result": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "type": "object"
+  },
+  "postconditions": [
+    "output schema satisfied",
+    "all required evidence recorded",
+    "rollback not triggered",
+    "tests passed on admission",
+    "extracted: A response has been generated based on the query.",
+    "extracted: The generation process has been completed and verified."
+  ],
+  "preconditions": [
+    "task belongs to family: general query",
+    "inputs match schema",
+    "evidence channel available",
+    "trace corresponds to a solved task",
+    "extracted: The system must be ready to process a general query.",
+    "extracted: A request for a greeting or initial interaction must be present."
+  ],
+  "rollback": [
+    "if evidence is insufficient, return to planning",
+    "if a tool returns contradictory data, invalidate kernel",
+    "if schema inference is unstable, demote kernel confidence"
+  ],
+  "source_trace_ids": [
+    "trace-1778703314"
+  ],
+  "status": {
+    "confidence": 0.4803,
+    "failures": 0,
+    "passes": 1,
+    "state": "candidate"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "hi"
+    }
+  ],
+  "task_family": "general query",
+  "tests": [
+    {
+      "expected": {
+        "result": "generated text response"
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "output-shape"
+    },
+    {
+      "expected": {
+        "min_evidence": 2
+      },
+      "input": {
+        "trace_id": "trace-1778703314"
+      },
+      "name": "evidence-completeness"
+    },
+    {
+      "expected": {
+        "min_confidence": 0.4803
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "confidence-floor"
+    }
+  ],
+  "version": 2
+}
