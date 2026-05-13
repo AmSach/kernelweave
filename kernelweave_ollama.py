@@ -57,11 +57,44 @@ def tool_run_command(command):
     except Exception as e:
         return str(e)
 
+def tool_register_tool(name, code):
+    import os
+    from pathlib import Path
+    import importlib.util
+    
+    try:
+        tools_dir = Path("custom_tools")
+        tools_dir.mkdir(exist_ok=True)
+        
+        file_path = tools_dir / f"{name}.py"
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(code)
+            
+        # Dynamically load the module
+        spec = importlib.util.spec_from_file_location(name, str(file_path))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        
+        # Look for the function by name or fallback to 'execute'
+        if hasattr(module, name):
+            func = getattr(module, name)
+        elif hasattr(module, "execute"):
+            func = getattr(module, "execute")
+        else:
+            return f"Error: Module must contain a function named '{name}' or 'execute'."
+            
+        # Add to global TOOLS dictionary
+        TOOLS[name] = func
+        return f"Tool '{name}' registered successfully and is now available in this session!"
+    except Exception as e:
+        return f"Failed to register tool: {e}"
+
 TOOLS = {
     "list_dir": tool_list_dir,
     "read_file": tool_read_file,
     "write_file": tool_write_file,
-    "run_command": tool_run_command
+    "run_command": tool_run_command,
+    "register_tool": tool_register_tool
 }
 
 
@@ -208,7 +241,8 @@ def main():
                 "- `list_dir(path=\".\")`: List directory contents.\n"
                 "- `read_file(path)`: Read file content.\n"
                 "- `write_file(path, content)`: Write file content.\n"
-                "- `run_command(command)`: Run a terminal command.\n\n"
+                "- `run_command(command)`: Run a terminal command.\n"
+                "- `register_tool(name, code)`: Create a new tool. 'code' must be a Python string containing a function named 'name' or 'execute'.\n\n"
                 "If you have enough information to answer, just answer normally. Do not use tools if you don't need to. "
                 "Always output valid JSON when using a tool. After receiving tool output, continue answering or use another tool."
             )
