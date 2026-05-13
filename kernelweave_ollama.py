@@ -151,6 +151,63 @@ def cosine_similarity(v1, v2):
         return 0
     return dot_product / (magnitude1 * magnitude2)
 
+def print_box(title, text, color="\033[96m"):
+    lines = text.split('\n')
+    width = max(len(line) for line in lines) + 4
+    width = max(width, len(title) + 6)
+    if width > 80: width = 80 # Cap width
+    reset = "\033[0m"
+    print(color + "┌" + "─" * (width-2) + "┐" + reset)
+    print(color + f"│  {BOLD}{title}{reset}{color}" + " " * (width - len(title) - 4) + "│" + reset)
+    print(color + "├" + "─" * (width-2) + "┤" + reset)
+    for line in lines:
+        # Wrap long lines if needed, or just truncate for the box display
+        truncated_line = line[:width-4]
+        print(color + "│  " + reset + truncated_line + " " * (width - len(truncated_line) - 4) + color + "│" + reset)
+    print(color + "└" + "─" * (width-2) + "┘" + reset)
+
+def get_relevant_memory(query, history, top_k=3):
+    if not history:
+        return ""
+        
+    print(f"\033[2m[Memory] Searching past conversation via embeddings...\033[0m")
+    query_vec = get_ollama_embedding(query)
+    if not query_vec:
+        # Fallback to last few messages if embedding fails
+        return "\n".join(history[-top_k*2:])
+        
+    scored_memories = []
+    for msg in history:
+        msg_vec = get_ollama_embedding(msg)
+        if msg_vec:
+            score = cosine_similarity(query_vec, msg_vec)
+            scored_memories.append((score, msg))
+            
+    # Sort by score descending
+    scored_memories.sort(key=lambda x: x[0], reverse=True)
+    
+    # Return top K
+    relevant = [msg for score, msg in scored_memories[:top_k]]
+    return "\n---\n".join(relevant)
+
+def log_conversation(prompt, response):
+    import datetime
+    try:
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        log_file = log_dir / "conversations.jsonl"
+        
+        log_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "prompt": prompt,
+            "response": response
+        }
+        
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as e:
+        print(f"\033[2m[Log Error] Failed to save log: {e}\033[0m")
+
 def tool_web_search(query):
     import urllib.request
     import urllib.parse
@@ -597,7 +654,8 @@ def main():
                 "Always output valid JSON when using a tool. After receiving tool output, continue answering or use another tool."
             )
             
-            conversation = "\n".join(conversation_history) + f"\nUser: {prompt}"
+            relevant_mem = get_relevant_memory(prompt, conversation_history)
+            conversation = f"System: Relevant past context:\n{relevant_mem}\n\nUser: {prompt}"
             max_iterations = 5
             
             try:
@@ -643,8 +701,10 @@ def main():
         
         # Clear the executing line
         print(" " * 80, end="\r")
-        print(f"{BOLD}{MAGENTA}KernelWeave > {RESET}")
-        print(f"{response_text}\n")
+        print_box("KernelWeave OS", response_text, color=MAGENTA)
+        
+        # Log conversation
+        log_conversation(prompt, response_text)
         
         # Append to history
         conversation_history.append(f"User: {prompt}")
