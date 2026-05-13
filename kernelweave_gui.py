@@ -1,6 +1,6 @@
 """
-KernelWeave Glass-Panel GUI (Rupert OS Edition)
-==============================================
+KernelWeave Glass-Panel GUI (Rupert OS - Agentic Edition)
+=========================================================
 
 A completely rebuilt GUI for KernelWeave, renamed to Rupert.
 Features:
@@ -12,6 +12,8 @@ Features:
   4. Command Terminal (Right Bottom) - Shows commands executing in realtime!
 - Strict read-only terminals.
 - Concise system prompt to stop wasting tokens.
+- **Agentic ReAct Loop**: Automatically executes tools and feeds results back!
+- **Model Dropdown**: Lists available local models!
 """
 import os
 import sys
@@ -19,7 +21,7 @@ import time
 import json
 import threading
 import queue
-import subprocess
+import re
 from pathlib import Path
 import tkinter as tk
 from tkinter import scrolledtext, messagebox, ttk
@@ -29,7 +31,16 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from kernelweave.kernel import KernelStore
 from kernelweave.runtime import ExecutionEngine, KernelRuntime
-from kernelweave_ollama import get_ollama_models
+from kernelweave_ollama import get_ollama_models, tool_web_search, tool_run_command, tool_read_file, tool_write_file, tool_list_dir
+
+# Map of tools
+TOOLS = {
+    "web_search": tool_web_search,
+    "run_command": tool_run_command,
+    "read_file": tool_read_file,
+    "write_file": tool_write_file,
+    "list_dir": tool_list_dir
+}
 
 # ── Theme Colors (Electric Obsidian) ───────────────────────────
 BG_COLOR = "#020508"      # Very deep obsidian blue-black
@@ -45,6 +56,7 @@ You are running on a local neuro-symbolic stack.
 
 CRITICAL: Do not waste tokens writing explanations or bullshit. Be extremely concise.
 If you need to use a tool, output the JSON tool call IMMEDIATELY. Do not explain why.
+Wait for the tool execution result before continuing.
 
 You must use tools by outputting a JSON object. For example:
 ```json
@@ -68,7 +80,6 @@ class RupertGUI:
         self.store = None
         self.stop_requested = False
         self.executing = False
-        self.selected_model = "granite4.1:8b"
         self.conversation_history = []
         
         # Queue for thread communication
@@ -98,11 +109,12 @@ class RupertGUI:
         self.left_panel = tk.Frame(self.main_pane, bg=BG_COLOR)
         self.left_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
         
-        # Model Selector
+        # Model Selector (Dropdown!)
         tk.Label(self.left_panel, text="// CORE MODEL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
-        self.model_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR)
-        self.model_entry.pack(fill='x', pady=(2, 10), ipady=5)
-        self.model_entry.insert(0, "granite4.1:8b")
+        
+        self.model_var = tk.StringVar()
+        self.model_dropdown = ttk.Combobox(self.left_panel, textvariable=self.model_var, font=('Courier', 12))
+        self.model_dropdown.pack(fill='x', pady=(2, 10))
         
         # Endpoint Presets
         tk.Label(self.left_panel, text="// ENDPOINT PRESETS", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
@@ -191,52 +203,29 @@ class RupertGUI:
     def initialize_engine(self):
         self.append_log("Rupert: Initializing Core Systems...", "system")
         try:
-            # Self-healing index
-            self.rebuild_index()
             self.store = KernelStore(Path("store"))
             self.runtime = KernelRuntime(self.store, use_embeddings=True)
             self.append_log(f"Rupert: Store online. {len(self.store.list_kernels())} kernels loaded.", "system")
+            
+            # Load models into dropdown
+            models = get_ollama_models()
+            if models:
+                self.model_dropdown['values'] = models
+                if "granite4.1:8b" in models:
+                    self.model_dropdown.set("granite4.1:8b")
+                else:
+                    self.model_dropdown.set(models[0])
+            else:
+                self.model_dropdown['values'] = ["granite4.1:8b"]
+                self.model_dropdown.set("granite4.1:8b")
+                
         except Exception as e:
             self.append_log(f"Error initializing core: {e}", "system")
             
-    def rebuild_index(self):
-        import glob
-        dir_path = "e:/kernelweave/store/kernels"
-        kernels = []
-        for f in glob.glob(os.path.join(dir_path, "*.json")):
-            name = os.path.basename(f)
-            kernel_id = name.replace(".json", "")
-            try:
-                with open(f, "r") as kf:
-                    data = json.load(kf)
-                status_obj = data.get("status", {})
-                state = status_obj.get("state", "candidate") if isinstance(status_obj, dict) else "candidate"
-                kernels.append({
-                    "kernel_id": kernel_id,
-                    "name": data.get("name", "Unknown"),
-                    "task_family": data.get("task_family", "Unknown"),
-                    "path": f"kernels/{name}",
-                    "status": state,
-                    "version": data.get("version", 2)
-                })
-            except:
-                pass
-        
-        index_path = "e:/kernelweave/store/index.json"
-        try:
-            with open(index_path, "r") as ifile:
-                index_data = json.load(ifile)
-        except:
-            index_data = {"kernels": [], "traces": []}
-            
-        index_data["kernels"] = kernels
-        with open(index_path, "w") as ifile:
-            json.dump(index_data, ifile, indent=2)
-            
     def send_prompt(self):
-        selected = self.model_entry.get().strip()
+        selected = self.model_var.get().strip()
         if not selected:
-            messagebox.showerror("Error", "Enter model.")
+            messagebox.showerror("Error", "Select model.")
             return
         if self.executing: return
         prompt = self.prompt_entry.get().strip()
@@ -258,95 +247,96 @@ class RupertGUI:
             
             self.msg_queue.put(('update_kernel', kernel_id))
             
-            # 2. Execution
+            # 2. Execution Loop (Agentic ReAct!)
             self.msg_queue.put(('log', "Rupert > ", "bot"))
             
-            import urllib.request
             base_url = self.url_entry.get().strip()
             url = f"{base_url}/api/generate"
             
             history_text = "\n".join(self.conversation_history[-4:]) if self.conversation_history else ""
-            full_prompt = f"{SYSTEM_PROMPT}\n\nRecent History:\n{history_text}\n\nUser: {prompt}"
-            body = {"model": selected, "prompt": full_prompt, "stream": True}
+            current_prompt = f"{SYSTEM_PROMPT}\n\nRecent History:\n{history_text}\n\nUser: {prompt}"
             
-            req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
-            
-            full_response = ""
-            try:
-                with urllib.request.urlopen(req, timeout=30) as response:
-                    for line in response:
-                        if self.stop_requested: break
-                        if line:
-                            chunk = json.loads(line.decode('utf-8'))
-                            token = chunk.get("response", "")
-                            full_response += token
-                            self.msg_queue.put(('stream', token))
+            max_iterations = 3
+            for i in range(max_iterations):
+                if self.stop_requested: break
+                
+                body = {"model": selected, "prompt": current_prompt, "stream": True}
+                req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
+                
+                full_response = ""
+                try:
+                    import urllib.request
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        for line in response:
+                            if self.stop_requested: break
+                            if line:
+                                chunk = json.loads(line.decode('utf-8'))
+                                token = chunk.get("response", "")
+                                full_response += token
+                                self.msg_queue.put(('stream', token))
+                                
+                    self.msg_queue.put(('stream', "\n"))
+                    
+                    # Check for tool calls
+                    blocks = re.findall(r'```json\s*(.*?)\s*```', full_response, re.DOTALL)
+                    if not blocks:
+                        # Try parsing raw JSON if no backticks
+                        if full_response.strip().startswith("{") and full_response.strip().endswith("}"):
+                            blocks = [full_response.strip()]
                             
-                self.msg_queue.put(('stream', "\n"))
-                
-                # Check for tool calls in response
-                self.parse_and_execute_tools(full_response)
-                
-                self.conversation_history.append(f"User: {prompt}")
-                self.conversation_history.append(f"Assistant: {full_response}")
-                self.msg_queue.put(('done',))
-                
-            except Exception as e:
-                self.msg_queue.put(('log', f"Error: {e}", "system"))
-                self.msg_queue.put(('done',))
+                    if blocks:
+                        try:
+                            data = json.loads(blocks[0])
+                            if "tool" in data and "args" in data:
+                                tool = data["tool"]
+                                args = data["args"]
+                                
+                                self.msg_queue.put(('update_tool', tool))
+                                self.msg_queue.put(('cmd', f"Executing tool: {tool}"))
+                                
+                                # Execute tool
+                                result = self.run_tool(tool, args)
+                                self.msg_queue.put(('cmd', f"Result: {result}"))
+                                
+                                # Feed back to model!
+                                current_prompt += f"\n\nResponse:\n{full_response}\n\nTool Result ({tool}):\n{result}\n\nPlease continue based on this result."
+                                self.msg_queue.put(('log', f"Rupert [Continuing loop {i+1}] > ", "bot"))
+                                continue
+                        except Exception as e:
+                            self.msg_queue.put(('cmd', f"Failed to parse or execute tool: {e}"))
+                            
+                    # If no tool called or failed, we are done
+                    break
+                    
+                except Exception as e:
+                    self.msg_queue.put(('log', f"Ollama error: {e}", "system"))
+                    break
+                    
+            self.conversation_history.append(f"User: {prompt}")
+            self.conversation_history.append(f"Assistant: {full_response}")
+            self.msg_queue.put(('done',))
                 
         except Exception as e:
             self.msg_queue.put(('log', f"Error: {e}", "system"))
             self.msg_queue.put(('done',))
             
-    def parse_and_execute_tools(self, text):
-        # Look for JSON blocks
-        import re
-        blocks = re.findall(r'```json\s*(.*?)\s*```', text, re.DOTALL)
-        for b in blocks:
-            try:
-                data = json.loads(b)
-                if "tool" in data and "args" in data:
-                    tool = data["tool"]
-                    args = data["args"]
-                    self.msg_queue.put(('update_tool', tool))
-                    self.msg_queue.put(('cmd', f"Executing tool: {tool} with args {json.dumps(args)}"))
-                    
-                    # Execute tool
-                    result = self.run_tool(tool, args)
-                    self.msg_queue.put(('cmd', f"Result: {result}"))
-                    
-            except Exception as e:
-                self.msg_queue.put(('cmd', f"Failed to parse tool call: {e}"))
-                
     def run_tool(self, tool, args):
         try:
-            if tool == "write_file":
-                path = args.get("file_path") or args.get("path")
-                content = args.get("content")
-                if path and content:
-                    # Resolve /tmp on windows
-                    if path.startswith("/tmp/"):
-                        path = path.replace("/tmp/", "e:/kernelweave/store/")
-                    os.makedirs(os.path.dirname(path), exist_ok=True)
-                    with open(path, "w") as f:
-                        f.write(content)
-                    return f"File written to {path}"
-            elif tool == "run_command":
-                cmd = args.get("command")
-                if cmd:
-                    # Fix xdg-open on windows
-                    if "xdg-open" in cmd:
-                        file_path = cmd.replace("xdg-open", "").strip()
-                        if file_path.startswith("/tmp/"):
-                            file_path = file_path.replace("/tmp/", "e:/kernelweave/store/")
-                        # Use start command on windows
-                        cmd = f"start {file_path}"
-                    
-                    self.msg_queue.put(('cmd', f"Running: {cmd}"))
-                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-                    return f"STDOUT: {result.stdout}\nSTDERR: {result.stderr}"
-            return "Tool not implemented in GUI fallback."
+            if tool in TOOLS:
+                # Resolve /tmp on windows
+                for k, v in args.items():
+                    if isinstance(v, str) and v.startswith("/tmp/"):
+                        args[k] = v.replace("/tmp/", "e:/kernelweave/store/")
+                        
+                # Fix xdg-open on windows
+                if tool == "run_command":
+                    cmd = args.get("command")
+                    if cmd and "xdg-open" in cmd:
+                        args["command"] = cmd.replace("xdg-open", "start")
+                        
+                result = TOOLS[tool](**args)
+                return result
+            return f"Tool '{tool}' not found in registry."
         except Exception as e:
             return f"Error executing tool: {e}"
             
