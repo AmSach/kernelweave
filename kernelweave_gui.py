@@ -1,15 +1,17 @@
 """
-KernelWeave Glass-Panel GUI (HUD REBORN - 60 FPS)
-=================================================
+KernelWeave Glass-Panel GUI (Rupert OS Edition)
+==============================================
 
-A completely rebuilt from scratch, ultra-futuristic GUI for KernelWeave.
+A completely rebuilt GUI for KernelWeave, renamed to Rupert.
 Features:
-- "Electric Obsidian" palette (Deep blue-black, high-contrast cyan, glow effects).
-- Concentric rotating segmented arcs.
-- Drifting neural mesh background.
-- Read-only execution trace (no user typing allowed in log!).
-- Custom dropdown simulation for models.
-- Endpoint presets for famous providers!
+- No visualizer (as requested).
+- 4 Panels:
+  1. Prompt Terminal (Left)
+  2. Active Kernel Display (Right Top)
+  3. Active Tool Display (Right Middle)
+  4. Command Terminal (Right Bottom) - Shows commands executing in realtime!
+- Strict read-only terminals.
+- Concise system prompt to stop wasting tokens.
 """
 import os
 import sys
@@ -17,11 +19,10 @@ import time
 import json
 import threading
 import queue
-import math
-import random
+import subprocess
 from pathlib import Path
 import tkinter as tk
-from tkinter import scrolledtext, messagebox
+from tkinter import scrolledtext, messagebox, ttk
 
 # Ensure kernelweave is importable
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -34,15 +35,18 @@ from kernelweave_ollama import get_ollama_models
 BG_COLOR = "#020508"      # Very deep obsidian blue-black
 SURFACE_COLOR = "#07111e" # Dark slate blue for panels
 TEXT_COLOR = "#a5c4ec"    # Tech blue text
-ACCENT_CYAN = "#00f0ff"   # Jarvis Cyan
+ACCENT_CYAN = "#00f0ff"   # Cyan
 ACCENT_ORANGE = "#ff5500" # Warning Orange
 ACCENT_GREEN = "#00ff66"  # Success Green
-DIM_COLOR = "#102a45"     # Faint grid lines
+DIM_COLOR = "#102a45"     # Border color
 
-SYSTEM_PROMPT = """You are JARVIS (KernelWeave OS), an advanced autonomous AI operating system.
-You are running on a local neuro-symbolic stack. You use an LLM for reasoning and distill repetitive tasks into Skill Kernels.
+SYSTEM_PROMPT = """You are Rupert, an advanced autonomous AI operating system.
+You are running on a local neuro-symbolic stack.
 
-You have full access to tools. You must use tools by outputting a JSON object. For example:
+CRITICAL: Do not waste tokens writing explanations or bullshit. Be extremely concise.
+If you need to use a tool, output the JSON tool call IMMEDIATELY. Do not explain why.
+
+You must use tools by outputting a JSON object. For example:
 ```json
 {
   "tool": "web_search",
@@ -50,30 +54,12 @@ You have full access to tools. You must use tools by outputting a JSON object. F
 }
 ```
 Available tools: `web_search`, `run_command`, `read_file`, `write_file`, `list_dir`.
-Be autonomous. Act like Jarvis.
 """
 
-class Particle:
-    def __init__(self, x, y, angle, speed, color, lifetime=20):
-        self.x = x
-        self.y = y
-        self.vx = math.cos(angle) * speed
-        self.vy = math.sin(angle) * speed
-        self.color = color
-        self.lifetime = lifetime
-        self.alive = True
-
-    def update(self):
-        self.x += self.vx
-        self.y += self.vy
-        self.lifetime -= 1
-        if self.lifetime <= 0:
-            self.alive = False
-
-class KernelWeaveGUI:
+class RupertGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("JARVIS HUD REBORN")
+        self.root.title("Rupert OS - KernelWeave")
         self.root.geometry("1400x850")
         self.root.configure(bg=BG_COLOR)
         
@@ -88,55 +74,32 @@ class KernelWeaveGUI:
         # Queue for thread communication
         self.msg_queue = queue.Queue()
         
-        # Animation state
-        self.particles = []
-        self.mesh_nodes = []
-        self.angle_offset = 0.0
-        self.pulse_scale = 1.0
-        self.pulse_dir = 0.02
-        self.active_kernel_id = "None"
-        self.routing_score = 0.0
-        self.routing_mode = "idle"
-        
         # Presets
         self.presets = {
             "OLLAMA (Local)": "http://127.0.0.1:11434",
             "OPENAI": "https://api.openai.com/v1",
-            "GEMINI": "https://generativelanguage.googleapis.com/v1",
-            "ANTHROPIC": "https://api.anthropic.com/v1"
+            "GEMINI": "https://generativelanguage.googleapis.com/v1"
         }
         
         # Setup UI
         self.create_layout()
         
-        # Initialize complex mesh background
-        for _ in range(45):
-            self.mesh_nodes.append({
-                'x': random.random(),
-                'y': random.random(),
-                'vx': random.uniform(-0.001, 0.001),
-                'vy': random.uniform(-0.001, 0.001)
-            })
-            
         # Load store and scan models
         self.initialize_engine()
         
-        # Start loops
+        # Start poll loop
         self.root.after(100, self.poll_queue)
-        self.root.after(16, self.animation_loop) # 60 FPS
         
     def create_layout(self):
         self.main_pane = tk.Frame(self.root, bg=BG_COLOR)
-        self.main_pane.pack(fill='both', expand=True)
+        self.main_pane.pack(fill='both', expand=True, padx=20, pady=20)
         
-        # Left Panel (Text and Controls)
-        self.left_panel = tk.Frame(self.main_pane, bg=BG_COLOR, width=500)
-        self.left_panel.pack(side='left', fill='both', expand=True, padx=20, pady=20)
+        # ── LEFT PANEL (Prompt Terminal & Controls) ───────────────────
+        self.left_panel = tk.Frame(self.main_pane, bg=BG_COLOR)
+        self.left_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
         
-        # Model Dropdown Simulation Label
+        # Model Selector
         tk.Label(self.left_panel, text="// CORE MODEL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
-        
-        # We use a button that opens a popup or just a text entry for simplicity but with preset buttons!
         self.model_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR)
         self.model_entry.pack(fill='x', pady=(2, 10), ipady=5)
         self.model_entry.insert(0, "granite4.1:8b")
@@ -157,13 +120,8 @@ class KernelWeaveGUI:
         self.url_entry.pack(fill='x', pady=(2, 10), ipady=5)
         self.url_entry.insert(0, "http://127.0.0.1:11434")
         
-        # API Key (BYOK)
-        tk.Label(self.left_panel, text="// API KEY (BYOK)", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
-        self.key_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR, show="*")
-        self.key_entry.pack(fill='x', pady=(2, 10), ipady=5)
-        
-        # Text Log (READ ONLY!)
-        tk.Label(self.left_panel, text="// EXECUTION TRACE", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        # Prompt Terminal
+        tk.Label(self.left_panel, text="// PROMPT TERMINAL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
         self.log_area = scrolledtext.ScrolledText(
             self.left_panel, 
             bg=SURFACE_COLOR, 
@@ -173,15 +131,13 @@ class KernelWeaveGUI:
             wrap=tk.WORD,
             borderwidth=1,
             relief='solid',
-            state='disabled' # READ ONLY!
+            state='disabled'
         )
-        self.log_area.pack(fill='both', expand=True, pady=(5, 15))
+        self.log_area.pack(fill='both', expand=True, pady=(2, 10))
         
         self.log_area.tag_config('user', foreground=ACCENT_CYAN)
         self.log_area.tag_config('bot', foreground=TEXT_COLOR)
         self.log_area.tag_config('system', foreground=DIM_COLOR)
-        self.log_area.tag_config('success', foreground=ACCENT_GREEN)
-        self.log_area.tag_config('error', foreground=ACCENT_ORANGE)
         
         # Prompt Input
         tk.Label(self.left_panel, text="// COMMAND INPUT", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
@@ -199,169 +155,83 @@ class KernelWeaveGUI:
         self.btn_stop = tk.Button(btn_frame, text="HALT", bg=ACCENT_ORANGE, fg=TEXT_COLOR, font=('Courier', 10, 'bold'), borderwidth=0, padx=20, pady=10, command=self.force_stop)
         self.btn_stop.pack(side='left')
         
-        # Right Panel (JARVIS HUD Canvas)
-        self.viz_panel = tk.Frame(self.main_pane, bg=BG_COLOR)
-        self.viz_panel.pack(side='right', fill='both', expand=True)
+        # ── RIGHT PANEL (Status & Commands) ───────────────────────────
+        self.right_panel = tk.Frame(self.main_pane, bg=BG_COLOR)
+        self.right_panel.pack(side='right', fill='both', expand=True, padx=(10, 0))
         
-        self.canvas = tk.Canvas(
-            self.viz_panel, 
-            bg=BG_COLOR, 
-            highlightthickness=0
+        # Active Kernel Panel
+        tk.Label(self.right_panel, text="// ACTIVE KERNEL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        self.kernel_label = tk.Label(self.right_panel, text="None", fg=TEXT_COLOR, bg=SURFACE_COLOR, font=('Courier', 12), anchor='w', padx=10, pady=10, relief='solid', borderwidth=1)
+        self.kernel_label.pack(fill='x', pady=(2, 15))
+        
+        # Active Tool Panel
+        tk.Label(self.right_panel, text="// ACTIVE TOOL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        self.tool_label = tk.Label(self.right_panel, text="None", fg=TEXT_COLOR, bg=SURFACE_COLOR, font=('Courier', 12), anchor='w', padx=10, pady=10, relief='solid', borderwidth=1)
+        self.tool_label.pack(fill='x', pady=(2, 15))
+        
+        # Command Terminal (Shows commands executing in realtime!)
+        tk.Label(self.right_panel, text="// COMMAND TERMINAL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        self.cmd_area = scrolledtext.ScrolledText(
+            self.right_panel, 
+            bg=SURFACE_COLOR, 
+            fg=ACCENT_GREEN, 
+            font=('Courier', 10),
+            insertbackground=TEXT_COLOR,
+            wrap=tk.WORD,
+            borderwidth=1,
+            relief='solid',
+            state='disabled'
         )
-        self.canvas.pack(fill='both', expand=True)
+        self.cmd_area.pack(fill='both', expand=True, pady=(2, 0))
         
     def set_endpoint(self, url):
         self.url_entry.delete(0, tk.END)
         self.url_entry.insert(0, url)
-        self.append_log(f"System: Endpoint preset loaded: {url}", "system")
         
     def initialize_engine(self):
-        self.append_log("JARVIS: Initializing Core Systems...", "system")
+        self.append_log("Rupert: Initializing Core Systems...", "system")
         try:
-            # Self-healing: Rebuild index.json to match disk!
-            import glob
-            dir_path = "e:/kernelweave/store/kernels"
-            kernels = []
-            for f in glob.glob(os.path.join(dir_path, "*.json")):
-                name = os.path.basename(f)
-                kernel_id = name.replace(".json", "")
-                try:
-                    with open(f, "r") as kf:
-                        data = json.load(kf)
-                    status_obj = data.get("status", {})
-                    state = status_obj.get("state", "candidate") if isinstance(status_obj, dict) else "candidate"
-                    
-                    kernels.append({
-                        "kernel_id": kernel_id,
-                        "name": data.get("name", "Unknown"),
-                        "task_family": data.get("task_family", "Unknown"),
-                        "path": f"kernels/{name}",
-                        "status": state,
-                        "version": data.get("version", 2)
-                    })
-                except:
-                    pass
-            
-            index_path = "e:/kernelweave/store/index.json"
-            try:
-                with open(index_path, "r") as ifile:
-                    index_data = json.load(ifile)
-            except:
-                index_data = {"kernels": [], "traces": []}
-                
-            index_data["kernels"] = kernels
-            with open(index_path, "w") as ifile:
-                json.dump(index_data, ifile, indent=2)
-                
+            # Self-healing index
+            self.rebuild_index()
             self.store = KernelStore(Path("store"))
             self.runtime = KernelRuntime(self.store, use_embeddings=True)
-            self.append_log(f"JARVIS: Store online. {len(self.store.list_kernels())} kernels loaded.", "success")
-            
+            self.append_log(f"Rupert: Store online. {len(self.store.list_kernels())} kernels loaded.", "system")
         except Exception as e:
-            self.append_log(f"Error initializing core: {e}", "error")
+            self.append_log(f"Error initializing core: {e}", "system")
             
-    def animation_loop(self):
-        self.canvas.delete("all")
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
+    def rebuild_index(self):
+        import glob
+        dir_path = "e:/kernelweave/store/kernels"
+        kernels = []
+        for f in glob.glob(os.path.join(dir_path, "*.json")):
+            name = os.path.basename(f)
+            kernel_id = name.replace(".json", "")
+            try:
+                with open(f, "r") as kf:
+                    data = json.load(kf)
+                status_obj = data.get("status", {})
+                state = status_obj.get("state", "candidate") if isinstance(status_obj, dict) else "candidate"
+                kernels.append({
+                    "kernel_id": kernel_id,
+                    "name": data.get("name", "Unknown"),
+                    "task_family": data.get("task_family", "Unknown"),
+                    "path": f"kernels/{name}",
+                    "status": state,
+                    "version": data.get("version", 2)
+                })
+            except:
+                pass
         
-        if width < 100:
-            self.root.after(16, self.animation_loop)
-            return
+        index_path = "e:/kernelweave/store/index.json"
+        try:
+            with open(index_path, "r") as ifile:
+                index_data = json.load(ifile)
+        except:
+            index_data = {"kernels": [], "traces": []}
             
-        center_x = width // 2
-        center_y = height // 2
-        
-        # Update animations
-        self.angle_offset += 0.03
-        self.pulse_scale += self.pulse_dir
-        if self.pulse_scale > 1.1 or self.pulse_scale < 0.9:
-            self.pulse_dir = -self.pulse_dir
-            
-        # 1. Draw Complex Mesh Background (Neural Network)
-        for n in self.mesh_nodes:
-            n['x'] += n['vx']
-            n['y'] += n['vy']
-            if n['x'] > 1.0 or n['x'] < 0: n['vx'] = -n['vx']
-            if n['y'] > 1.0 or n['y'] < 0: n['vy'] = -n['vy']
-            
-            cx = int(n['x'] * width)
-            cy = int(n['y'] * height)
-            self.canvas.create_oval(cx-1, cy-1, cx+1, cy+1, fill=DIM_COLOR, outline="")
-            
-            # Connect close nodes
-            for n2 in self.mesh_nodes:
-                if n != n2:
-                    dx = n['x'] - n2['x']
-                    dy = n['y'] - n2['y']
-                    dist = math.sqrt(dx*dx + dy*dy)
-                    if dist < 0.12:
-                        self.canvas.create_line(cx, cy, int(n2['x']*width), int(n2['y']*height), fill="#051425", width=1)
-                        
-        # 2. Draw JARVIS Concentric Rings (The HUD)
-        base_r = min(width, height) // 4
-        
-        # Outer dashed ring
-        self.draw_dashed_circle(center_x, center_y, base_r + 40, DIM_COLOR)
-        # Rotating arc ring
-        self.draw_arc_ring(center_x, center_y, base_r, ACCENT_CYAN, self.angle_offset)
-        # Inner pulsing ring
-        self.canvas.create_oval(center_x - int(base_r*0.7*self.pulse_scale), center_y - int(base_r*0.7*self.pulse_scale),
-                                center_x + int(base_r*0.7*self.pulse_scale), center_y + int(base_r*0.7*self.pulse_scale),
-                                fill="", outline=DIM_COLOR, width=1)
-                                
-        # Central Core (Glowing)
-        self.canvas.create_oval(center_x-25, center_y-25, center_x+25, center_y+25, fill=SURFACE_COLOR, outline=ACCENT_CYAN, width=2)
-        self.canvas.create_text(center_x, center_y, text="JARVIS", fill=ACCENT_CYAN, font=('Courier', 9, 'bold'))
-        
-        # 3. Draw Floating Kernel Data Points
-        if self.store:
-            kernels = self.store.list_kernels()
-            for i, k in enumerate(kernels):
-                angle = (2 * math.pi * i) / len(kernels) + self.angle_offset * 0.1
-                r = base_r + 80
-                x = center_x + int(r * math.cos(angle))
-                y = center_y + int(r * math.sin(angle))
-                
-                # Draw connecting line to core
-                self.canvas.create_line(center_x, center_y, x, y, fill="#051425", width=1)
-                # Draw node
-                is_active = (k['kernel_id'] == self.active_kernel_id)
-                col = ACCENT_GREEN if is_active else ACCENT_CYAN
-                self.canvas.create_rectangle(x-4, y-4, x+4, y+4, fill=col, outline="")
-                self.canvas.create_text(x+10, y, text=k['kernel_id'][:6], fill=TEXT_COLOR, font=('Courier', 8), anchor='w')
-                
-        # 4. Update and Draw Particles
-        for p in self.particles[:]:
-            p.update()
-            if not p.alive:
-                self.particles.remove(p)
-            else:
-                self.canvas.create_oval(p.x-2, p.y-2, p.x+2, p.y+2, fill=p.color, outline="")
-                
-        # 5. HUD Labels (Tech Readouts)
-        self.canvas.create_text(30, 30, text="// KERNELWEAVE OS //", fill=ACCENT_CYAN, font=('Courier', 14, 'bold'), anchor='w')
-        self.canvas.create_text(30, 55, text=f"MODE: {self.routing_mode.upper()}", fill=TEXT_COLOR, font=('Courier', 10), anchor='w')
-        self.canvas.create_text(30, 75, text=f"ACTIVE_REF: {self.active_kernel_id[:10]}", fill=TEXT_COLOR, font=('Courier', 10), anchor='w')
-        self.canvas.create_text(30, 95, text=f"SIMILARITY: {self.routing_score:.2f}", fill=TEXT_COLOR, font=('Courier', 10), anchor='w')
-        
-        self.canvas.create_text(width-30, 30, text="SYS_LATTICE: STABLE", fill=ACCENT_GREEN, font=('Courier', 10), anchor='e')
-        self.canvas.create_text(width-30, 50, text="NEURAL_LOAD: 14%", fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
-        self.canvas.create_text(width-30, 70, text="KERNELS_SYNCED: " + str(len(kernels) if self.store else 0), fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
-        
-        self.root.after(16, self.animation_loop)
-        
-    def draw_dashed_circle(self, x, y, r, color):
-        for angle in range(0, 360, 8):
-            rad1 = math.radians(angle)
-            rad2 = math.radians(angle + 4)
-            self.canvas.create_line(x + r*math.cos(rad1), y + r*math.sin(rad1),
-                                    x + r*math.cos(rad2), y + r*math.sin(rad2), fill=color, width=1)
-                                    
-    def draw_arc_ring(self, x, y, r, color, offset):
-        for i in range(4):
-            angle = math.degrees(offset) + (i * 90)
-            self.canvas.create_arc(x-r, y-r, x+r, y+r, start=angle, extent=45, style='arc', outline=color, width=2)
+        index_data["kernels"] = kernels
+        with open(index_path, "w") as ifile:
+            json.dump(index_data, ifile, indent=2)
             
     def send_prompt(self):
         selected = self.model_entry.get().strip()
@@ -377,12 +247,6 @@ class KernelWeaveGUI:
         self.executing = True
         self.stop_requested = False
         
-        # Spawn burst from core
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
-        for _ in range(30):
-            self.particles.append(Particle(width//2, height//2, random.uniform(0, 2*math.pi), random.uniform(3, 8), ACCENT_CYAN))
-            
         threading.Thread(target=self.async_execute, args=(prompt, selected), daemon=True).start()
         
     def async_execute(self, prompt, selected):
@@ -390,30 +254,22 @@ class KernelWeaveGUI:
             # 1. Routing
             plan = self.runtime.run(prompt)
             mode = plan['mode']
-            score = plan.get('score', 0.0)
             kernel_id = plan.get('kernel_id', 'None')
             
-            self.msg_queue.put(('mode', mode, score, kernel_id))
-            self.msg_queue.put(('log', f"JARVIS: Routing score {score:.2f}. Mode: {mode.upper()}", "success"))
+            self.msg_queue.put(('update_kernel', kernel_id))
             
             # 2. Execution
-            self.msg_queue.put(('log', "JARVIS > ", "bot"))
+            self.msg_queue.put(('log', "Rupert > ", "bot"))
             
             import urllib.request
             base_url = self.url_entry.get().strip()
-            api_key = self.key_entry.get().strip()
-            
             url = f"{base_url}/api/generate"
             
-            history_text = "\n".join(self.conversation_history[-6:]) if self.conversation_history else ""
+            history_text = "\n".join(self.conversation_history[-4:]) if self.conversation_history else ""
             full_prompt = f"{SYSTEM_PROMPT}\n\nRecent History:\n{history_text}\n\nUser: {prompt}"
             body = {"model": selected, "prompt": full_prompt, "stream": True}
             
-            headers = {"content-type": "application/json"}
-            if api_key:
-                headers["Authorization"] = f"Bearer {api_key}"
-                
-            req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers)
+            req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
             
             full_response = ""
             try:
@@ -427,17 +283,72 @@ class KernelWeaveGUI:
                             self.msg_queue.put(('stream', token))
                             
                 self.msg_queue.put(('stream', "\n"))
+                
+                # Check for tool calls in response
+                self.parse_and_execute_tools(full_response)
+                
                 self.conversation_history.append(f"User: {prompt}")
                 self.conversation_history.append(f"Assistant: {full_response}")
                 self.msg_queue.put(('done',))
                 
             except Exception as e:
-                self.msg_queue.put(('error', f"Ollama error: {e}"))
+                self.msg_queue.put(('log', f"Error: {e}", "system"))
                 self.msg_queue.put(('done',))
                 
         except Exception as e:
-            self.msg_queue.put(('error', str(e)))
+            self.msg_queue.put(('log', f"Error: {e}", "system"))
             self.msg_queue.put(('done',))
+            
+    def parse_and_execute_tools(self, text):
+        # Look for JSON blocks
+        import re
+        blocks = re.findall(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+        for b in blocks:
+            try:
+                data = json.loads(b)
+                if "tool" in data and "args" in data:
+                    tool = data["tool"]
+                    args = data["args"]
+                    self.msg_queue.put(('update_tool', tool))
+                    self.msg_queue.put(('cmd', f"Executing tool: {tool} with args {json.dumps(args)}"))
+                    
+                    # Execute tool
+                    result = self.run_tool(tool, args)
+                    self.msg_queue.put(('cmd', f"Result: {result}"))
+                    
+            except Exception as e:
+                self.msg_queue.put(('cmd', f"Failed to parse tool call: {e}"))
+                
+    def run_tool(self, tool, args):
+        try:
+            if tool == "write_file":
+                path = args.get("file_path") or args.get("path")
+                content = args.get("content")
+                if path and content:
+                    # Resolve /tmp on windows
+                    if path.startswith("/tmp/"):
+                        path = path.replace("/tmp/", "e:/kernelweave/store/")
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
+                    with open(path, "w") as f:
+                        f.write(content)
+                    return f"File written to {path}"
+            elif tool == "run_command":
+                cmd = args.get("command")
+                if cmd:
+                    # Fix xdg-open on windows
+                    if "xdg-open" in cmd:
+                        file_path = cmd.replace("xdg-open", "").strip()
+                        if file_path.startswith("/tmp/"):
+                            file_path = file_path.replace("/tmp/", "e:/kernelweave/store/")
+                        # Use start command on windows
+                        cmd = f"start {file_path}"
+                    
+                    self.msg_queue.put(('cmd', f"Running: {cmd}"))
+                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                    return f"STDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+            return "Tool not implemented in GUI fallback."
+        except Exception as e:
+            return f"Error executing tool: {e}"
             
     def poll_queue(self):
         try:
@@ -447,24 +358,27 @@ class KernelWeaveGUI:
                 if msg_type == 'log':
                     self.append_log(msg[1], msg[2] if len(msg) > 2 else "bot")
                 elif msg_type == 'stream':
-                    # Enable, insert, disable!
                     self.log_area.config(state='normal')
                     self.log_area.insert(tk.END, msg[1], 'bot')
                     self.log_area.config(state='disabled')
                     self.log_area.see(tk.END)
-                elif msg_type == 'mode':
-                    self.routing_mode = msg[1]
-                    self.routing_score = msg[2]
-                    self.active_kernel_id = msg[3]
-                elif msg_type == 'error':
-                    self.append_log(f"Error: {msg[1]}", "error")
+                elif msg_type == 'update_kernel':
+                    self.kernel_label.config(text=msg[1])
+                elif msg_type == 'update_tool':
+                    self.tool_label.config(text=msg[1])
+                elif msg_type == 'cmd':
+                    self.cmd_area.config(state='normal')
+                    self.cmd_area.insert(tk.END, msg[1] + "\n")
+                    self.cmd_area.config(state='disabled')
+                    self.cmd_area.see(tk.END)
                 elif msg_type == 'done':
                     self.executing = False
+                    self.tool_label.config(text="None")
                     
                 self.msg_queue.task_done()
         except queue.Empty:
             pass
-        self.root.after(30, self.poll_queue)
+        self.root.after(100, self.poll_queue)
         
     def append_log(self, text, tag="bot"):
         self.log_area.config(state='normal')
@@ -474,9 +388,9 @@ class KernelWeaveGUI:
         
     def force_stop(self):
         self.stop_requested = True
-        self.append_log("\n[SYSTEM] Emergency Halt requested.", "error")
+        self.append_log("\n[SYSTEM] Emergency Halt requested.", "system")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = KernelWeaveGUI(root)
+    app = RupertGUI(root)
     root.mainloop()
