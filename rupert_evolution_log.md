@@ -62,3 +62,13 @@ I will simulate tasks for different personas and log the results here.
   2. The tool threw an error. The model failed to correct itself across 3 iterations.
 - **Fix Applied**:
   - Upgraded `tool_write_file` in `kernelweave_ollama.py` to accept both `path` and `filename` as aliases!
+
+### Test 3: Super Complex Full-Stack Task (Initial Attempt)
+- **Task**: Create a full-stack web app, run server, and verify with browser.
+- **Result**: **FAILED**.
+- **Details**:
+  1. The model tried to write to `test_app/requirements.txt` but the directory `test_app` didn't exist!
+  2. The tool failed with `FileNotFoundError` ([Errno 2] No such file or directory).
+  3. The model failed to create the directory and kept trying to write the file.
+- **Fix Applied**:
+  - Upgraded `tool_write_file` in `kernelweave_ollama.py` to **automatically create parent directories**!

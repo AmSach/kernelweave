@@ -122,6 +122,9 @@ def tool_write_file(path=None, content="", filename=None):
     if not actual_path:
         return "Error: path or filename required."
     try:
+        from pathlib import Path
+        Path(actual_path).parent.mkdir(parents=True, exist_ok=True)
+        
         with open(actual_path, "w", encoding="utf-8") as f:
             f.write(content)
         return f"File '{actual_path}' written successfully."
