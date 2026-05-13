@@ -143,51 +143,52 @@ def tool_web_search(query):
     print(f"{DIM}Searching the web for: {query}...{RESET}")
     results = []
     
-    # Priority 1: Use official duckduckgo_search package if available
-    if HAS_DDG:
-        try:
-            with DDGS() as ddgs:
-                ddg_results = ddgs.text(query, max_results=10)
-                for r in ddg_results:
-                    if 'body' in r:
-                        results.append(r['body'])
-                print(f"{DIM}Fetched {len(results)} results via duckduckgo_search.{RESET}")
-        except Exception as e:
-            print(f"{DIM}duckduckgo_search failed ({e}), falling back to scraper...{RESET}")
-            
-    # Priority 2: Fallback to scraping
-    if not results:
-        url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({'q': query})
-        req = urllib.request.Request(
-            url, 
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        )
-        
-        try:
-            with urllib.request.urlopen(req, timeout=10) as response:
-                html = response.read().decode('utf-8')
+    try:
+        # Priority 1: Use official duckduckgo_search package if available
+        if HAS_DDG:
+            try:
+                with DDGS() as ddgs:
+                    ddg_results = ddgs.text(query, max_results=10)
+                    for r in ddg_results:
+                        if 'body' in r:
+                            results.append(r['body'])
+                    print(f"{DIM}Fetched {len(results)} results via duckduckgo_search.{RESET}")
+            except Exception as e:
+                print(f"{DIM}duckduckgo_search failed ({e}), falling back to scraper...{RESET}")
                 
-            # Extract snippets using more generic regexes
-            snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
-            if not snippets:
-                # Try finding text inside result__snippet divs or similar
-                snippets = re.findall(r'<[^>]+class="[^"]*snippet[^"]*"[^>]*>(.*?)</[^>]+>', html, re.DOTALL)
+        # Priority 2: Fallback to scraping
+        if not results:
+            url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({'q': query})
+            req = urllib.request.Request(
+                url, 
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            )
             
-            for snippet in snippets:
-                clean_snippet = re.sub(r'<[^>]+>', '', snippet).strip()
-                if clean_snippet and len(clean_snippet) > 10:
-                    results.append(clean_snippet)
+            try:
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    html = response.read().decode('utf-8')
                     
-            print(f"{DIM}Fetched {len(results)} results via scraper.{RESET}")
-        except Exception as e:
-            return f"Search failed: {e}"
+                # Extract snippets using more generic regexes
+                snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
+                if not snippets:
+                    # Try finding text inside result__snippet divs or similar
+                    snippets = re.findall(r'<[^>]+class="[^"]*snippet[^"]*"[^>]*>(.*?)</[^>]+>', html, re.DOTALL)
+                
+                for snippet in snippets:
+                    clean_snippet = re.sub(r'<[^>]+>', '', snippet).strip()
+                    if clean_snippet and len(clean_snippet) > 10:
+                        results.append(clean_snippet)
+                        
+                print(f"{DIM}Fetched {len(results)} results via scraper.{RESET}")
+            except Exception as e:
+                return f"Search failed during scraping: {e}"
+                
+        if not results:
+            return ("No results found. DuckDuckGo may be rate-limiting the scraper.\n"
+                    "Tip: Run 'pip install duckduckgo-search' to enable the robust official API.")
             
-    if not results:
-        return ("No results found. DuckDuckGo may be rate-limiting the scraper.\n"
-                "Tip: Run 'pip install duckduckgo-search' to enable the robust official API.")
-        
-    # 2. Vector Embedding Search (RAG)
-    # Embed the query
+        # 2. Vector Embedding Search (RAG)
+        # Embed the query
         query_vec = get_ollama_embedding(query)
         
         if not query_vec:
@@ -197,7 +198,7 @@ def tool_web_search(query):
         # Embed results and score them
         scored_results = []
         print(f"{DIM}Ranking results with vector embeddings...{RESET}")
-        for res in results[:10]: # Score top 10 from scraper
+        for res in results[:10]: # Score top 10
             res_vec = get_ollama_embedding(res)
             if res_vec:
                 score = cosine_similarity(query_vec, res_vec)
