@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from kernelweave_ollama import TOOLS, get_ollama_models
 from kernelweave.kernel import KernelStore
 from pathlib import Path
+from kernelweave.runtime import KernelRuntime
 
 def extract_json(text):
     start = text.find('{')
