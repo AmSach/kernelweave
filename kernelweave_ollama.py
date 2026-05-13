@@ -36,12 +36,20 @@ def ensure_dependency(package_name, import_name):
     except ImportError:
         print(f"\033[93m[Setup] Installing missing dependency: {package_name}...\033[0m")
         try:
+            # Try running via the current python executable
             subprocess.run([sys.executable, "-m", "pip", "install", package_name], check=True)
             print(f"\033[92m[Setup] Successfully installed {package_name}!\033[0m")
             return True
-        except Exception as e:
-            print(f"\033[91m[Setup] Failed to install {package_name}: {e}\033[0m")
-            return False
+        except Exception:
+            try:
+                # Fallback to system pip if python -m pip fails
+                subprocess.run(["pip", "install", package_name], check=True)
+                print(f"\033[92m[Setup] Successfully installed {package_name} via system pip!\033[0m")
+                return True
+            except Exception as e:
+                print(f"\033[91m[Setup] Failed to install {package_name}: {e}\033[0m")
+                print(f"\033[93m[Setup] Please run 'pip install {package_name}' manually.\033[0m")
+                return False
 
 HAS_DDG = ensure_dependency("duckduckgo-search", "duckduckgo_search")
 if HAS_DDG:
