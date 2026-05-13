@@ -1,6 +1,15 @@
 {
   "kernels": [
     {
+      "digest": "7f7f3da9f8daec6f982f3f35f98d3ae61e5a6156bdefdfb036430a42400abf1b",
+      "kernel_id": "kw-103152d59e47418f",
+      "name": "general query kernel",
+      "path": "kernels\\kw-103152d59e47418f.json",
+      "status": "candidate",
+      "task_family": "general query",
+      "version": 2
+    },
+    {
       "digest": "b66d893fa5781c77bdcba4e7c3ceb17e2032927f625a69469f59aa3cab3e3c69",
       "kernel_id": "kw-73a20f259c554094",
       "name": "general query kernel",
@@ -28,7 +37,7 @@
       "version": 2
     },
     {
-      "digest": "32c7ad857c42503c2564ce17afaaa6b21a7871e8127ce6ad3fdf3a97f27a2eec",
+      "digest": "4bba493d609d104b018163fbaaa723d9b8f77741c87ee668568c5c63c1e27a89",
       "kernel_id": "kw-caae04864268822c",
       "name": "general query kernel",
       "path": "kernels\\kw-caae04864268822c.json",

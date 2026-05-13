@@ -1,6 +1,6 @@
 {
-  "description": "hi",
-  "digest": "4bba493d609d104b018163fbaaa723d9b8f77741c87ee668568c5c63c1e27a89",
+  "description": "run a sweep of the internet and gimme some news of whats happening around the world",
+  "digest": "7f7f3da9f8daec6f982f3f35f98d3ae61e5a6156bdefdfb036430a42400abf1b",
   "evidence_requirements": [
     "completed generation with score 0.00",
     "source trace logged",
@@ -17,7 +17,7 @@
     ],
     "type": "object"
   },
-  "kernel_id": "kw-caae04864268822c",
+  "kernel_id": "kw-103152d59e47418f",
   "name": "general query kernel",
   "output_schema": {
     "properties": {
@@ -34,13 +34,19 @@
     "output schema satisfied",
     "all required evidence recorded",
     "rollback not triggered",
-    "tests passed on admission"
+    "tests passed on admission",
+    "extracted: The kernel will respond with a textual explanation indicating its inability to perform real-time internet searches or provide current global news.",
+    "extracted: No actual data retrieval from the internet occurs as part of this execution.",
+    "extracted: The response generation is marked as completed, though with a score of 0.00, reflecting the limitation in fulfilling the request."
   ],
   "preconditions": [
     "task belongs to family: general query",
     "inputs match schema",
     "evidence channel available",
-    "trace corresponds to a solved task"
+    "trace corresponds to a solved task",
+    "extracted: The kernel must have access to a text-based interface for receiving user requests.",
+    "extracted: The request must be categorized under the task family 'general query'.",
+    "extracted: The description must explicitly ask for global news or an internet sweep."
   ],
   "rollback": [
     "if evidence is insufficient, return to planning",
@@ -48,7 +54,7 @@
     "if schema inference is unstable, demote kernel confidence"
   ],
   "source_trace_ids": [
-    "trace-1778703728"
+    "trace-1778703773"
   ],
   "status": {
     "confidence": 0.4803,
@@ -60,7 +66,7 @@
     {
       "action": "plan",
       "step": 1,
-      "text": "hi"
+      "text": "run a sweep of the internet and gimme some news of whats happening around the world"
     }
   ],
   "task_family": "general query",
@@ -79,7 +85,7 @@
         "min_evidence": 2
       },
       "input": {
-        "trace_id": "trace-1778703728"
+        "trace_id": "trace-1778703773"
       },
       "name": "evidence-completeness"
     },

@@ -163,6 +163,77 @@ def get_openai_models(url="http://127.0.0.1:1234/v1"):
     except Exception:
         return []
 
+def wrap_with_streaming(backend, provider, url, model):
+    original_generate = backend.generate
+    
+    def streaming_generate(prompt, system_prompt="", **kwargs):
+        # Fall back to original for JSON mode or if specific overrides are requested
+        if kwargs.get("json_mode") or kwargs.get("json_schema") or kwargs.get("max_tokens") == 1:
+            return original_generate(prompt, system_prompt=system_prompt, **kwargs)
+            
+        import urllib.request
+        import json
+        
+        combined_prompt = prompt
+        if system_prompt:
+            combined_prompt = f"{system_prompt}\n\n{prompt}"
+            
+        if provider == "ollama":
+            body = {
+                "model": model,
+                "prompt": combined_prompt,
+                "stream": True,
+                "options": {"temperature": 0.4}
+            }
+            target_url = f"{url.rstrip('/')}/api/generate"
+        else: # openai-compatible
+            body = {
+                "model": model,
+                "messages": [],
+                "temperature": 0.4,
+                "stream": True
+            }
+            if system_prompt:
+                body["messages"].append({"role": "system", "content": system_prompt})
+            body["messages"].append({"role": "user", "content": prompt})
+            target_url = f"{url.rstrip('/')}/chat/completions"
+            
+        req = urllib.request.Request(target_url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
+        
+        full_text = ""
+        try:
+            with urllib.request.urlopen(req) as response:
+                for line in response:
+                    if line:
+                        line_text = line.decode('utf-8').strip()
+                        if provider == "ollama":
+                            payload = json.loads(line_text)
+                            chunk = payload.get("response", "")
+                            full_text += chunk
+                            print(chunk, end="", flush=True)
+                            if payload.get("done", False):
+                                break
+                        else: # openai-compatible
+                            if line_text.startswith("data: "):
+                                data_str = line_text[6:]
+                                if data_str == "[DONE]":
+                                    break
+                                payload = json.loads(data_str)
+                                choices = payload.get("choices", [])
+                                if choices:
+                                    chunk = choices[0].get("delta", {}).get("content", "")
+                                    full_text += chunk
+                                    print(chunk, end="", flush=True)
+            print() # New line at the end
+            from kernelweave.llm.providers import ModelResponse
+            return ModelResponse(text=full_text, provider=provider, model=model, raw={"streamed": True}, usage={})
+        except Exception as e:
+            # Fallback to original non-streaming call if stream fails
+            return original_generate(prompt, system_prompt=system_prompt, **kwargs)
+            
+    backend.generate = streaming_generate
+    return backend
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="KernelWeave Interactive Shell")
@@ -275,6 +346,12 @@ def main():
         except (KeyboardInterrupt, EOFError):
             print()
             sys.exit(1)
+        
+    # Wrap backend with streaming for the interactive session
+    if connected:
+        backend = wrap_with_streaming(backend, provider, url, model)
+    else:
+        backend = wrap_with_streaming(backend, custom_provider, custom_url, args.model)
         
     store_path = Path(args.store)
     store = KernelStore(store_path)
