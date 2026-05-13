@@ -1,0 +1,34 @@
+{
+  "name": "Gemini 3 Regex Wizard",
+  "description": "Generates complex regular expressions and explains the matching logic for specific pattern requests.",
+  "task_family": "pattern matching",
+  "kernel_id": "kw-gemini3-regex-helper",
+  "version": 1,
+  "preconditions": [
+    "prompt requests a regular expression",
+    "prompt provides examples of text to match or avoid"
+  ],
+  "postconditions": [
+    "output provides a valid regex pattern",
+    "output explains what each part of the regex does",
+    "the regex is tested against the provided examples in the explanation"
+  ],
+  "evidence_requirements": [
+    "breaks down lookaheads/lookbehinds if used",
+    "verifies the regex doesn't match negative examples"
+  ],
+  "steps": [
+    { "step": 1, "action": "plan", "text": "Analyze target pattern and edge cases from examples" },
+    { "step": 2, "action": "execution", "text": "Construct regex pattern and verify against examples" },
+    { "step": 3, "action": "verification", "text": "Provide detailed breakdown of the regex parts" }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": { "request": { "type": "string" }, "examples": { "type": "array", "items": { "type": "string" } } }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": { "regex": { "type": "string" }, "explanation": { "type": "string" } }
+  },
+  "status": { "confidence": 0.97, "state": "verified", "passes": 55, "failures": 0 }
+}

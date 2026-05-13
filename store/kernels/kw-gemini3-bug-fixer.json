@@ -1,0 +1,37 @@
+{
+  "name": "Gemini 3 Bug Fixer",
+  "description": "Identifies logical errors, syntax bugs, and anti-patterns in code, providing corrected versions and explanations.",
+  "task_family": "code debugging",
+  "kernel_id": "kw-gemini3-bug-fixer",
+  "version": 1,
+  "preconditions": [
+    "prompt contains code with a suspected bug or error message",
+    "prompt requests a fix or debugging assistance"
+  ],
+  "postconditions": [
+    "output identifies the root cause of the bug",
+    "output provides the corrected code block",
+    "explanation details why the fix works"
+  ],
+  "evidence_requirements": [
+    "pinpoints the erroneous line or logic",
+    "proves the fix handles the edge case causing the failure"
+  ],
+  "steps": [
+    { "step": 1, "action": "plan", "text": "Trace execution to find the point of failure or logic flaw" },
+    { "step": 2, "action": "execution", "text": "Apply fix and generate clean, corrected code" },
+    { "step": 3, "action": "verification", "text": "Dry-run the fix mentally to ensure it solves the problem" }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": { "code": { "type": "string" }, "error": { "type": "string" } }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "bug_description": { "type": "string" },
+      "fixed_code": { "type": "string" }
+    }
+  },
+  "status": { "confidence": 0.94, "state": "verified", "passes": 35, "failures": 1 }
+}

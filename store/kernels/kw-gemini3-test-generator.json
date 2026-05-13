@@ -1,0 +1,34 @@
+{
+  "name": "Gemini 3 Test Generator",
+  "description": "Generates comprehensive unit tests and edge-case coverage for provided functions or classes.",
+  "task_family": "testing",
+  "kernel_id": "kw-gemini3-test-generator",
+  "version": 1,
+  "preconditions": [
+    "prompt contains a function or class that needs testing",
+    "target testing framework is specified or implied (default: pytest)"
+  ],
+  "postconditions": [
+    "output contains valid test code",
+    "tests cover happy path, boundary conditions, and error cases",
+    "mocks are used appropriately for external dependencies"
+  ],
+  "evidence_requirements": [
+    "includes at least 3 distinct test cases",
+    "includes a parameterized test if applicable"
+  ],
+  "steps": [
+    { "step": 1, "action": "plan", "text": "Identify inputs, outputs, and edge cases for the code" },
+    { "step": 2, "action": "execution", "text": "Draft test cases using the requested framework" },
+    { "step": 3, "action": "verification", "text": "Verify test structure and assertions are logical" }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": { "code": { "type": "string" } }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": { "test_code": { "type": "string" } }
+  },
+  "status": { "confidence": 0.93, "state": "verified", "passes": 28, "failures": 0 }
+}

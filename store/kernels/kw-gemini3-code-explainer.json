@@ -1,0 +1,38 @@
+{
+  "name": "Gemini 3 Code Explainer",
+  "description": "Analyzes complex code snippets and provides detailed, structured explanations of logic, control flow, and potential optimizations.",
+  "task_family": "code analysis",
+  "kernel_id": "kw-gemini3-code-explainer",
+  "version": 1,
+  "preconditions": [
+    "prompt contains a code snippet or references a code file",
+    "prompt asks for explanation or analysis"
+  ],
+  "postconditions": [
+    "output breaks down code into logical sections",
+    "explanation uses appropriate technical terminology",
+    "output identifies time and space complexity where applicable"
+  ],
+  "evidence_requirements": [
+    "references specific line numbers or symbols from the input",
+    "provides at least one optimization suggestion"
+  ],
+  "steps": [
+    { "step": 1, "action": "plan", "text": "Parse code structure and identify main algorithm" },
+    { "step": 2, "action": "execution", "text": "Draft section-by-section explanation with complexity analysis" },
+    { "step": 3, "action": "verification", "text": "Verify explanation accuracy against the source code" }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": { "code": { "type": "string" } },
+    "required": ["code"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "explanation": { "type": "string" },
+      "complexity": { "type": "string" }
+    }
+  },
+  "status": { "confidence": 0.96, "state": "verified", "passes": 40, "failures": 0 }
+}

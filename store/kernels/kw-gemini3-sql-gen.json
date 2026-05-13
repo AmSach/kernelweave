@@ -1,0 +1,34 @@
+{
+  "name": "Gemini 3 SQL Expert",
+  "description": "Translates natural language questions into optimized, safe SQL queries based on provided schema descriptions.",
+  "task_family": "database operations",
+  "kernel_id": "kw-gemini3-sql-gen",
+  "version": 1,
+  "preconditions": [
+    "prompt requests data extraction or DB operation",
+    "table names or schema context is provided or implied"
+  ],
+  "postconditions": [
+    "output is a valid SQL query",
+    "query handles JOINs and aggregations correctly if needed",
+    "query avoids common pitfalls like SQL injection or full table scans where obvious"
+  ],
+  "evidence_requirements": [
+    "matches query logic to the requested question",
+    "explains any complex subqueries or window functions used"
+  ],
+  "steps": [
+    { "step": 1, "action": "plan", "text": "Map prompt entities to table columns and determine operations" },
+    { "step": 2, "action": "execution", "text": "Draft SQL query with proper joins and filters" },
+    { "step": 3, "action": "verification", "text": "Dry-run query logic against the implied schema" }
+  ],
+  "input_schema": {
+    "type": "object",
+    "properties": { "question": { "type": "string" }, "schema": { "type": "string" } }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": { "sql_query": { "type": "string" } }
+  },
+  "status": { "confidence": 0.95, "state": "verified", "passes": 42, "failures": 0 }
+}
