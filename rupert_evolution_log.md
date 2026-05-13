@@ -72,3 +72,14 @@ I will simulate tasks for different personas and log the results here.
   3. The model failed to create the directory and kept trying to write the file.
 - **Fix Applied**:
   - Upgraded `tool_write_file` in `kernelweave_ollama.py` to **automatically create parent directories**!
+
+### Test 4: Super Complex Full-Stack Task (Second Attempt)
+- **Task**: Create a full-stack web app, run server, and verify with browser.
+- **Result**: **PARTIAL SUCCESS** (Gaps identified: Hallucinated arguments).
+- **Details**:
+  1. The model successfully wrote `requirements.txt`, `app.py`, `test_app.py`, `setup.py`, and `templates/index.html`!
+  2. It successfully ran `pip install` in the venv!
+  3. It failed in Iteration 9 because it added `"shell": true` to `run_command` arguments.
+  4. It ran out of iterations (max 10) before running the server or browser.
+- **Fix Applied**:
+  - Upgraded `tool_run_command` in `kernelweave_ollama.py` to accept `shell` as an optional argument!

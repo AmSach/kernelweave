@@ -3,3 +3,4 @@ __pycache__/
 build/
 styletmp/
 kernelweave-training-pack.zip
+test_app/.venv/

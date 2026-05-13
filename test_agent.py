@@ -45,7 +45,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
     print(f"[Router] Mode: {plan['mode']} | Kernel: {plan.get('kernel_id', 'none')}")
     
     system_prompt = (
-        "You are Rupert, an advanced autonomous AI operating system.\n"
+        "You are Rupert, an advanced autonomous AI operating system running on Windows.\n"
         "You must use tools by outputting a JSON object. For example:\n"
         "```json\n"
         "{\n"
@@ -54,11 +54,14 @@ def run_test(prompt, model_name="granite4.1:8b"):
         "}\n"
         "```\n"
         "Available tools: `browser_browse`, `web_search`, `read_file`, `write_file`, `list_dir`, `run_command`.\n"
-        "Be extremely concise. Output JSON immediately if you need a tool."
+        "CRITICAL RULES:\n"
+        "1. You are on Windows. Do NOT use Unix commands like `source`, `cat <<EOF`, or `ls`. Use Windows equivalents or use provided tools.\n"
+        "2. To create or edit files, ALWAYS use the `write_file` tool. Do NOT use `echo` or `cat` in `run_command` to write files.\n"
+        "3. Be extremely concise. Output JSON immediately if you need a tool."
     )
     
     conversation = f"User: {prompt}"
-    max_iterations = 3
+    max_iterations = 10
     
     url = "http://127.0.0.1:11434/api/generate"
     

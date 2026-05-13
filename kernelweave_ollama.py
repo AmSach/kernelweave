@@ -131,10 +131,10 @@ def tool_write_file(path=None, content="", filename=None):
     except Exception as e:
         return str(e)
 
-def tool_run_command(command):
+def tool_run_command(command, shell=True):
     import subprocess
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        result = subprocess.run(command, shell=shell, capture_output=True, text=True)
         return f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     except Exception as e:
         return str(e)
