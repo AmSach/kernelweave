@@ -61,6 +61,9 @@ if HAS_DDG:
         print("\033[93m[Setup] duckduckgo-search installed but not visible to current process. Falling back to scraper for this session.\033[0m")
         HAS_DDG = False
 
+# Ensure sentence-transformers is installed for vector matching in router
+ensure_dependency("sentence-transformers", "sentence_transformers")
+
 # ── Tools for ReAct Loop ───────────────────────────────────────────
 def tool_list_dir(path="."):
     import os
@@ -500,11 +503,17 @@ def main():
         
     store_path = Path(args.store)
     store = KernelStore(store_path)
-    runtime = KernelRuntime(store, use_embeddings=False)
+    
+    # Enable embeddings for smart kernel matching
+    print(f"{DIM}Initializing vector embeddings for router...{RESET}")
+    runtime = KernelRuntime(store, use_embeddings=True)
+    
     engine = ExecutionEngine(store, backend)
     verifier = VerifierHierarchy(backend=backend)
     
     print(f"{DIM}Store loaded: {store.summary()}{RESET}\n")
+
+    conversation_history = []
 
     while True:
         try:
@@ -588,7 +597,7 @@ def main():
                 "Always output valid JSON when using a tool. After receiving tool output, continue answering or use another tool."
             )
             
-            conversation = prompt
+            conversation = "\n".join(conversation_history) + f"\nUser: {prompt}"
             max_iterations = 5
             
             try:
@@ -636,6 +645,10 @@ def main():
         print(" " * 80, end="\r")
         print(f"{BOLD}{MAGENTA}KernelWeave > {RESET}")
         print(f"{response_text}\n")
+        
+        # Append to history
+        conversation_history.append(f"User: {prompt}")
+        conversation_history.append(f"Assistant: {response_text}")
         
         # 3. Verification & Self-Compilation
         if response_text:

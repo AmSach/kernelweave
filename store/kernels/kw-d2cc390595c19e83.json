@@ -1,0 +1,101 @@
+{
+  "description": "fetch me news from around the world. whats happening?",
+  "digest": "661c429fdc147ab8e88775c038b9879477b73f8e18995e47dbc3e02d15323ecf",
+  "evidence_requirements": [
+    "completed generation with score 0.00",
+    "source trace logged",
+    "final response conforms to expected output"
+  ],
+  "input_schema": {
+    "properties": {
+      "task": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "task"
+    ],
+    "type": "object"
+  },
+  "kernel_id": "kw-d2cc390595c19e83",
+  "name": "general query kernel",
+  "output_schema": {
+    "properties": {
+      "result": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "type": "object"
+  },
+  "postconditions": [
+    "output schema satisfied",
+    "all required evidence recorded",
+    "rollback not triggered",
+    "tests passed on admission",
+    "extracted: A response is generated that provides a general overview of recent global events based on the kernel's last training data up to October 2023.",
+    "extracted: The response does not include real-time web search results due to limitations in accessing live data."
+  ],
+  "preconditions": [
+    "task belongs to family: general query",
+    "inputs match schema",
+    "evidence channel available",
+    "trace corresponds to a solved task",
+    "extracted: The kernel must be invoked with a request to fetch news from around the world.",
+    "extracted: No specific input parameters are required beyond the natural language query."
+  ],
+  "rollback": [
+    "if evidence is insufficient, return to planning",
+    "if a tool returns contradictory data, invalidate kernel",
+    "if schema inference is unstable, demote kernel confidence"
+  ],
+  "source_trace_ids": [
+    "trace-1778704945"
+  ],
+  "status": {
+    "confidence": 0.4803,
+    "failures": 0,
+    "passes": 1,
+    "state": "candidate"
+  },
+  "steps": [
+    {
+      "action": "plan",
+      "step": 1,
+      "text": "fetch me news from around the world. whats happening?"
+    }
+  ],
+  "task_family": "general query",
+  "tests": [
+    {
+      "expected": {
+        "result": "generated text response"
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "output-shape"
+    },
+    {
+      "expected": {
+        "min_evidence": 2
+      },
+      "input": {
+        "trace_id": "trace-1778704945"
+      },
+      "name": "evidence-completeness"
+    },
+    {
+      "expected": {
+        "min_confidence": 0.4803
+      },
+      "input": {
+        "task_family": "general query"
+      },
+      "name": "confidence-floor"
+    }
+  ],
+  "version": 2
+}
