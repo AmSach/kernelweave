@@ -130,8 +130,8 @@ def run_test(prompt, model_name="granite4.1:8b"):
         print(f"\nError during test: {e}")
 
 if __name__ == "__main__":
-    # Test with the coder task
-    prompt = "Write a Python script named fibonacci.py that calculates Fibonacci numbers. Then write a test script named test_fibonacci.py and run it using the run_command tool to verify it works."
+    # Test with the super complex task
+    prompt = "Create a full-stack web application in a new directory named 'test_app'. The backend should be in Python using Flask. Write a test for the backend, run the server in the background, and use browser_browse to verify the frontend loads!"
     # Use the model the user preferred or default
     model = "granite4.1:8b" 
     
