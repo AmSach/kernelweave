@@ -177,6 +177,42 @@ class KernelWeaveGUI:
     def initialize_engine(self):
         self.append_log("JARVIS: Initializing Core Systems...", "system")
         try:
+            # Self-healing: Rebuild index.json to match disk!
+            import glob
+            dir_path = "e:/kernelweave/store/kernels"
+            kernels = []
+            for f in glob.glob(os.path.join(dir_path, "*.json")):
+                name = os.path.basename(f)
+                kernel_id = name.replace(".json", "")
+                try:
+                    with open(f, "r") as kf:
+                        data = json.load(kf)
+                    # Extract state from status object if it exists
+                    status_obj = data.get("status", {})
+                    state = status_obj.get("state", "candidate") if isinstance(status_obj, dict) else "candidate"
+                    
+                    kernels.append({
+                        "kernel_id": kernel_id,
+                        "name": data.get("name", "Unknown"),
+                        "task_family": data.get("task_family", "Unknown"),
+                        "path": f"kernels/{name}",
+                        "status": state,
+                        "version": data.get("version", 2)
+                    })
+                except Exception as e:
+                    print(f"Failed to index {name}: {e}")
+            
+            index_path = "e:/kernelweave/store/index.json"
+            try:
+                with open(index_path, "r") as ifile:
+                    index_data = json.load(ifile)
+            except:
+                index_data = {"kernels": [], "traces": []}
+                
+            index_data["kernels"] = kernels
+            with open(index_path, "w") as ifile:
+                json.dump(index_data, ifile, indent=2)
+                
             self.store = KernelStore(Path("store"))
             self.runtime = KernelRuntime(self.store, use_embeddings=True)
             self.append_log(f"JARVIS: Store online. {len(self.store.list_kernels())} kernels loaded.", "success")
