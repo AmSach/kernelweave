@@ -9,6 +9,7 @@ import json
 import time
 import re
 import urllib.request
+import urllib.parse
 
 # Ensure kernelweave is importable
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -105,7 +106,6 @@ def run_test(prompt, model_name="granite4.1:8b"):
                         if tool_name == "web_search" and ("No results found" in tool_result or "failed" in tool_result.lower()):
                             print("[Fallback] Web search failed. Trying browser_browse...")
                             if "browser_browse" in TOOLS:
-                                import urllib.parse
                                 query_encoded = urllib.parse.quote(tool_args.get("query", ""))
                                 tool_result = TOOLS["browser_browse"](url=f"https://www.google.com/search?q={query_encoded}")
                                 print(f"[Fallback Result] {tool_result}")
