@@ -124,8 +124,19 @@ class KernelWeaveGUI:
         # Model Selector
         tk.Label(self.left_panel, text="CORE MODEL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
         self.model_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR)
-        self.model_entry.pack(fill='x', pady=(5, 15), ipady=8)
+        self.model_entry.pack(fill='x', pady=(2, 10), ipady=5)
         self.model_entry.insert(0, "granite4.1:8b")
+        
+        # Endpoint URL
+        tk.Label(self.left_panel, text="ENDPOINT URL", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        self.url_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR)
+        self.url_entry.pack(fill='x', pady=(2, 10), ipady=5)
+        self.url_entry.insert(0, "http://127.0.0.1:11434")
+        
+        # API Key (BYOK)
+        tk.Label(self.left_panel, text="API KEY (OPTIONAL)", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
+        self.key_entry = tk.Entry(self.left_panel, bg=SURFACE_COLOR, fg=TEXT_COLOR, font=('Courier', 12), borderwidth=1, relief='solid', insertbackground=TEXT_COLOR, show="*")
+        self.key_entry.pack(fill='x', pady=(2, 10), ipady=5)
         
         # Text Log
         tk.Label(self.left_panel, text="SYSTEM TRACE", fg=ACCENT_CYAN, bg=BG_COLOR, font=('Courier', 10, 'bold')).pack(anchor='w')
@@ -315,7 +326,7 @@ class KernelWeaveGUI:
         self.canvas.create_text(width-30, 50, text="NEURAL_LOAD: 23%", fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
         self.canvas.create_text(width-30, 70, text="STORE_COUNT: " + str(len(kernels) if self.store else 0), fill=TEXT_COLOR, font=('Courier', 10), anchor='e')
         
-        self.root.after(30, self.animation_loop)
+        self.root.after(16, self.animation_loop)
         
     def draw_dashed_circle(self, x, y, r, color):
         for angle in range(0, 360, 10):
@@ -366,13 +377,20 @@ class KernelWeaveGUI:
             self.msg_queue.put(('log', "JARVIS > ", "bot"))
             
             import urllib.request
-            url = "http://127.0.0.1:11434/api/generate"
+            base_url = self.url_entry.get().strip()
+            api_key = self.key_entry.get().strip()
+            
+            url = f"{base_url}/api/generate"
             
             history_text = "\n".join(self.conversation_history[-6:]) if self.conversation_history else ""
             full_prompt = f"{SYSTEM_PROMPT}\n\nRecent History:\n{history_text}\n\nUser: {prompt}"
             body = {"model": selected, "prompt": full_prompt, "stream": True}
             
-            req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
+            headers = {"content-type": "application/json"}
+            if api_key:
+                headers["Authorization"] = f"Bearer {api_key}"
+                
+            req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers)
             
             full_response = ""
             try:
