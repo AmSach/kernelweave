@@ -130,8 +130,8 @@ def run_test(prompt, model_name="granite4.1:8b"):
         print(f"\nError during test: {e}")
 
 if __name__ == "__main__":
-    # Test with the researcher task
-    prompt = "fetch me some news about Generative AI breakthroughs 2026 and save it to a file named ai_report.txt"
+    # Test with the coder task
+    prompt = "Write a Python script named fibonacci.py that calculates Fibonacci numbers. Then write a test script named test_fibonacci.py and run it using the run_command tool to verify it works."
     # Use the model the user preferred or default
     model = "granite4.1:8b" 
     
