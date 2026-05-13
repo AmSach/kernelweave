@@ -53,7 +53,13 @@ def ensure_dependency(package_name, import_name):
 
 HAS_DDG = ensure_dependency("duckduckgo-search", "duckduckgo_search")
 if HAS_DDG:
-    from duckduckgo_search import DDGS
+    try:
+        import importlib
+        importlib.invalidate_caches()
+        from duckduckgo_search import DDGS
+    except ImportError:
+        print("\033[93m[Setup] duckduckgo-search installed but not visible to current process. Falling back to scraper for this session.\033[0m")
+        HAS_DDG = False
 
 # ── Tools for ReAct Loop ───────────────────────────────────────────
 def tool_list_dir(path="."):
