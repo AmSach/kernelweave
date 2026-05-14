@@ -89,17 +89,35 @@ def tool_browser_browse(url):
             except Exception:
                 print("[Setup] Installing Chromium binaries...")
                 import subprocess
+                import sys
                 subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
                 browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
-            page.goto(url)
+            
+            # Stealth: Set realistic user agent
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            context = browser.new_context(user_agent=user_agent)
+            page = context.new_page()
+            
+            print(f"[Browser] Navigating to {url}...")
+            page.goto(url, wait_until="domcontentloaded")
+            
             import time
             time.sleep(2)
             title = page.title()
-            content = page.evaluate("() => document.body.innerText")[:500]
+            content = page.evaluate("() => document.body.innerText")
+            
+            # Log and check for captchas
+            print(f"[Browser] Title: {title}")
+            print(f"[Browser] Content snippet: {content[:100].strip()}")
+            
+            if "captcha" in content.lower() or "robot" in content.lower() or "verify you are human" in content.lower():
+                print(f"[Browser] WARNING: Captcha or bot detection detected on {url}!")
+                return f"Browser error: Access denied or Captcha detected on {url}. Please try another source."
+                
             browser.close()
-            return f"Successfully browsed {url}.\nTitle: {title}\nContent Snippet: {content}..."
+            return f"Successfully browsed {url}.\nTitle: {title}\nContent Snippet: {content[:500]}..."
     except Exception as e:
+        print(f"[Browser] Error: {e}")
         return f"Browser error: {e}"
 
 # ── Tools for ReAct Loop ───────────────────────────────────────────
