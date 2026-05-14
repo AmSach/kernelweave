@@ -70,7 +70,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
             print(f"\n--- Iteration {i+1} ---")
             print("Thinking...", end="\r")
             
-            body = {"model": model_name, "prompt": f"{system_prompt}\n\n{conversation}", "stream": True}
+            body = {"model": model_name, "prompt": f"{system_prompt}\n\n{conversation}", "stream": True, "format": "json"}
             req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers={"content-type": "application/json"})
             
             text = ""
