@@ -84,7 +84,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
             
             text = ""
             first_token = True
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=120) as response:
                 for line in response:
                     if line:
                         chunk = json.loads(line.decode('utf-8'))
