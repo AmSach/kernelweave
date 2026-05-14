@@ -57,7 +57,8 @@ def run_test(prompt, model_name="granite4.1:8b"):
         "CRITICAL RULES:\n"
         "1. You are on Windows. Do NOT use Unix commands like `source`, `cat <<EOF`, or `ls`. Use Windows equivalents or use provided tools.\n"
         "2. To create or edit files, ALWAYS use the `write_file` tool. Do NOT use `echo` or `cat` in `run_command` to write files.\n"
-        "3. Output the JSON block IMMEDIATELY. Do not put any text before or after it."
+        "3. Output the JSON block IMMEDIATELY. Do not put any text before or after it.\n"
+        "4. After writing or editing a file, you MUST verify it works by running it or reading it!"
     )
     
     conversation = (

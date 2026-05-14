@@ -1,4 +1,6 @@
 def calculate_ratio(a, b):
+    if b == 0:
+        return 'Error: Division by zero is not allowed'
     return a / b
 
 if __name__ == "__main__":
