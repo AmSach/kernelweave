@@ -57,7 +57,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
         "CRITICAL RULES:\n"
         "1. You are on Windows. Do NOT use Unix commands like `source`, `cat <<EOF`, or `ls`. Use Windows equivalents or use provided tools.\n"
         "2. To create or edit files, ALWAYS use the `write_file` tool. Do NOT use `echo` or `cat` in `run_command` to write files.\n"
-        "3. Be extremely concise. Output JSON immediately if you need a tool."
+        "3. Do NOT output internal thoughts, reasoning, or explanations. Output the JSON block IMMEDIATELY as the first line of your response!"
     )
     
     conversation = f"User: {prompt}"
@@ -91,6 +91,10 @@ def run_test(prompt, model_name="granite4.1:8b"):
                             first_token = False
                         print(token, end="", flush=True)
                         text += token
+                        
+                        if len(text) > 4000:
+                            print("\n\033[93m[Warning] Model output too long (>4000 chars), truncating...\033[0m")
+                            break
             print() # Newline after stream
             
             # Check if model wants to use a tool
@@ -137,7 +141,10 @@ if __name__ == "__main__":
         "Create a full-stack web application in a new directory named 'test_app'. The backend should be in Python using Flask. Write a test for the backend, run the server in the background, and use browser_browse to verify the frontend loads!",
         "Search the web for 'latest breakthroughs in quantum computing 2026', read 2 different articles using browser_browse, and write a summary report to quantum_news.md.",
         "Write a Python script named calculator.py with add, subtract, multiply, divide functions. Then write a script that imports it and tests all functions. Run the tests and report the result.",
-        "List the contents of the current directory. If there are any .py files, read one and suggest 3 improvements in a file named improvements.txt."
+        "List the contents of the current directory. If there are any .py files, read one and suggest 3 improvements in a file named improvements.txt.",
+        "Create a JSON file named 'data.json' with a list of 5 products (id, name, price). Read the file, calculate the average price, and append the result to the file as a comment or a new field!",
+        "Search for 'best practices for writing secure Python code', find a list of top 5 tips, and create a markdown file named 'secure_code_tips.md' with those tips.",
+        "Look for a file named 'kernelweave_ollama.py' in the current directory. Read the first 50 lines and summarize what it does in a file named 'summary_ollama.txt'."
     ]
     
     # Use the model the user preferred or default
