@@ -124,10 +124,11 @@ def tool_browser_browse(url):
         return f"Browser error: {e}"
 
 # ── Tools for ReAct Loop ───────────────────────────────────────────
-def tool_list_dir(path="."):
+def tool_list_dir(path=None, directory=None):
+    actual_path = path or directory or "."
     import os
     try:
-        return json.dumps(os.listdir(path))
+        return json.dumps(os.listdir(actual_path))
     except Exception as e:
         return str(e)
 
