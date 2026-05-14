@@ -159,13 +159,13 @@ if __name__ == "__main__":
     ]
     
     # Use the model the user preferred or default
-    model = "gemma4:e2b" 
+    model = "granite4.1:8b" 
     
     # Check available models
     models = get_ollama_models()
     if models:
         print(f"Available models: {models}")
-        if "gemma4:e2b" not in models:
+        if "granite4.1:8b" not in models:
             model = models[0]
             print(f"Defaulting to available model: {model}")
             
