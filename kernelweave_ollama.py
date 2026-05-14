@@ -131,9 +131,12 @@ def tool_list_dir(path="."):
     except Exception as e:
         return str(e)
 
-def tool_read_file(path):
+def tool_read_file(path=None, filename=None):
+    actual_path = path or filename
+    if not actual_path:
+        return "Error: path or filename required."
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(actual_path, "r", encoding="utf-8") as f:
             return f.read()
     except Exception as e:
         return str(e)
