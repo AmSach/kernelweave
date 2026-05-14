@@ -66,7 +66,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
         "Rupert: {\"thought\": \"I need to search the web.\", \"plan\": [\"Search\"], \"tool\": \"web_search\", \"args\": {\"query\": \"quantum computing\"}}\n"
         f"User: {prompt}"
     )
-    max_iterations = 10
+    max_iterations = 20
     
     url = "http://127.0.0.1:11434/api/generate"
     
@@ -168,7 +168,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
 
 if __name__ == "__main__":
     tasks = [
-        "Act as a senior developer. Read all Python files in the current directory. Find any function that doesn't have a docstring or is missing type hints. Add the missing docstrings and type hints to at least one file. Then run the file using run_command or a python command to ensure you didn't introduce any syntax errors. If an error occurs, fix it and try again! Do not stop until you have successfully verified the file works!"
+        "Act as a full-stack developer. Create a mini web application. 1. Create a Python file named `app.py` with a simple Flask or HTTP server that serves a JSON list of products. 2. Create an HTML file named `index.html` with a clean UI that fetches that JSON and displays it in a grid. 3. Run the server in the background using `run_command`. 4. Use a python script to simulate a user fetching the API to verify it works! 5. Once verified, report success! Do not stop until you have verified it!"
     ]
     
     # Use the model the user preferred or default
