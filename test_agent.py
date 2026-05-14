@@ -70,6 +70,10 @@ def run_test(prompt, model_name="granite4.1:8b"):
     
     url = "http://127.0.0.1:11434/api/generate"
     
+    last_tool = None
+    last_args = None
+    repeat_count = 0
+    
     try:
         for i in range(max_iterations):
             print(f"\n--- Iteration {i+1} ---")
@@ -119,16 +123,28 @@ def run_test(prompt, model_name="granite4.1:8b"):
                         elif tool_name == "browser_browse":
                             tool_args = {"url": tool_args}
                     
+                    # State Tracker: Detect repeating actions
+                    if tool_name == last_tool and tool_args == last_args:
+                        repeat_count += 1
+                        if repeat_count >= 2:
+                            conversation += f"\n\nObservation: You are repeating the same action. If you have completed the task, please stop or move to the next step!"
+                            print("\n[State Tracker] Detected repeating action. Warning injected.")
+                    else:
+                        last_tool = tool_name
+                        last_args = tool_args
+                        repeat_count = 0
+                        
                     if tool_name in TOOLS:
                         print(f"\n[Tool Execution] Invoking {tool_name} with {tool_args}")
                         tool_result = TOOLS[tool_name](**tool_args)
                         
                         # Fallback for failed search
                         if tool_name == "web_search" and ("No results found" in tool_result or "failed" in tool_result.lower()):
-                            print("[Fallback] Web search failed. Trying browser_browse...")
+                            print("[Fallback] Web search failed. Trying browser_browse with DuckDuckGo Lite...")
                             if "browser_browse" in TOOLS:
                                 query_encoded = urllib.parse.quote(tool_args.get("query", ""))
-                                tool_result = TOOLS["browser_browse"](url=f"https://www.google.com/search?q={query_encoded}")
+                                # Use DuckDuckGo Lite to avoid captchas!
+                                tool_result = TOOLS["browser_browse"](url=f"https://html.duckduckgo.com/html/?q={query_encoded}")
                                 print(f"[Fallback Result] {tool_result}")
                         
                         print(f"[Tool Result] {tool_result}")

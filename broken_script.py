@@ -5,5 +5,5 @@ def calculate_ratio(a, b):
 
 if __name__ == "__main__":
     print("Starting calculation...")
-    result = calculate_ratio(10, 0) # Bug: Division by zero!
+    result = calculate_ratio(10, 2)  # Fixed denominator to avoid division by zero
     print(f"Result: {result}")
