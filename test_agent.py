@@ -60,7 +60,11 @@ def run_test(prompt, model_name="granite4.1:8b"):
         "3. Do NOT output internal thoughts, reasoning, or explanations. Output the JSON block IMMEDIATELY as the first line of your response!"
     )
     
-    conversation = f"User: {prompt}"
+    conversation = (
+        "User: Search the web for quantum computing.\n"
+        "Rupert: {\"tool\": \"web_search\", \"args\": {\"query\": \"quantum computing\"}}\n"
+        f"User: {prompt}"
+    )
     max_iterations = 10
     
     url = "http://127.0.0.1:11434/api/generate"
@@ -105,6 +109,15 @@ def run_test(prompt, model_name="granite4.1:8b"):
                     tool_name = tool_call.get("tool")
                     tool_args = tool_call.get("args", {})
                     
+                    # Fix for string arguments instead of dict
+                    if isinstance(tool_args, str):
+                        if tool_name == "run_command":
+                            tool_args = {"command": tool_args}
+                        elif tool_name in ["read_file", "list_dir"]:
+                            tool_args = {"path": tool_args}
+                        elif tool_name == "browser_browse":
+                            tool_args = {"url": tool_args}
+                    
                     if tool_name in TOOLS:
                         print(f"\n[Tool Execution] Invoking {tool_name} with {tool_args}")
                         tool_result = TOOLS[tool_name](**tool_args)
@@ -138,23 +151,17 @@ def run_test(prompt, model_name="granite4.1:8b"):
 
 if __name__ == "__main__":
     tasks = [
-        "Create a full-stack web application in a new directory named 'test_app'. The backend should be in Python using Flask. Write a test for the backend, run the server in the background, and use browser_browse to verify the frontend loads!",
-        "Search the web for 'latest breakthroughs in quantum computing 2026', read 2 different articles using browser_browse, and write a summary report to quantum_news.md.",
-        "Write a Python script named calculator.py with add, subtract, multiply, divide functions. Then write a script that imports it and tests all functions. Run the tests and report the result.",
-        "List the contents of the current directory. If there are any .py files, read one and suggest 3 improvements in a file named improvements.txt.",
-        "Create a JSON file named 'data.json' with a list of 5 products (id, name, price). Read the file, calculate the average price, and append the result to the file as a comment or a new field!",
-        "Search for 'best practices for writing secure Python code', find a list of top 5 tips, and create a markdown file named 'secure_code_tips.md' with those tips.",
-        "Look for a file named 'kernelweave_ollama.py' in the current directory. Read the first 50 lines and summarize what it does in a file named 'summary_ollama.txt'."
+        "There is a file named 'broken_script.py' in the current directory. It has a bug (division by zero). You must read the file, run it using run_command to see the error, fix the bug by updating the file with write_file, and run it again to verify it works!"
     ]
     
     # Use the model the user preferred or default
-    model = "qwen3.5:0.8b" 
+    model = "gemma4:e2b" 
     
     # Check available models
     models = get_ollama_models()
     if models:
         print(f"Available models: {models}")
-        if "qwen3.5:0.8b" not in models:
+        if "gemma4:e2b" not in models:
             model = models[0]
             print(f"Defaulting to available model: {model}")
             
