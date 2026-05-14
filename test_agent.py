@@ -168,10 +168,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
 
 if __name__ == "__main__":
     tasks = [
-        "There is a file named 'broken_script.py' in the current directory. It has a bug (division by zero). You must read the file, run it using run_command to see the error, fix the bug by updating the file with write_file, and run it again to verify it works!",
-        "Act as a quantitative trader. Search for 'latest Bitcoin price USD', extract the price, calculate a mock moving average, and write a trading signal (BUY/SELL) to 'trading_signal.txt' based on whether the price is above or below $60,000.",
-        "Act as a UI/UX designer. Create a CSS file named 'modern_theme.css' with a glassmorphism design (backdrop-filter: blur(10px), semi-transparent background). Then read the file to verify it was written correctly.",
-        "Act as a data analyst. Create a CSV file named 'sales_data.csv' with columns: Product, Units, Price. Put 3 rows of data. Then read the file and calculate the total revenue (Units * Price) for all products and output it to 'revenue_summary.txt'."
+        "Act as a senior developer. Read all Python files in the current directory. Find any function that doesn't have a docstring or is missing type hints. Add the missing docstrings and type hints to at least one file. Then run the file using run_command or a python command to ensure you didn't introduce any syntax errors. If an error occurs, fix it and try again! Do not stop until you have successfully verified the file works!"
     ]
     
     # Use the model the user preferred or default
