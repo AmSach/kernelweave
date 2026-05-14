@@ -325,8 +325,36 @@ def tool_web_search(query):
             except Exception as e:
                 return f"Search failed during scraping: {e}"
                 
+        # Priority 3: Fallback to Bing via Playwright
+        if not results and HAS_PLAYWRIGHT:
+            print(f"{DIM}Scraper failed. Trying Bing via Playwright...{RESET}")
+            try:
+                from playwright.sync_api import sync_playwright
+                with sync_playwright() as p:
+                    browser = p.chromium.launch(headless=True)
+                    context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                    page = context.new_page()
+                    page.goto(f"https://www.bing.com/search?q={urllib.parse.quote(query)}")
+                    page.wait_for_selector(".b_algo", timeout=5000)
+                    
+                    snippets = page.evaluate("""() => {
+                        const results = [];
+                        const elements = document.querySelectorAll('.b_caption p');
+                        elements.forEach(el => results.push(el.innerText));
+                        return results;
+                    }""")
+                    
+                    for s in snippets:
+                        if len(s) > 10:
+                            results.append(s)
+                            
+                    browser.close()
+                    print(f"{DIM}Fetched {len(results)} results via Bing.{RESET}")
+            except Exception as e:
+                print(f"{DIM}Bing fallback failed: {e}{RESET}")
+                
         if not results:
-            return ("No results found. DuckDuckGo may be rate-limiting the scraper.\n"
+            return ("No results found. DuckDuckGo and Bing may be rate-limiting or blocked.\n"
                     "Tip: Run 'pip install duckduckgo-search' to enable the robust official API.")
             
         # 2. Vector Embedding Search (RAG)
