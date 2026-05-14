@@ -98,6 +98,9 @@ def tool_browser_browse(url):
             context = browser.new_context(user_agent=user_agent)
             page = context.new_page()
             
+            # Stealth: Hide navigator.webdriver flag to bypass bot detection
+            page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            
             print(f"[Browser] Navigating to {url}...")
             page.goto(url, wait_until="domcontentloaded")
             
