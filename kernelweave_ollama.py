@@ -131,8 +131,8 @@ def tool_list_dir(path="."):
     except Exception as e:
         return str(e)
 
-def tool_read_file(path=None, filename=None):
-    actual_path = path or filename
+def tool_read_file(path=None, filename=None, file_path=None, file_name=None):
+    actual_path = path or filename or file_path or file_name
     if not actual_path:
         return "Error: path or filename required."
     try:
