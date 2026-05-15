@@ -66,7 +66,7 @@ def run_test(prompt, model_name="granite4.1:8b"):
         "Rupert: {\"thought\": \"I need to search the web.\", \"plan\": [\"Search\"], \"tool\": \"web_search\", \"args\": {\"query\": \"quantum computing\"}}\n"
         f"User: {prompt}"
     )
-    max_iterations = 20
+    max_iterations = 40
     
     url = "http://127.0.0.1:11434/api/generate"
     
