@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Product Grid</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .product-card {
+            border: 1px solid #ccc;
+            padding: 15px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product List</h1>
+    <div id='product-grid' class='grid-container'></div>
+
+    <script>
+        async function fetchProducts() {
+            const response = await fetch('/products');
+            const products = await response.json();
+            const gridContainer = document.getElementById('product-grid');
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `<h2>${product.name}</h2><p>Price: $${product.price}</p>`;
+                gridContainer.appendChild(card);
+            });
+        }
+
+        fetchProducts();
+    </script>
+</body>
+</html>
