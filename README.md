@@ -1,4 +1,10 @@
-# KernelWeave
+# 🧬 KERNELWEAVE: THE NEURO-SYMBOLIC OPERATING SYSTEM FOR LLMS
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Architecture: Neuro-Symbolic OS](https://img.shields.io/badge/Architecture-Neuro--Symbolic%20LLM%20Kernel-purple.svg)]()
+[![Model Routing: Dynamic](https://img.shields.io/badge/Routing-Small%20Model%20Fallback%20%2B%20Verification-brightgreen.svg)]()
+[![Ollama: Supported](https://img.shields.io/badge/Ollama-100%25%20Local%20Inference-blue.svg)]()
+
 
 > [!TIP]
 > **EASY GUIDE BRO!** 🧠
